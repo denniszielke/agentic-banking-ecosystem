@@ -186,17 +186,29 @@ and data — collaborating across organisational boundaries via A2A.
 
 #### Layers
 
-- **Interaction layer** — Web apps (`*_app`) plus Copilot / Copilot Studio / Scout as
-  surface integrations. UIs talk to agents over **A2A / Responses API** and can call MCP
-  servers directly over **MCP**.
+- **Interaction layer** — two dedicated front ends, plus Copilot / Copilot Studio / Scout
+  as additional surface integrations:
+  - `customer_app` — a **web application** for banking customers. Talks to
+    `customer_support_agent` over **A2A / Responses API**.
+  - `employee_app` — an internal application for bank employees, surfaced inside
+    **Microsoft Teams** (Teams app / message extension). Talks to
+    `employee_advisory_agent` over **A2A / Responses API**.
+  - Both apps reach agents over A2A / Responses API; they do **not** call MCP servers
+    directly — all data access is mediated by the agents.
 - **Agent layer** (Foundry hosted agents, container-based on Azure Container Apps) — each
-  agent exposes **A2A + Responses API**:
-  - `customer_support_agent` (Bank South, consumer) — hands off to `credit_card_agent`
+  agent exposes **A2A + Responses API**. MCP server dependencies per agent:
+  - `customer_support_agent` (Bank South, consumer) — **depends on**
+    `customer_data_mcp_server` (balance, transactions, personal details) and
+    `product_data_mcp_server` (list/explain products); hands off to `credit_card_agent`
     and `compliance_agent`.
-  - `employee_advisory_agent` (one instance per bank, internal) — adds WorkIQ for
-    calendar and documents in the user context.
-  - `credit_card_agent` (one instance per bank) — HITL approval before `order_product`.
-  - `compliance_agent` (Bank North, exposed cross-org as a service to Bank South).
+  - `employee_advisory_agent` (one instance per bank, internal) — **depends on**
+    `product_data_mcp_server` (full catalogue), `customer_data_mcp_server` (read-only
+    customer context), and **WorkIQ MCP** (calendar and documents in the user context).
+  - `credit_card_agent` (one instance per bank) — **depends on** `product_data_mcp_server`
+    (`order_product`, `update_holding`) and `customer_data_mcp_server` (eligibility
+    context); HITL approval before `order_product`.
+  - `compliance_agent` (Bank North, exposed cross-org as a service to Bank South) — **no
+    MCP dependency**; consumes the Compliance rules index only.
   - Domain flows are loaded from a `/skills` subfolder per agent.
 - **Tool layer** (MCP servers on Azure Container Apps, every tool call authenticated via
   Entra ID):
@@ -217,33 +229,37 @@ networking). The protocol on each edge is explicit:
 
 | # | Path | Protocol | Direction / notes |
 |---|------|----------|-------------------|
-| 1 | Web app / Copilot surface → agent | A2A / Responses API | User-facing entry point |
-| 2 | Web app → MCP server | MCP | Direct tool access where a UI needs raw data |
+| 1 | `customer_app` (web) → `customer_support_agent` | A2A / Responses API | Customer front end |
+| 2 | `employee_app` (Microsoft Teams) → `employee_advisory_agent` | A2A / Responses API | Employee front end |
 | 3 | `customer_support_agent` → `credit_card_agent` | A2A | Intra-bank hand-off (card ordering) |
 | 4 | `customer_support_agent` → `compliance_agent` | A2A | **Cross-org** (Bank South → Bank North) |
 | 5 | `credit_card_agent` → `compliance_agent` | A2A | **Cross-org** guardrail check |
-| 6 | Agent → MCP server (`customer_data`, `product_data`) | MCP | Tool calls (read + HITL writes) |
-| 7 | Agent → Azure AI Search | Search query (HTTPS) | Vector/grounding retrieval |
-| 8 | `employee_advisory_agent` → WorkIQ | MCP | Calendar + documents in user context |
-| 9 | All components → Application Insights | OTLP (OpenTelemetry) | Telemetry / traces |
-| 10 | All components ↔ Agent 365 | Identity + telemetry | Registration, security signals |
+| 6 | `customer_support_agent` → `customer_data_mcp_server` + `product_data_mcp_server` | MCP | Tool dependency (read + HITL writes) |
+| 7 | `employee_advisory_agent` → `product_data_mcp_server` + `customer_data_mcp_server` | MCP | Tool dependency (read) |
+| 8 | `credit_card_agent` → `product_data_mcp_server` + `customer_data_mcp_server` | MCP | Tool dependency (`order_product`, eligibility) |
+| 9 | Agent → Azure AI Search | Search query (HTTPS) | Vector / grounding retrieval |
+| 10 | `employee_advisory_agent` → WorkIQ MCP | MCP | Calendar + documents in user context |
+| 11 | All components → Application Insights | OTLP (OpenTelemetry) | Telemetry / traces |
+| 12 | All components ↔ Agent 365 | Identity + telemetry | Registration, security signals |
 
-The two **cross-organisation** edges (4 and 5) are the core of the story: Bank South's
-agents consume Bank North's `compliance_agent` as an A2A service across subscription and
-tenant boundaries.
+Data access is always **mediated by an agent**: the two web apps never call an MCP server
+directly. The two **cross-organisation** edges (4 and 5) are the core of the story: Bank
+South's agents consume Bank North's `compliance_agent` as an A2A service across
+subscription and tenant boundaries.
 
 ```mermaid
 flowchart LR
-    subgraph Users
-        UI["Web app / Copilot surface"]
+    subgraph Frontends["Front ends"]
+        CAPP["customer_app (web)"]
+        EAPP["employee_app (Microsoft Teams)"]
     end
 
     subgraph BankSouth["Bank South subscription"]
         CSA["customer_support_agent"]
         CCA_S["credit_card_agent"]
+        EAA_S["employee_advisory_agent"]
         CDATA_S["customer_data_mcp_server"]
         PDATA_S["product_data_mcp_server"]
-        EAA_S["employee_advisory_agent"]
     end
 
     subgraph BankNorth["Bank North subscription"]
@@ -255,30 +271,39 @@ flowchart LR
     subgraph Shared["Azure AI Search / WorkIQ"]
         FIDX["Financial products index"]
         CIDX["Compliance rules index"]
-        WIQ["WorkIQ"]
+        WIQ["WorkIQ MCP"]
     end
 
     OBS["Application Insights + Agent 365"]
 
-    UI -- "A2A / Responses API" --> CSA
-    UI -- "A2A / Responses API" --> EAA_S
-    UI -- "MCP" --> PDATA_S
+    %% Front ends -> agents (no direct MCP access)
+    CAPP -- "A2A / Responses API" --> CSA
+    EAPP -- "A2A / Responses API" --> EAA_S
 
+    %% Agent -> agent hand-offs
     CSA -- "A2A" --> CCA_S
     CSA -- "A2A (cross-org)" --> COMP
     CCA_S -- "A2A (cross-org)" --> COMP
 
+    %% Agent -> MCP dependencies
     CSA -- "MCP" --> CDATA_S
     CSA -- "MCP" --> PDATA_S
     CCA_S -- "MCP" --> PDATA_S
+    CCA_S -- "MCP" --> CDATA_S
+    EAA_S -- "MCP" --> PDATA_S
+    EAA_S -- "MCP" --> CDATA_S
     EAA_S -- "MCP" --> WIQ
 
+    %% Agent -> search / grounding
     CSA -- "search" --> FIDX
+    EAA_S -- "search" --> FIDX
     COMP -- "search" --> CIDX
 
+    %% Telemetry
     CSA -. "OTel" .-> OBS
     COMP -. "OTel" .-> OBS
     CCA_S -. "OTel" .-> OBS
+    EAA_S -. "OTel" .-> OBS
     CDATA_S -. "OTel" .-> OBS
     PDATA_S -. "OTel" .-> OBS
 ```
