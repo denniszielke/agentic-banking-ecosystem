@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "description": "Bank North compliance agent. Provides grounded regulatory guidance (KYC, AML, sanctions, fraud, eligibility) and escalation, offered cross-org to Bank South over A2A.",
+  "skills": [
+    {
+      "id": "regulatory-guidance",
+      "name": "Regulatory Guidance",
+      "description": "Answer KYC/AML/sanctions/eligibility questions with cited rules from the compliance knowledge base."
+    },
+    {
+      "id": "escalation",
+      "name": "Escalation Handling",
+      "description": "Recognise advice requests and high-risk cases and route them to the correct human per the escalation matrix."
+    }
+  ]
+}

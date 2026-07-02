@@ -12,6 +12,9 @@ Usage::
     # deploy only (image already in ACR)
     python -m scripts.deploy_customer_data_mcp_server
 
+    # build, deploy, then register the Foundry toolbox in one go
+    python -m scripts.deploy_customer_data_mcp_server --build --register
+
 Environment variables (populated automatically from ``.env`` after ``azd up``):
   AZURE_RESOURCE_GROUP                   target resource group (required)
   AZURE_REGISTRY                         ACR login server (required)
@@ -20,6 +23,8 @@ Environment variables (populated automatically from ``.env`` after ``azd up``):
   TAG                                    image tag to deploy (default: latest)
   CUSTOMER_MCP_EXTERNAL                  "true" for public ingress so the Foundry
                                          project can reach it (default: true)
+  CUSTOMER_TOOLBOX_NAME                  Foundry toolbox name registered with
+                                         --register (default: customer-data-tools)
 """
 
 from __future__ import annotations
@@ -73,11 +78,28 @@ def deploy(tag: str | None = None) -> None:
             "\nCustomer data MCP server deployed, but no ingress FQDN was "
             "returned. Set CUSTOMER_MCP_EXTERNAL=true or check the ingress."
         )
+    return fqdn
+
+
+def register_toolbox(fqdn: str | None) -> None:
+    """Register the deployed server as a Foundry toolbox.
+
+    Imported lazily so the plain deploy path never needs ``azure-ai-projects``.
+    """
+    if fqdn:
+        os.environ.setdefault("CUSTOMER_MCP_URL", f"https://{fqdn}/mcp")
+    from scripts.register_customer_data_toolbox import deploy as register
+
+    print("\n==> Registering customer data MCP server as a Foundry toolbox")
+    register()
 
 
 if __name__ == "__main__":
     do_build = "--build" in sys.argv
+    do_register = "--register" in sys.argv
     built_tag: str | None = None
     if do_build:
         built_tag = build()
-    deploy(tag=built_tag)
+    fqdn = deploy(tag=built_tag)
+    if do_register:
+        register_toolbox(fqdn)

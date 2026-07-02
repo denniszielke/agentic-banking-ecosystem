@@ -1,20 +1,33 @@
 ---
 name: ops
 description: >
-  Operations runbook for the agentic-supply-chain repo. USE THIS SKILL when the
-  user asks to deploy, build, provision, ingest, index, register, or clean up any
-  part of the project — including infrastructure (azd), container images, Container
-  Apps, AI Search indexes, Foundry toolboxes, and hosted agents. Covers the full
-  lifecycle: provision → build → index → ingest → deploy → register → clean up.
+  Operations runbook for the agentic-banking-ecosystem repo. USE THIS SKILL when
+  the user asks to deploy, build, provision, generate data, index, ingest,
+  register, or clean up any part of the project — including infrastructure (azd),
+  container images, Container Apps, the customer/product MCP servers, AI Search
+  indexes, Foundry toolboxes, and the banking agents. Covers the full lifecycle:
+  provision → generate data → build → deploy MCP → register toolboxes → index →
+  ingest → deploy agents → clean up.
 ---
 
-# Ops Runbook — agentic-supply-chain
+# Ops Runbook — agentic-banking-ecosystem
 
-All commands are run from the **repo root**. Environment variables come from
-`./.env`, which `azd up` writes automatically. Activate the venv first:
+A multi-organisation agentic banking demo (Bank North + Bank South). It ships two
+MCP servers (customer data, product data), two Azure AI Search indexes (Financial
+products, Compliance rules), and three agents:
+
+- **compliance_agent** — Bank North, Foundry **hosted agent** (index-only,
+  cross-org A2A service).
+- **employee_advisory_agent** — Foundry **hosted agent** (product/customer/WorkIQ
+  toolboxes + Financial products index).
+- **customer_support_agent** — Bank South, Azure **Container App** + web UI
+  (customer/product MCP + both indexes).
+
+All commands run from the **repo root**. Configuration comes from `./.env`, which
+`azd up` writes automatically. Use the project venv:
 
 ```bash
-source .venv/bin/activate   # or: .venv/bin/python -m scripts.<name>
+source .venv/bin/activate   # or prefix commands with: .venv/bin/python
 ```
 
 ---
@@ -25,518 +38,302 @@ source .venv/bin/activate   # or: .venv/bin/python -m scripts.<name>
 |---|---|---|
 | Azure Developer CLI (`azd`) | latest | https://aka.ms/azd |
 | Azure CLI (`az`) | ≥ 2.60 | https://aka.ms/azcli |
-| Python | 3.12 + | |
+| Python | 3.13 + | |
 
-Install Python deps:
+Install Python deps (all services + scripts):
 ```bash
 pip install -r requirements.txt
+# script-only deps (agents/index tooling):
+pip install -r scripts/requirements-agents.txt
 ```
 
 ---
 
 ## 1. Provision Infrastructure
 
-Creates all long-lived Azure resources (AI Foundry project, Azure AI Search,
-Container Apps environment, VNet, ACR, user-assigned managed identity) and writes
-all outputs to `./.env`.
+Creates the long-lived Azure resources (AI Foundry project, Azure AI Search,
+Container Apps environment, ACR, user-assigned managed identity) and writes all
+outputs to `./.env`.
 
 ```bash
+azd env set AZURE_LOCATION swedencentral
+azd env set AZURE_PRINCIPAL_ID $(az ad signed-in-user show --query id -o tsv)
+azd env set AZURE_PRINCIPAL_TYPE User
+azd env set SKIP_CONNECTION_CREATION true
+azd env set SKIP_ROLE_ASSIGNMENTS true
 azd up
 ```
 
-Runs `postprovision` hook automatically:
-- creates AI Search indexes + knowledge base (`scripts/deploy_assets.py`)
-
-Runs `postdeploy` hook automatically:
-- copies `.env`, builds all container images in ACR (`scripts/build_containers.sh`)
-
-To provision only (no deploy):
+Provision only / deploy only / tear down:
 ```bash
 azd provision
-```
-
-To deploy only (infra already provisioned):
-```bash
 azd deploy
-```
-
-To tear everything down:
-```bash
 azd down
 ```
 
 ---
 
-## 2. Build Container Images
+## 2. Generate Demo Data
 
-Builds all five service images in ACR (no local Docker). Each image is tagged
-with both a concrete timestamp tag **and** `:latest`.
+The synthetic customer/transaction data is generated deterministically (seeded).
+Regenerates `data/customers.md`, `data/customers.json`, `data/transactions.json`
+and the per-customer files under `data/transactions/`.
 
 ```bash
-./scripts/build_containers.sh "${AZURE_ENV_NAME}"
-# prints: Registry: myregistry.azurecr.io, Tag: 20260615120000
+python -m scripts.generate_data
+# or: python3 scripts/generate_data.py
 ```
 
-Override the tag:
-```bash
-./scripts/build_containers.sh "${AZURE_ENV_NAME}" 20260615120000
-```
-
-Images built:
-- `shopping-chat` — from `src/shopping_chat/Dockerfile`
-- `promotion-ingestion` — from `src/promotion_ingestion/Dockerfile`
-- `shopping-agent` — from `src/shopping_agent/Dockerfile`
-- `shopping-simulator` — from `src/shopping_simulations/Dockerfile`
-- `pricing-mcp-server` — from `src/pricing_mcp_server/Dockerfile`
-- `campaign-agent` — from `src/campaign_agent/Dockerfile`
+The knowledge markdown under `data/knowledge/` and the data model in
+`data/products.md` are authored by hand (not generated).
 
 ---
 
-## 3. AI Search Indexes & Knowledge Base
+## 3. Build the MCP Server Images
 
-### Create / update all indexes and knowledge base (postprovision hook)
-```bash
-python -m scripts.deploy_assets
-```
+Builds the two MCP server images (`customer-data-mcp-server`,
+`product-data-mcp-server`) in ACR (no local Docker). Only builds — does not
+deploy. The resource group is read from `./.env` (`AZURE_RESOURCE_GROUP`, or
+`rg-<AZURE_ENV_NAME>`); subscription and registry are discovered from it.
 
-### Create / update indexes only
 ```bash
-python -m scripts.create_search_index
-```
-
-### Create / update knowledge base only
-```bash
-python -m scripts.create_knowledgebase
-```
-
-### Seed the category taxonomy (one-time, re-runnable)
-```bash
-python scripts/create_category_items.py
-python scripts/create_category_items.py --dry-run   # preview only
-```
-
-### Map uncategorized items to best-matching category
-```bash
-python scripts/map_items_to_category.py
-python scripts/map_items_to_category.py --dry-run
-python scripts/map_items_to_category.py --threshold 0.85 --batch-size 50
-```
-
-### Migrate supplier index to multi-location schema
-```bash
-python scripts/migrate_supplier_index.py
-python scripts/migrate_supplier_index.py --export-only   # export, then inspect
-python scripts/migrate_supplier_index.py --import-only   # skip delete, re-import
-python scripts/migrate_supplier_index.py --dry-run
+python -m scripts.build_containers                 # auto timestamp tag + :latest
+python -m scripts.build_containers latest          # explicit tag
+python -m scripts.build_containers --env <name>    # override rg-<name>
 ```
 
 ---
 
-## 4. Flyer Ingestion
+## 4. Deploy the MCP Servers
 
-### Ingest all PDFs in data/files/ (derives supplier IDs from filenames)
+Deploys each MCP server as a Container App via `infra/core/host/app.bicep`. Pass
+`--build` to build in ACR first (else deploys `:latest` or the `TAG` env var).
+Add `--register` to also publish the server as a Foundry toolbox in the same run.
+
 ```bash
-python scripts/ingest_all.py
-python scripts/ingest_all.py --dry-run
-python scripts/ingest_all.py --files-dir data/files --output-dir data
+# customer data MCP server (customers, accounts, balances, transactions)
+python -m scripts.deploy_customer_data_mcp_server --build --register
+
+# product data MCP server (catalogue + per-customer holdings)
+python -m scripts.deploy_product_data_mcp_server --build --register
 ```
 
-### Ingest a single supplier's sources
-```bash
-python -m src.promotion_ingestion.processor \
-    --supplier-id <supplier-id> \
-    --source https://example.com/weekly-flyer.pdf \
-    --source data/local-flyer.pdf \
-    --output data/extraction-result.json
-
-# Push directly to AI Search:
-python -m src.promotion_ingestion.processor \
-    --supplier-id <supplier-id> \
-    --source https://example.com/weekly-flyer.pdf \
-    --push-to-search
-```
-
-Filename → supplier-id convention:
-- `StoreOne-Jun8.pdf` → `store-one`
-- `StoreTwo-Jun15.pdf` → `store-two`
-- `StoreBranch-Jun8.pdf` → `store-branch`
+Each prints the deployed `…/mcp` URL. Key overrides:
+- `CUSTOMER_MCP_APP_NAME` / `PRODUCT_MCP_APP_NAME` — Container App name
+- `CUSTOMER_MCP_PORT` (8092) / `PRODUCT_MCP_PORT` (8093)
+- `CUSTOMER_MCP_EXTERNAL` / `PRODUCT_MCP_EXTERNAL` — public ingress (default: true)
+- `CUSTOMER_TOOLBOX_NAME` / `PRODUCT_TOOLBOX_NAME` — toolbox names for `--register`
 
 ---
 
-## 5. Deploy Core Container Apps
+## 5. Register the Foundry Toolboxes
 
-Deploys `shopping-chat`, `promotion-ingestion`, `shopping-agent` via `infra/core/host/app.bicep`.
-Uses `TAG` env var (default: `latest`).
+The MCP-server toolboxes are registered automatically with `--register` above.
+Register any toolbox on its own (idempotent, re-runnable):
 
 ```bash
-export TAG=20260615120000   # from build_containers.sh output; or omit for :latest
-python -m scripts.deploy_agents
+python -m scripts.register_customer_data_toolbox    # → customer-data-tools
+python -m scripts.register_product_data_toolbox     # → product-data-tools
+python -m scripts.register_workiq_toolbox           # → workiq-tools (employee agent)
 ```
 
-Required env vars (from `.env`):
-- `AZURE_RESOURCE_GROUP`, `AZURE_REGISTRY`, `AZURE_CONTAINER_APPS_ENVIRONMENT_NAME`, `AZURE_IDENTITY_NAME`
+Each prints the consumer endpoint
+`{project}/toolboxes/{toolbox}/mcp?api-version=v1`. Key overrides:
+- `CUSTOMER_TOOLBOX_NAME` / `PRODUCT_TOOLBOX_NAME` / `WORKIQ_TOOLBOX_NAME`
+- `CUSTOMER_MCP_URL` / `PRODUCT_MCP_URL` — explicit MCP URL (else derived from the
+  Container App FQDN via `AZURE_RESOURCE_GROUP`)
+- `WORKIQ_MCP_URL` / `WORKIQ_CONNECTION_ID` — WorkIQ MCP URL / OAuth connection id
+
+**WorkIQ auth (OAuth identity passthrough).** WorkIQ needs a custom-Entra OAuth
+connection — static tokens are rejected. There is no `McpServers.WorkIQ.All`
+scope / `mcp_WorkIQTools` server; use a granular capability (default:
+`mcp_CalendarTools` / `McpServers.Calendar.All`, via `WORKIQ_MCP_SERVER` /
+`WORKIQ_SCOPE`). Setup:
+1. `python -m scripts.setup_workiq_oauth_app` — creates the Entra app + admin
+   consent + secret and prints the Foundry connection values.
+2. In the Foundry portal create a `workiq-connection` (Custom → MCP → OAuth
+   Identity Passthrough → Custom OAuth); add the redirect URL it returns back to
+   the app registration.
+3. `WORKIQ_CONNECTION_NAME=workiq-connection python -m scripts.register_workiq_toolbox`.
 
 ---
 
-## 5b. Shopping Simulator Workflow (multi-agent, DevUI)
+## 6. Create & Populate the Search Indexes
 
-A **multi-agent workflow** (Microsoft Agent Framework) that simulates one
-shopping bill **per supplier in parallel** and recommends the cheapest one- or
-two-stop tour. It is served on the **DevUI** from an externally ingressed
-Container App and publishes OpenTelemetry traces to Application Insights for use
-as a Foundry [external agent](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/register-external-agent).
-Source: [src/shopping_simulations](../../../src/shopping_simulations).
+Two Azure AI Search indexes: **Financial products** (`banking-products`) and
+**Compliance rules** (`banking-compliance`), both with HNSW vector + semantic
+search.
 
-Prerequisite: the shopping toolbox is registered (see §8 / harness README):
 ```bash
-python -m scripts.register_shopping_toolbox
+# create/update the two index schemas
+python -m scripts.create_search_indexes
+
+# parse data/products.md + data/knowledge/*.md, embed (if AZURE_OPENAI_ENDPOINT is
+# set) and upload
+python -m scripts.ingest_knowledge
 ```
 
-Build the image in ACR, then deploy the Container App (public DevUI on 8080):
-```bash
-python -m scripts.deploy_shopping_simulator --build
-```
-
-Deploy only (image already in ACR):
-```bash
-python -m scripts.deploy_shopping_simulator
-```
-
-The deploy script also grants the user-assigned managed identity
-**Cognitive Services User** (consume Foundry models) and **Monitoring Metrics
-Publisher** (publish telemetry to Application Insights). It prints the public
-DevUI URL: `https://<fqdn>/`.
-
-Key overrides:
-- `SHOPPING_SIM_APP_NAME` — Container App name (default: `shopping-simulator`)
-- `SHOPPING_SIM_PORT` — DevUI / container port (default: `8080`)
-- `SHOPPING_SIM_EXTERNAL=false` — internal ingress (default: public)
-- `SHOPPING_SIM_MAX_SUPPLIERS` — concurrent supplier-bill slots (default: `5`)
-- `SHOPPING_TOOLBOX_NAME` — toolbox the agents consume (default: `shopping-tools`)
-- `OTEL_AGENT_ID` — `gen_ai.agent.id` for external-agent trace matching
-  (default: `shopping-simulator-v1`)
-
-After telemetry flows, register it as a Foundry external agent with
-`ExternalAgentDefinition(otel_agent_id="shopping-simulator-v1")` — see
-[src/shopping_simulations/README.md](../../../src/shopping_simulations/README.md).
+Ingestion is embedding-optional: without `AZURE_OPENAI_ENDPOINT` the documents are
+pushed without vectors and text/semantic search still works. Key overrides:
+- `AZURE_SEARCH_PRODUCT_INDEX_NAME` (banking-products)
+- `AZURE_SEARCH_COMPLIANCE_INDEX_NAME` (banking-compliance)
+- `AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME` (text-embedding-3-small)
+- `AZURE_OPENAI_EMBEDDING_DIMENSIONS` (1536)
 
 ---
 
-## 6. Campaign-Agent Pipeline (three discrete steps)
+## 7. Deploy the Agents
 
-Run these in order. Each is independently re-runnable.
+Prerequisites: MCP servers deployed + registered as toolboxes (§4–5), WorkIQ
+toolbox registered (§5), and indexes created + ingested (§6).
 
-### Step 1 — Deploy pricing MCP server (internal Container App, port 8091)
-
+### Compliance agent (Bank North, Foundry hosted agent — index-only)
 ```bash
-# Build image in ACR first, then deploy:
-python -m scripts.deploy_pricing_mcp_server --build
-
-# Deploy only (image already in ACR):
-python -m scripts.deploy_pricing_mcp_server
-
-# Deploy a specific tag:
-TAG=20260615120000 python -m scripts.deploy_pricing_mcp_server
+python -m scripts.deploy_compliance_agent
 ```
+Key overrides: `AZURE_AI_COMPLIANCE_AGENT_NAME` (compliance-agent),
+`COMPLIANCE_BANK_ID` (bank-north). Enables RESPONSES + A2A + INVOCATIONS.
 
-Prints the resulting MCP URL, e.g.:
-`https://pricing-mcp-server.<env-default-domain>/mcp`
-
-Key overrides:
-- `PRICING_MCP_APP_NAME` — Container App name (default: `pricing-mcp-server`)
-- `PRICING_MCP_PORT` — container port (default: `8091`)
-- `PRICING_MCP_EXTERNAL=true` — expose public ingress (default: internal)
-
-### Step 2 — Register pricing MCP server as a Foundry toolbox
-
+### Employee advisory agent (Foundry hosted agent — one per bank)
 ```bash
-python -m scripts.register_pricing_toolbox
+python -m scripts.deploy_employee_advisory_agent
 ```
+Consumes the product/customer/WorkIQ toolboxes + Financial products index. Key
+overrides: `AZURE_AI_EMPLOYEE_AGENT_NAME` (employee-advisory-agent),
+`EMPLOYEE_BANK_ID` (bank-south), `EMPLOYEE_WORKIQ_ENABLED` (true),
+`PRODUCT_TOOLBOX_NAME` / `CUSTOMER_TOOLBOX_NAME` / `WORKIQ_TOOLBOX_NAME`.
 
-Derives the MCP URL from the Container App FQDN (`AZURE_RESOURCE_GROUP`), or
-override with:
+### Customer support agent (Bank South, Container App + web UI)
 ```bash
-PRICING_MCP_URL=https://pricing-mcp-server.<env>.azurecontainerapps.io/mcp \
-  python -m scripts.register_pricing_toolbox
+python -m scripts.deploy_customer_support_agent --build
 ```
+Reaches the customer/product MCP servers directly (URLs auto-resolved) and grounds
+on both indexes. Grants the managed identity **Cognitive Services User**,
+**Search Index Data Reader** and **Monitoring Metrics Publisher**. Prints the
+public web-UI URL. Key overrides: `CUSTOMER_SUPPORT_APP_NAME`
+(customer-support-agent), `CUSTOMER_SUPPORT_PORT` (8090),
+`CUSTOMER_SUPPORT_EXTERNAL` (true), `CUSTOMER_MCP_URL` / `PRODUCT_MCP_URL`.
 
-Key overrides:
-- `PRICING_TOOLBOX_NAME` — toolbox name (default: `pricing-tools`)
-- `PRICING_MCP_URL` — explicit MCP server URL
-- `PRICING_MCP_CONNECTION_ID` — Foundry connection ID (optional)
-
-Prints the consumer endpoint:
-`{project}/toolboxes/pricing-tools/mcp?api-version=v1`
-
-### Step 3 — Deploy campaign planning agent (Foundry hosted agent)
-
+### Deploy all three together
 ```bash
-python -m scripts.deploy_campaign_agent
+python -m scripts.deploy_banking_agents --build
+python -m scripts.deploy_banking_agents --only customer-support --build
 ```
-
-Key overrides:
-- `AZURE_AI_CAMPAIGN_AGENT_NAME` — agent name (default: `campaign-agent`)
-- `PRICING_TOOLBOX_NAME` — toolbox the agent consumes (default: `pricing-tools`)
-- `TOOLBOX_MCP_ENDPOINT` — explicit toolbox MCP URL (optional override)
-- `PRICING_MCP_URL` — bypass toolbox, call MCP server directly (local dev)
+`--build` rebuilds the container-app image; `--only` accepts `compliance`,
+`employee`, `customer-support` (repeatable).
 
 ---
 
-## 6b. Campaign A365 *Autopilot* Digital Worker
+## 8. Run Services Locally
 
-This is a **separate deployment path** from §6. Instead of a RESPONSES-protocol
-hosted agent, it publishes the campaign planner as an **Agent 365 autopilot /
-digital worker** (activity protocol, bot-relayed, hireable in Microsoft 365).
-Source lives in [src/campaign_a365_agent](../../../src/campaign_a365_agent) and
-the Python step scripts in [scripts/autopilot](../../../scripts/autopilot).
-
-Prerequisites: `azd up` has run (so `./.env` has `AZURE_AI_PROJECT_ENDPOINT`,
-`AZURE_CONTAINER_REGISTRY_ENDPOINT`, `AZURE_RESOURCE_GROUP`, etc.) and you are
-logged in with `az login` as **Owner** on the subscription.
-
-### One-shot wrapper (recommended)
-
-Runs the whole pipeline: provision autopilot infra → remote ACR build → create
-agent version → publish digital worker → OAuth2 grants → add blueprint owner.
-
+### Customer data MCP server
 ```bash
-python -m scripts.deploy_campaign_autopilot
+python -m src.customer_data_mcp_server.server
+# serves http://127.0.0.1:8092/mcp  (override CUSTOMER_MCP_HOST / CUSTOMER_MCP_PORT)
 ```
 
-Useful flags:
-- `--skip-infra --blueprint-id <id>` — reuse an existing blueprint, skip bicep
-- `--configure-backend` — also PUT the Teams Developer Portal backend config
-  (needs `az login --scope https://dev.teams.microsoft.com/.default`)
-
-### What the wrapper provisions
-
-`provision_infra` runs three things (MAIB creation + role grants are done in
-Python, **not** bicep — see note below):
-1. **MAIB** — `create_maib.py` PUTs a **Managed Agent Identity Blueprint** via
-   the Foundry data-plane API and returns its client id.
-2. **Project roles** — `grant_project_roles.py` grants the existing project
-   system identity **AcrPull** on the registry + **Cognitive Services User** on
-   the account (tolerating assignments `azd` already created).
-3. **Bot service** — `infra/autopilot/main.bicep` (resourceGroup scope) deploys
-   an **Azure Bot + Teams channel**, `msaAppId` = blueprint client id,
-   endpoint = the agent's `activityProtocol` endpoint. References the existing
-   account/project — it does not recreate them.
-
-> **Why no deployment script?** The Foundry sample created the MAIB from an
-> `AzurePowerShell` deploymentScript, which requires a *key-based* storage
-> account. That is blocked by policy in some tenants
-> (`KeyBasedAuthenticationNotPermitted`), so MAIB creation was moved into Python.
-> `azd` also already grants AcrPull to the project identity, which made the
-> bicep role assignment fail with `RoleAssignmentExists` — hence the Python grant.
-
-### Running steps individually
-
-Each step is also runnable standalone (all read `./.env`):
-
+### Product data MCP server
 ```bash
-python -m scripts.autopilot.create_maib                # → AGENT_IDENTITY_BLUEPRINT_ID
-python -m scripts.autopilot.grant_project_roles        # AcrPull + Cognitive Services User
-python -m scripts.autopilot.provision_infra            # the above two + bot service bicep
-AGENT_IDENTITY_BLUEPRINT_ID=<id> python -m scripts.autopilot.build_image
-python -m scripts.autopilot.create_agent               # → AGENT_GUID
-AGENT_GUID=<g> AGENT_IDENTITY_BLUEPRINT_ID=<id> python -m scripts.autopilot.publish_digital_worker
-AGENT_IDENTITY_BLUEPRINT_ID=<id> python -m scripts.autopilot.create_oauth2_grants
-AGENT_IDENTITY_BLUEPRINT_ID=<id> python -m scripts.autopilot.add_blueprint_owner
-AGENT_IDENTITY_BLUEPRINT_ID=<id> python -m scripts.autopilot.configure_blueprint_backend  # optional
+python -m src.product_data_mcp_server.server
+# serves http://127.0.0.1:8093/mcp  (override PRODUCT_MCP_HOST / PRODUCT_MCP_PORT)
 ```
 
-Key overrides:
-- `AZURE_AI_CAMPAIGN_AGENT_NAME` — agent name (default: `campaign-a365-agent`)
-- `MAIB_NAME` — blueprint name (default: `<agent>-maib`)
-- `CAMPAIGN_A365_IMAGE_NAME` — image repo (default: `campaign-a365-agent`)
-- `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME` — model the agent calls
-
-### After deployment
-
-Approve the blueprint in the Microsoft 365 admin center
-(`https://admin.cloud.microsoft/?#/agents/all/requested`), configure it in the
-Teams Developer Portal, then create agent instances in Teams.
-
----
-
-## 7. Deploy All Hosted Agents (shopping + campaign together)
-
-```bash
-python -m scripts.deploy_hosted_agents
-```
-
-Requires: `AZURE_AI_PROJECT_ENDPOINT`, `AZURE_CONTAINER_REGISTRY_ENDPOINT`
-
-Deploys `shopping-agent` and `campaign-agent` as Foundry hosted agents
-(RESPONSES protocol). Builds images in ACR (timestamped + `:latest`).
-
----
-
-## 8. Promotion Agent Pipeline (two discrete steps)
-
-A lightweight **prompt-based** agent that identifies product promotions and
-pricing details.  It reads the live retail-items AI Search index through a
-Foundry toolbox — no container image required.
-
-Run these in order. Each is independently re-runnable.
-
-### Step 1 — Register the promotion toolbox (AI Search → Foundry toolbox)
-
-```bash
-python -m scripts.register_promotion_toolbox
-```
-
-Required env vars:
-- `AZURE_AI_PROJECT_ENDPOINT`
-- `AZURE_SEARCH_CONNECTION_NAME` — name of the AI Search connection in your
-  Foundry project (Foundry → Settings → Connections).
-
-Key overrides:
-- `PROMOTION_TOOLBOX_NAME` — toolbox name (default: `promotion-tools`)
-- `AZURE_SEARCH_ITEM_INDEX_NAME` — index to search (default: `retail-items`)
-
-Prints the consumer endpoint:
-`{project}/toolboxes/promotion-tools/mcp?api-version=v1`
-
-### Step 2 — Deploy the promotion prompt agent
-
-```bash
-python -m scripts.deploy_promotion_agent
-```
-
-Key overrides:
-- `AZURE_AI_PROMOTION_AGENT_NAME` — agent name (default: `promotion-agent`)
-- `PROMOTION_TOOLBOX_NAME` — toolbox to connect (default: `promotion-tools`)
-- `PROMOTION_TOOLBOX_MCP_URL` — explicit toolbox MCP URL (optional override)
-- `PROMOTION_MCP_CONNECTION_ID` — Foundry connection ID (optional)
-- `AZURE_AI_MODEL_DEPLOYMENT_NAME` — model (default: `gpt-4.1-mini`)
-
-Prints the A2A card URL and base path:
-`{project}/agents/promotion-agent/endpoint/protocols/a2a/agentCard/v0.3`
-
-The agent supports **RESPONSES**, **A2A** and **INVOCATIONS** protocols.
-
----
-
-## 9. Run Services Locally
-
-<!-- NOTE: sections 9-12 are renumbered; was 8-11 before Promotion Agent Pipeline was added -->
-
-### Pricing MCP server
-```bash
-python -m src.pricing_mcp_server.server
-# serves http://127.0.0.1:8091/mcp
-# override: PRICING_MCP_HOST / PRICING_MCP_PORT
-```
-
-### Campaign planning agent
+### Compliance agent (RESPONSES host, port 8088)
 ```bash
 export AZURE_AI_PROJECT_ENDPOINT="https://<project>.services.ai.azure.com/api/projects/<name>"
-export AZURE_OPENAI_CHAT_DEPLOYMENT_NAME="gpt-4.1-mini"
 export AZURE_SEARCH_ENDPOINT="https://<search>.search.windows.net"
-export PRICING_MCP_URL="http://127.0.0.1:8091/mcp"
-python -m src.campaign_agent.agent
-# serves RESPONSES protocol on PORT (default 8088)
+python -m src.compliance_agent.agent
 ```
 
-### Shopping chat UI
+### Employee advisory agent (RESPONSES host, port 8088)
 ```bash
-uvicorn src.shopping_chat.app:app --reload --port 8080
-# open http://localhost:8080
+# direct MCP URLs bypass the toolboxes for local dev:
+export PRODUCT_MCP_URL="http://127.0.0.1:8093/mcp"
+export CUSTOMER_MCP_URL="http://127.0.0.1:8092/mcp"
+python -m src.employee_advisory_agent.agent
 ```
 
-### Shopping agent (CLI)
+### Customer support agent (AG-UI web UI, port 8090)
 ```bash
-python -m src.shopping_agent.shopping_agent --query "Milch, Hackfleisch, Tomaten"
-python -m src.shopping_agent.shopping_agent   # interactive REPL
+export CUSTOMER_MCP_URL="http://127.0.0.1:8092/mcp"
+export PRODUCT_MCP_URL="http://127.0.0.1:8093/mcp"
+python -m src.customer_support_agent.server
+# open http://localhost:8090
 ```
 
 ---
 
-## 10. Cleanup
+## 9. Cleanup
 
-### Delete search index data (keep schemas)
 ```bash
-python scripts/delete_index_data.py
-```
+# Foundry hosted agents (compliance, employee advisory)
+python -m scripts.delete_agents
+python -m scripts.delete_agents --toolboxes   # also delete the toolboxes
 
-### Delete a search index entirely (schema + data)
-```bash
-python scripts/delete_index.py
-```
+# Container Apps (customer support agent + customer/product MCP servers)
+python -m scripts.delete_container_apps
 
-### Delete all Container Apps
-```bash
-python scripts/delete_agents.py   # requires AZURE_RESOURCE_GROUP
-```
+# the two Azure AI Search indexes (schema + data)
+python -m scripts.delete_search_indexes
 
-### Delete all Foundry agents
-```bash
-python scripts/delete_agents.py   # if it covers hosted agents — check script
-```
-
-### Tear down all Azure resources
-```bash
+# tear down all Azure resources
 azd down
 ```
 
 ---
 
-## 11. Environment Variable Reference
+## 10. Environment Variable Reference
 
-All variables are written to `./.env` by `azd up`.
+Most variables are written to `./.env` by `azd up`.
 
 | Variable | Source | Used by |
 |---|---|---|
 | `AZURE_RESOURCE_GROUP` | azd | all deploy scripts |
-| `AZURE_REGISTRY` | azd | build, deploy |
-| `AZURE_CONTAINER_APPS_ENVIRONMENT_NAME` | azd | deploy |
-| `AZURE_IDENTITY_NAME` | azd | deploy |
-| `AZURE_AI_PROJECT_ENDPOINT` | azd | agents, toolbox, ingestion |
-| `AZURE_CONTAINER_REGISTRY_ENDPOINT` | azd | hosted agents |
+| `AZURE_REGISTRY` / `AZURE_CONTAINER_REGISTRY_ENDPOINT` | azd | build, deploy, hosted agents |
+| `AZURE_CONTAINER_APPS_ENVIRONMENT_NAME` | azd | container-app deploy |
+| `AZURE_IDENTITY_NAME` | azd | container-app deploy (managed identity) |
+| `AZURE_AI_PROJECT_ENDPOINT` | azd | agents, toolboxes |
 | `AZURE_SEARCH_ENDPOINT` | azd | indexing, ingestion, agents |
-| `AZURE_SEARCH_ADMIN_KEY` | azd | indexing (optional, falls back to DefaultAzureCredential) |
-| `AZURE_SEARCH_SUPPLIER_INDEX_NAME` | azd | default: `retail-suppliers` |
-| `AZURE_SEARCH_CATEGORY_INDEX_NAME` | azd | default: `retail-categories` |
-| `AZURE_SEARCH_ITEM_INDEX_NAME` | azd | default: `retail-items` |
-| `AZURE_SEARCH_KNOWLEDGE_BASE_NAME` | azd | default: `supply-chain-kb` |
-| `AZURE_OPENAI_ENDPOINT` | azd | all AI calls |
+| `AZURE_SEARCH_ADMIN_KEY` | azd | indexing (optional; falls back to DefaultAzureCredential) |
+| `AZURE_SEARCH_PRODUCT_INDEX_NAME` | manual | default: `banking-products` |
+| `AZURE_SEARCH_COMPLIANCE_INDEX_NAME` | manual | default: `banking-compliance` |
+| `AZURE_OPENAI_ENDPOINT` | azd | model + embedding calls |
 | `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME` | azd | default: `gpt-4.1-mini` |
 | `AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME` | azd | default: `text-embedding-3-small` |
 | `AZURE_AI_MODEL_DEPLOYMENT_NAME` | azd | fallback model |
 | `OPENAI_API_VERSION` | azd | default: `2024-05-01-preview` |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | azd | telemetry |
 | `TAG` | manual | image tag for deploy (default: `latest`) |
-| `PRICING_MCP_URL` | manual | direct MCP URL (local dev / override) |
-| `PRICING_MCP_APP_NAME` | manual | default: `pricing-mcp-server` |
-| `PRICING_MCP_EXTERNAL` | manual | `true` to expose public ingress |
-| `PRICING_TOOLBOX_NAME` | manual | default: `pricing-tools` |
-| `TOOLBOX_MCP_ENDPOINT` | manual | explicit toolbox MCP URL |
-| `AZURE_AI_CAMPAIGN_AGENT_NAME` | manual | default: `campaign-agent` |
-| `AZURE_AI_HOSTED_AGENT_NAME` | manual | default: `shopping-agent` |
-| `AZURE_SEARCH_CONNECTION_NAME` | manual | Foundry connection name for AI Search (promotion toolbox) |
-| `PROMOTION_TOOLBOX_NAME` | manual | default: `promotion-tools` |
-| `PROMOTION_TOOLBOX_MCP_URL` | manual | explicit promotion toolbox MCP URL (optional) |
-| `PROMOTION_MCP_CONNECTION_ID` | manual | Foundry connection ID for restricted toolbox (optional) |
-| `AZURE_AI_PROMOTION_AGENT_NAME` | manual | default: `promotion-agent` |
-| `SHOPPING_TOOLBOX_NAME` | manual | default: `shopping-tools` |
-| `SHOPPING_SIM_APP_NAME` | manual | simulator Container App name (default: `shopping-simulator`) |
-| `SHOPPING_SIM_PORT` | manual | simulator DevUI port (default: `8080`) |
-| `SHOPPING_SIM_EXTERNAL` | manual | `true` for public ingress (default: `true`) |
-| `SHOPPING_SIM_MAX_SUPPLIERS` | manual | concurrent supplier-bill slots (default: `5`) |
-| `OTEL_AGENT_ID` | manual | `gen_ai.agent.id` for external-agent matching (default: `shopping-simulator-v1`) |
+| `CUSTOMER_MCP_APP_NAME` / `PRODUCT_MCP_APP_NAME` | manual | MCP Container App names |
+| `CUSTOMER_MCP_PORT` / `PRODUCT_MCP_PORT` | manual | `8092` / `8093` |
+| `CUSTOMER_MCP_EXTERNAL` / `PRODUCT_MCP_EXTERNAL` | manual | public ingress (default: true) |
+| `CUSTOMER_MCP_URL` / `PRODUCT_MCP_URL` | manual | direct MCP URL (local dev / container app) |
+| `CUSTOMER_TOOLBOX_NAME` | manual | default: `customer-data-tools` |
+| `PRODUCT_TOOLBOX_NAME` | manual | default: `product-data-tools` |
+| `WORKIQ_TOOLBOX_NAME` | manual | default: `workiq-tools` |
+| `WORKIQ_MCP_URL` / `WORKIQ_CONNECTION_ID` | manual | WorkIQ MCP URL / OAuth connection id |
+| `AZURE_AI_COMPLIANCE_AGENT_NAME` | manual | default: `compliance-agent` |
+| `AZURE_AI_EMPLOYEE_AGENT_NAME` | manual | default: `employee-advisory-agent` |
+| `EMPLOYEE_WORKIQ_ENABLED` | manual | attach WorkIQ tool (default: true) |
+| `CUSTOMER_SUPPORT_APP_NAME` | manual | default: `customer-support-agent` |
+| `CUSTOMER_SUPPORT_PORT` / `CUSTOMER_SUPPORT_EXTERNAL` | manual | `8090` / public (true) |
+| `BANK_ID` / `COMPLIANCE_BANK_ID` / `EMPLOYEE_BANK_ID` | manual | owning bank id |
 
 ---
 
-## 12. Conventions
+## 11. Conventions
 
-- **No real retailer brand names** in `src/` or `scripts/`. Use `the retailer`,
-  `competitor-a`, `Store A`, `Naturgut Bio`, etc. `data/` input files are exempt.
 - Run all scripts from the **repo root** as modules: `python -m scripts.<name>`.
-- Scripts read `./.env` via `python-dotenv` — always source it before manual CLI work.
+- Scripts read `./.env` via `python-dotenv` — source it before manual CLI work.
 - Image builds use `az acr build` (no local Docker). Both `:<timestamp>` and
   `:latest` tags are pushed on every build.
-- Hosted agents speak the **RESPONSES protocol** on port `8088` (campaign) /
-  `8090` (shopping).
-- The pricing MCP server is **internal by default** (no public ingress). Set
-  `PRICING_MCP_EXTERNAL=true` only when Foundry needs to reach it directly.
+- Hosted agents (compliance, employee advisory) speak **RESPONSES + A2A +
+  INVOCATIONS** on port `8088`; the customer support Container App serves the
+  AG-UI web UI on port `8090`.
+- Agents reach MCP servers through **Foundry toolboxes** by default; a direct
+  `*_MCP_URL` override bypasses the toolbox for local dev.
+- All write tools (`update_customer`, `order_product`, `update_holding`) are
+  **human-in-the-loop** — preview, confirm, then commit.
+- Each agent loads its domain flows from a `skills/` subfolder that ships inside
+  its container image.
+

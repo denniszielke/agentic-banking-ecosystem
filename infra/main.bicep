@@ -195,6 +195,7 @@ output AZURE_REGISTRY string = aiProject.outputs.dependentResources.registry.log
 
 output AZURE_RESOURCE_GROUP string = resourceGroupName
 output AZURE_LOCATION string = location
+output AZURE_TENANT_ID string = tenant().tenantId
 
 // Container Apps
 output AZURE_CONTAINER_APPS_ENVIRONMENT_NAME string = containerAppsEnv.outputs.name

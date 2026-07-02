@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "description": "Internal advisory agent for bank employees. Explains product conditions, recommends suitable products with customer context, and routes to the right branch contact — grounded on the bank's own knowledge.",
+  "skills": [
+    {
+      "id": "product-recommendation",
+      "name": "Product Recommendation",
+      "description": "Match a customer's segment and needs to product conditions and recommend the most suitable product."
+    },
+    {
+      "id": "contact-routing",
+      "name": "Contact Routing & Follow-up",
+      "description": "Find the right internal branch contact for a product and schedule follow-ups via WorkIQ."
+    }
+  ]
+}
