@@ -283,6 +283,32 @@ python -m scripts.deploy_banking_agents --build
 python -m scripts.deploy_banking_agents --only customer-support --build
 ```
 
+### Granting Agent 365 observability permissions
+
+The Foundry hosted agents (compliance, employee advisory) export OpenTelemetry
+spans to the Agent 365 ingestion service using their **Entra Agent Identity**.
+Recent observability package versions require that identity to hold the
+`Agent365.Observability.OtelWrite` app role — without it, telemetry export fails
+with `HTTP 403 … missing the required 'Agent365.Observability.OtelWrite' app
+role`. Run this once per hosted agent **after** it is deployed (idempotent):
+
+```bash
+# auto-discover the compliance + employee advisory agent identities
+python -m scripts.grant_observability_permissions
+
+# or target explicit agent identity object ids (from the 403 message / portal)
+python -m scripts.grant_observability_permissions \
+  --agent-id <agent-identity-object-id> --agent-id <agent-identity-object-id>
+```
+
+Requires `az login` as a **Global Administrator** or **Application
+Administrator** (needed to create app role assignments). Auto-discovery matches
+the hosted-agent names (`AZURE_AI_COMPLIANCE_AGENT_NAME` /
+`AZURE_AI_EMPLOYEE_AGENT_NAME`) against the tenant's agent identities; override
+with `A365_OBSERVABILITY_AGENT_IDS` (comma-separated object ids) or `--agent-id`.
+Assignments can take 2–5 minutes to propagate. See
+[the Foundry docs](https://aka.ms/foundry-grant-agent-365-permissions).
+
 ### Cleaning up
 
 Delete the Foundry hosted agents (and optionally their toolboxes), the Container

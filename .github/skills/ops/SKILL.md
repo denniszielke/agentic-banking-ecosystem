@@ -222,6 +222,29 @@ python -m scripts.deploy_banking_agents --only customer-support --build
 `--build` rebuilds the container-app image; `--only` accepts `compliance`,
 `employee`, `customer-support` (repeatable).
 
+### Grant Agent 365 observability permissions (hosted agents)
+The Foundry hosted agents export OpenTelemetry spans to the Agent 365 ingestion
+service using their **Entra Agent Identity**. Recent observability package
+versions require that identity to hold the `Agent365.Observability.OtelWrite`
+app role, otherwise export fails with `HTTP 403 … missing the required
+'Agent365.Observability.OtelWrite' app role`. Run this once per hosted agent
+**after** it is deployed (idempotent):
+
+```bash
+# auto-discover the compliance + employee advisory agent identities
+python -m scripts.grant_observability_permissions
+
+# or target explicit agent identity object ids (from the 403 message / portal)
+python -m scripts.grant_observability_permissions \
+    --agent-id <agent-identity-object-id> --agent-id <agent-identity-object-id>
+```
+
+Requires `az login` as **Global Administrator** or **Application
+Administrator**. Key overrides: `A365_OBSERVABILITY_AGENT_IDS` (comma-separated
+object ids, overrides discovery), `AZURE_AI_COMPLIANCE_AGENT_NAME` /
+`AZURE_AI_EMPLOYEE_AGENT_NAME` (names used for auto-discovery). Assignments can
+take 2–5 minutes to propagate. See https://aka.ms/foundry-grant-agent-365-permissions.
+
 ---
 
 ## 8. Run Services Locally
@@ -314,6 +337,7 @@ Most variables are written to `./.env` by `azd up`.
 | `WORKIQ_MCP_URL` / `WORKIQ_CONNECTION_ID` | manual | WorkIQ MCP URL / OAuth connection id |
 | `AZURE_AI_COMPLIANCE_AGENT_NAME` | manual | default: `compliance-agent` |
 | `AZURE_AI_EMPLOYEE_AGENT_NAME` | manual | default: `employee-advisory-agent` |
+| `A365_OBSERVABILITY_AGENT_IDS` | manual | agent identity object ids to grant OtelWrite (overrides discovery) |
 | `EMPLOYEE_WORKIQ_ENABLED` | manual | attach WorkIQ tool (default: true) |
 | `CUSTOMER_SUPPORT_APP_NAME` | manual | default: `customer-support-agent` |
 | `CUSTOMER_SUPPORT_PORT` / `CUSTOMER_SUPPORT_EXTERNAL` | manual | `8090` / public (true) |

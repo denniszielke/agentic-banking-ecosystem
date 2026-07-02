@@ -263,9 +263,17 @@ def shared_agent_env(project_endpoint: str) -> dict[str, str]:
     """Environment variables common to every banking Foundry hosted agent."""
     model_deployment_name = os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4.1-mini")
     return {
-        # Enable experimental GenAI tracing so agent prompts/completions are
-        # captured as OpenTelemetry spans and surfaced in Application Insights.
-        "AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING": "true",
+        # Experimental GenAI tracing is OFF by default. When enabled it turns on
+        # the azure-ai-projects Responses instrumentor, which monkeypatches
+        # ``openai.resources.responses.AsyncResponses.create`` and — for
+        # streaming — returns its own ``AsyncStreamWrapper``. That breaks
+        # agent-framework-openai's ``responses.with_raw_response.create(...).parse()``
+        # streaming path with ``AttributeError: 'AsyncStreamWrapper' object has
+        # no attribute 'parse'``. Opt back in per-deployment by setting
+        # AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING=true in ./.env.
+        "AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING": os.getenv(
+            "AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING", "false"
+        ),
         "AZURE_SEARCH_ENDPOINT": os.getenv("AZURE_SEARCH_ENDPOINT", ""),
         "AZURE_SEARCH_ADMIN_KEY": os.getenv("AZURE_SEARCH_ADMIN_KEY", ""),
         "AZURE_SEARCH_PRODUCT_INDEX_NAME": os.getenv(
