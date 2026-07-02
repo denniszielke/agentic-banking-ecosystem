@@ -1,0 +1,102 @@
+{
+  "server": "product_data",
+  "description": "Financial product catalogue and per-customer product holdings.",
+  "transport": "streamable-http",
+  "tools": [
+    {
+      "name": "list_products",
+      "description": "List the financial product catalogue, optionally filtered by category.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Optional category filter — 'current_account', 'savings', 'childrens_savings' or 'credit_card' (case-insensitive). Omit to list every product."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "get_product",
+      "description": "Get a single product definition by code (or exact name).",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "description": "The product code (e.g. 'GOLDCARD') or exact product name (e.g. 'GoldCard')."
+          }
+        },
+        "required": ["product_code"]
+      }
+    },
+    {
+      "name": "list_holdings",
+      "description": "List the product holdings a customer currently has.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          }
+        },
+        "required": ["customer_id"]
+      }
+    },
+    {
+      "name": "order_product",
+      "description": "Order a new product for a customer (write — human-in-the-loop).",
+      "access": "write",
+      "humanInTheLoop": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          },
+          "product_code": {
+            "type": "string",
+            "description": "The product to order (e.g. 'GOLDCARD')."
+          },
+          "confirm": {
+            "type": "boolean",
+            "default": false,
+            "description": "Set to true only after a human has approved the preview."
+          }
+        },
+        "required": ["customer_id", "product_code"]
+      }
+    },
+    {
+      "name": "update_holding",
+      "description": "Update an existing product holding (write — human-in-the-loop).",
+      "access": "write",
+      "humanInTheLoop": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The account id, format 'ACC-100001'."
+          },
+          "fields": {
+            "type": "object",
+            "description": "Mapping of field name to new value (subset of 'status', 'credit_limit', 'iban', 'card_number')."
+          },
+          "confirm": {
+            "type": "boolean",
+            "default": false,
+            "description": "Set to true only after a human has approved the preview."
+          }
+        },
+        "required": ["account_id", "fields"]
+      }
+    }
+  ]
+}

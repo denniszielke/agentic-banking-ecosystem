@@ -1,0 +1,139 @@
+{
+  "server": "customer_data",
+  "description": "Bank customer master data — customers, accounts, credit cards, balances and transactions.",
+  "transport": "streamable-http",
+  "tools": [
+    {
+      "name": "list_customers",
+      "description": "List customers, optionally filtered by bank.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "Optional bank filter, 'Bank North' or 'Bank South' (case-insensitive). Omit to list all banks."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "get_customer",
+      "description": "Get a single customer's full profile including their product holdings.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          }
+        },
+        "required": ["customer_id"]
+      }
+    },
+    {
+      "name": "list_accounts",
+      "description": "List the product holdings (accounts and credit cards) of a customer.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          }
+        },
+        "required": ["customer_id"]
+      }
+    },
+    {
+      "name": "get_account",
+      "description": "Get a single product holding (account or credit card) by its id.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The account id, format 'ACC-100001'."
+          }
+        },
+        "required": ["account_id"]
+      }
+    },
+    {
+      "name": "list_transactions",
+      "description": "List transactions for one account or across all of a customer's holdings.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Optional account id, format 'ACC-100001'."
+          },
+          "customer_id": {
+            "type": "string",
+            "description": "Optional customer id, format 'CUST-1001'."
+          },
+          "date_from": {
+            "type": "string",
+            "description": "Optional inclusive lower bound date 'YYYY-MM-DD'."
+          },
+          "date_to": {
+            "type": "string",
+            "description": "Optional inclusive upper bound date 'YYYY-MM-DD'."
+          },
+          "limit": {
+            "type": "integer",
+            "default": 100,
+            "description": "Maximum number of transactions to return."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "get_balance",
+      "description": "Get the current balance and currency of a single product holding.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The account id, format 'ACC-100001'."
+          }
+        },
+        "required": ["account_id"]
+      }
+    },
+    {
+      "name": "update_customer",
+      "description": "Update a customer's contact details (write — human-in-the-loop).",
+      "access": "write",
+      "humanInTheLoop": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          },
+          "fields": {
+            "type": "object",
+            "description": "Mapping of field name to new value (subset of 'email', 'phone', 'address')."
+          },
+          "confirm": {
+            "type": "boolean",
+            "default": false,
+            "description": "Set to true only after a human has approved the preview."
+          }
+        },
+        "required": ["customer_id", "fields"]
+      }
+    }
+  ]
+}

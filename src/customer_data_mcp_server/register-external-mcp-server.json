@@ -1,0 +1,40 @@
+{
+  "serverName": "ext_customer_data",
+  "serverUrl": "",
+  "authType": "EntraID",
+  "description": "Bank customer master data MCP server — customers, accounts, credit cards, balances and transactions.",
+  "publisherName": "Bank North / Bank South",
+  "tools": [
+    {
+      "name": "list_customers",
+      "description": "List customers, optionally filtered by bank."
+    },
+    {
+      "name": "get_customer",
+      "description": "Get a single customer's full profile including their product holdings."
+    },
+    {
+      "name": "list_accounts",
+      "description": "List the product holdings (accounts and credit cards) of a customer."
+    },
+    {
+      "name": "get_account",
+      "description": "Get a single product holding (account or credit card) by its id."
+    },
+    {
+      "name": "list_transactions",
+      "description": "List transactions for one account or across all of a customer's holdings."
+    },
+    {
+      "name": "get_balance",
+      "description": "Get the current balance and currency of a single product holding."
+    },
+    {
+      "name": "update_customer",
+      "description": "Update a customer's contact details (write — human-in-the-loop)."
+    }
+  ],
+  "remoteScopes": null,
+  "externalOAuth": null,
+  "apiKey": null
+}

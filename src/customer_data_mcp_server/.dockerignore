@@ -1,0 +1,37 @@
+# Python build artefacts
+.venv
+.venv/**
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+**/.pytest_cache
+.mypy_cache
+.ruff_cache
+*.egg-info
+dist
+build
+
+# Dev / CI
+.git
+.github
+.azure
+.env
+.env.*
+
+# Tests
+tests
+tests/**
+
+# Docs / media (the server needs data/, so it is NOT ignored here)
+*.md
+
+# Infrastructure & deploy tooling — not needed at container runtime
+infra
+infra/**
+scripts
+scripts/**
+scripts-samples
+scripts-samples/**

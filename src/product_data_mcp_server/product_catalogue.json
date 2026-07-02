@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "owner": "Bank North / Bank South",
+    "currency": "EUR",
+    "classification": "internal",
+    "description": "Financial product catalogue for the agentic banking ecosystem. Mirrors the catalogue table in data/products.md. Interest rates are annual percentages; annual fees are in EUR. Conditions are documented in the linked knowledge files.",
+    "source": "data/products.md"
+  },
+  "products": [
+    {
+      "product_code": "CURRENTPLUS",
+      "product_name": "Current Account Plus",
+      "category": "current_account",
+      "currency": "EUR",
+      "interest_rate": 0.0,
+      "annual_fee": 0,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": null
+    },
+    {
+      "product_code": "FLEXSAVE",
+      "product_name": "FlexSave",
+      "category": "savings",
+      "currency": "EUR",
+      "interest_rate": 0.75,
+      "annual_fee": 0,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/savings-products.md"
+    },
+    {
+      "product_code": "GROWTHSAVER",
+      "product_name": "GrowthSaver",
+      "category": "savings",
+      "currency": "EUR",
+      "interest_rate": 1.8,
+      "annual_fee": 0,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/savings-products.md"
+    },
+    {
+      "product_code": "FIXEDPLUS",
+      "product_name": "FixedDeposit Plus",
+      "category": "savings",
+      "currency": "EUR",
+      "interest_rate": 2.1,
+      "annual_fee": 0,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/savings-products.md"
+    },
+    {
+      "product_code": "KIDSSAVE",
+      "product_name": "KidsSave",
+      "category": "childrens_savings",
+      "currency": "EUR",
+      "interest_rate": 2.25,
+      "annual_fee": 0,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/childrens-savings-products.md"
+    },
+    {
+      "product_code": "TEENSAVER",
+      "product_name": "TeenSaver",
+      "category": "childrens_savings",
+      "currency": "EUR",
+      "interest_rate": 2.75,
+      "annual_fee": 0,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/childrens-savings-products.md"
+    },
+    {
+      "product_code": "FUTUREBUILDER",
+      "product_name": "FutureBuilder",
+      "category": "childrens_savings",
+      "currency": "EUR",
+      "interest_rate": 3.25,
+      "annual_fee": 0,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/childrens-savings-products.md"
+    },
+    {
+      "product_code": "CLASSICCARD",
+      "product_name": "ClassicCard",
+      "category": "credit_card",
+      "currency": "EUR",
+      "interest_rate": null,
+      "annual_fee": 29,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/credit-card-products.md"
+    },
+    {
+      "product_code": "GOLDCARD",
+      "product_name": "GoldCard",
+      "category": "credit_card",
+      "currency": "EUR",
+      "interest_rate": null,
+      "annual_fee": 89,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/credit-card-products.md"
+    },
+    {
+      "product_code": "PLATINUMCARD",
+      "product_name": "PlatinumCard",
+      "category": "credit_card",
+      "currency": "EUR",
+      "interest_rate": null,
+      "annual_fee": 199,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/credit-card-products.md"
+    }
+  ]
+}
