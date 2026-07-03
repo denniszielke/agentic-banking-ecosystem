@@ -25,6 +25,8 @@ Environment variables (populated from ``.env`` by ``azd up``):
   CUSTOMER_SUPPORT_PORT                  container port (default: 8090)
   CUSTOMER_SUPPORT_EXTERNAL              "true" for public ingress (default: true)
   CUSTOMER_MCP_URL / PRODUCT_MCP_URL     direct MCP URLs (auto-resolved if unset)
+  ENTRA_AUTH_ENABLED                     "true" to send Entra tokens to the Easy
+                                         Auth-protected MCP servers (default: true)
   TAG                                    image tag to deploy (default: latest)
 """
 
@@ -35,6 +37,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from scripts.auth_helpers import (
+    entra_auth_enabled,
+    grant_mcp_role_to_principal,
+    resolve_mcp_audience,
+)
 from scripts.deploy_helpers import (
     build_image,
     deploy_container_app,
@@ -129,6 +136,22 @@ def deploy(tag: str | None = None) -> None:
     customer_mcp_url = _resolve_mcp_url("CUSTOMER_MCP_URL", "CUSTOMER_MCP_APP_NAME", "customer-data-mcp-server")
     product_mcp_url = _resolve_mcp_url("PRODUCT_MCP_URL", "PRODUCT_MCP_APP_NAME", "product-data-mcp-server")
 
+    # When the MCP servers are protected with Easy Auth, resolve their audiences
+    # and grant this agent's identity the Mcp.Invoke role so it can acquire
+    # tokens. The audiences are passed to the container so the direct MCP calls
+    # attach a bearer token.
+    customer_mcp_audience = ""
+    product_mcp_audience = ""
+    if entra_auth_enabled():
+        customer_app = os.getenv("CUSTOMER_MCP_APP_NAME", "customer-data-mcp-server")
+        product_app = os.getenv("PRODUCT_MCP_APP_NAME", "product-data-mcp-server")
+        customer_mcp_audience = resolve_mcp_audience(customer_app)
+        product_mcp_audience = resolve_mcp_audience(product_app)
+        print("==> Granting Mcp.Invoke on the MCP app registrations")
+        for audience in (customer_mcp_audience, product_mcp_audience):
+            if audience:
+                grant_mcp_role_to_principal(audience.removeprefix("api://"), principal_id)
+
     env_vars = {
         "HOST": "0.0.0.0",
         "PORT": str(PORT),
@@ -146,6 +169,10 @@ def deploy(tag: str | None = None) -> None:
         # Direct MCP URLs so the container reaches the servers without a toolbox.
         "CUSTOMER_MCP_URL": customer_mcp_url,
         "PRODUCT_MCP_URL": product_mcp_url,
+        # MCP audiences (set only when Easy Auth is enabled) so the direct MCP
+        # calls attach an Entra bearer token.
+        "CUSTOMER_MCP_AUDIENCE": customer_mcp_audience,
+        "PRODUCT_MCP_AUDIENCE": product_mcp_audience,
         "APPLICATIONINSIGHTS_CONNECTION_STRING": os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING", ""),
     }
 

@@ -30,6 +30,7 @@ import os
 from azure.ai.projects.models import MCPToolboxTool
 
 from scripts.agent_deploy_helpers import get_client, get_container_app_fqdn, get_env
+from scripts.auth_helpers import entra_auth_enabled
 
 TOOLBOX_NAME = os.getenv("CUSTOMER_TOOLBOX_NAME", "customer-data-tools")
 
@@ -60,16 +61,32 @@ def deploy() -> None:
         )
         return
 
-    tool = MCPToolboxTool(
-        server_label="customer-data",
-        server_url=mcp_url,
-        description=(
+    tool_kwargs: dict = {
+        "server_label": "customer-data",
+        "server_url": mcp_url,
+        "description": (
             "Bank customer master data: customers, accounts and credit cards, "
             "balances and transactions. Read tools plus a human-in-the-loop "
             "update_customer write tool."
         ),
-        require_approval="never",
-    )
+        "require_approval": "never",
+    }
+
+    if entra_auth_enabled():
+        connection_id = os.getenv("CUSTOMER_MCP_CONNECTION_ID", "").strip()
+        if connection_id:
+            tool_kwargs["project_connection_id"] = connection_id
+            print(f"  Entra auth on: forwarding calls via connection {connection_id}")
+        else:
+            print(
+                "  WARN: ENTRA_AUTH_ENABLED=true but CUSTOMER_MCP_CONNECTION_ID is "
+                "unset.\n"
+                "  The toolbox cannot forward an authenticated token, so tool "
+                "calls will fail with 401 until a Foundry connection for the MCP "
+                "audience is created and CUSTOMER_MCP_CONNECTION_ID is set."
+            )
+
+    tool = MCPToolboxTool(**tool_kwargs)
 
     client = get_client()
     version = client.toolboxes.create_version(

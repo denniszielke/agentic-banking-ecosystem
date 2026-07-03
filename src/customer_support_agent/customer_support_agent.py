@@ -97,6 +97,14 @@ _PRODUCT_TOOLBOX_ENDPOINT = os.getenv("PRODUCT_TOOLBOX_MCP_ENDPOINT") or (
 )
 _DIRECT_PRODUCT_MCP_URL = os.getenv("PRODUCT_MCP_URL", "").strip()
 
+# When the MCP servers are protected with Entra ID Easy Auth (issue #2), the
+# direct MCP calls must carry a bearer token for the server's audience
+# (api://<appId>). The audience is injected by the deploy script as
+# CUSTOMER_MCP_AUDIENCE / PRODUCT_MCP_AUDIENCE; when unset the direct calls stay
+# anonymous (auth disabled or local dev).
+_CUSTOMER_MCP_AUDIENCE = os.getenv("CUSTOMER_MCP_AUDIENCE", "").strip()
+_PRODUCT_MCP_AUDIENCE = os.getenv("PRODUCT_MCP_AUDIENCE", "").strip()
+
 _SKILLS_DIR = Path(__file__).parent / "skills"
 
 
@@ -262,10 +270,35 @@ class _ToolboxAuth(httpx.Auth):
         yield request
 
 
-def _build_mcp_tool(name: str, toolbox_endpoint: str, direct_url: str) -> MCPStreamableHTTPTool:
-    """Build an MCP tool, preferring a direct URL over the Foundry toolbox."""
+def _build_mcp_tool(
+    name: str,
+    toolbox_endpoint: str,
+    direct_url: str,
+    audience: str = "",
+) -> MCPStreamableHTTPTool:
+    """Build an MCP tool, preferring a direct URL over the Foundry toolbox.
+
+    When ``audience`` is set the direct MCP server is protected with Entra ID
+    Easy Auth, so a bearer token for ``{audience}/.default`` is attached to every
+    request via the ambient managed identity / DefaultAzureCredential.
+    """
     if direct_url:
         logger.info("Using direct %s MCP endpoint %s", name, direct_url)
+        if audience:
+            logger.info("Attaching Entra token for audience %s", audience)
+            token_provider = get_bearer_token_provider(
+                _sync_credential, f"{audience}/.default"
+            )
+            http_client = httpx.AsyncClient(
+                auth=_ToolboxAuth(token_provider),
+                timeout=120.0,
+            )
+            return MCPStreamableHTTPTool(
+                name=name,
+                url=direct_url,
+                http_client=http_client,
+                load_prompts=False,
+            )
         return MCPStreamableHTTPTool(name=name, url=direct_url, load_prompts=False)
     logger.info("Using Foundry toolbox %s endpoint %s", name, toolbox_endpoint)
     http_client = httpx.AsyncClient(
@@ -284,6 +317,16 @@ def _build_mcp_tool(name: str, toolbox_endpoint: str, direct_url: str) -> MCPStr
 def make_mcp_tools() -> list[MCPStreamableHTTPTool]:
     """Build the customer-data and product-data MCP tools."""
     return [
-        _build_mcp_tool("customer-data", _CUSTOMER_TOOLBOX_ENDPOINT, _DIRECT_CUSTOMER_MCP_URL),
-        _build_mcp_tool("product-data", _PRODUCT_TOOLBOX_ENDPOINT, _DIRECT_PRODUCT_MCP_URL),
+        _build_mcp_tool(
+            "customer-data",
+            _CUSTOMER_TOOLBOX_ENDPOINT,
+            _DIRECT_CUSTOMER_MCP_URL,
+            _CUSTOMER_MCP_AUDIENCE,
+        ),
+        _build_mcp_tool(
+            "product-data",
+            _PRODUCT_TOOLBOX_ENDPOINT,
+            _DIRECT_PRODUCT_MCP_URL,
+            _PRODUCT_MCP_AUDIENCE,
+        ),
     ]

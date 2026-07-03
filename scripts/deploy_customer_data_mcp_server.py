@@ -25,6 +25,8 @@ Environment variables (populated automatically from ``.env`` after ``azd up``):
                                          project can reach it (default: true)
   CUSTOMER_TOOLBOX_NAME                  Foundry toolbox name registered with
                                          --register (default: customer-data-tools)
+  ENTRA_AUTH_ENABLED                     "true" to protect the Container App with
+                                         Entra ID Easy Auth (default: true)
 """
 
 from __future__ import annotations
@@ -33,7 +35,19 @@ import os
 import sys
 from pathlib import Path
 
-from scripts.deploy_helpers import build_image, deploy_container_app, resolve_registry
+from scripts.auth_helpers import (
+    configure_container_app_easy_auth,
+    disable_container_app_easy_auth,
+    ensure_mcp_app_registration,
+    entra_auth_enabled,
+    resolve_tenant_id,
+)
+from scripts.deploy_helpers import (
+    build_image,
+    deploy_container_app,
+    get_env,
+    resolve_registry,
+)
 
 APP_NAME = os.getenv("CUSTOMER_MCP_APP_NAME", "customer-data-mcp-server")
 IMAGE_NAME = "customer-data-mcp-server"
@@ -70,6 +84,8 @@ def deploy(tag: str | None = None) -> None:
         readiness_probe_path="/health",
     )
 
+    _apply_entra_auth()
+
     if fqdn:
         mcp_url = f"https://{fqdn}/mcp"
         print(f"\nCustomer data MCP server deployed: {mcp_url}")
@@ -79,6 +95,29 @@ def deploy(tag: str | None = None) -> None:
             "returned. Set CUSTOMER_MCP_EXTERNAL=true or check the ingress."
         )
     return fqdn
+
+
+def _apply_entra_auth() -> None:
+    """Toggle Entra ID Easy Auth on the Container App from ENTRA_AUTH_ENABLED."""
+    resource_group = get_env("AZURE_RESOURCE_GROUP")
+    if not entra_auth_enabled():
+        disable_container_app_easy_auth(resource_group, APP_NAME)
+        return
+    print("\n==> ENTRA_AUTH_ENABLED=true — protecting the MCP server with Easy Auth")
+    app_id, audience = ensure_mcp_app_registration(APP_NAME)
+    configure_container_app_easy_auth(
+        resource_group=resource_group,
+        app_name=APP_NAME,
+        client_id=app_id,
+        tenant_id=resolve_tenant_id(),
+        excluded_paths=["/health"],
+    )
+    print(
+        "  Callers must request a token for audience "
+        f"'{audience}/.default'.\n"
+        "  Set CUSTOMER_MCP_CONNECTION_ID so the Foundry toolbox forwards "
+        "authenticated calls."
+    )
 
 
 def register_toolbox(fqdn: str | None) -> None:

@@ -126,6 +126,52 @@ python -m scripts.deploy_customer_data_mcp_server --build --register
 python -m scripts.deploy_product_data_mcp_server  --build --register
 ```
 
+#### Protecting the MCP servers with Entra ID
+
+The MCP servers are protected with **Entra ID Easy Auth** by default
+(`ENTRA_AUTH_ENABLED=true`) — the deploy scripts create an app registration
+(`<app>-mcp-auth`, audience `api://<appId>`), enable Easy Auth so unauthenticated
+requests return **HTTP 401**, and print the required audience:
+
+```bash
+python -m scripts.deploy_customer_data_mcp_server --build --register
+python -m scripts.deploy_product_data_mcp_server  --build --register
+```
+
+Wire the consumers: pass `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID`
+(a Foundry connection for the MCP audience) so the toolboxes forward
+authenticated calls; the customer support agent deploy grants its identity the
+`Mcp.Invoke` role and injects `CUSTOMER_MCP_AUDIENCE` / `PRODUCT_MCP_AUDIENCE`
+automatically. Set `ENTRA_AUTH_ENABLED=false` and re-deploy to restore anonymous
+ingress. See the ops skill for details.
+
+##### Who can authenticate — any user or app in the tenant
+
+Easy Auth validates **only** the token **issuer** (this tenant,
+`https://login.microsoftonline.com/<tenant>/v2.0`) and the **audience**
+(`api://<appId>`). It keeps **no per-app allow-list** (`allowedApplications` is
+empty), so **any user or app in the tenant** holding a valid token for the
+audience is accepted. The app registration exposes both a `user_impersonation`
+delegated scope (for users) and an `Mcp.Invoke` application role (for apps).
+
+Entra still requires each caller to be **granted access once** before it will
+*issue* a token for the custom API — this is a platform invariant that cannot be
+switched off:
+
+| Caller | Flow | One-time grant |
+|---|---|---|
+| **App** (managed identity / service principal) | client credentials, `api://<appId>/.default` | assign the `Mcp.Invoke` app role to its SP (done automatically for the customer support agent) |
+| **User** (interactive) | delegated | consent to `user_impersonation` — run **admin consent** once so users aren't prompted |
+
+Notes:
+- The two MCP servers reserve `/health` as an Easy Auth **excluded path**;
+  Container Apps readiness probes run against the container directly, so the app
+  stays healthy regardless.
+- Acquire a token for testing with
+  `az login --scope api://<appId>/.default` (triggers the one-time user consent),
+  then call the `…/mcp` endpoint with `Authorization: Bearer <token>`.
+- An anonymous request to `…/mcp` returns **HTTP 401** when auth is enabled.
+
 ### Creating and populating the search indexes
 
 Create the two Azure AI Search indexes — **Financial products**
@@ -321,8 +367,10 @@ Apps, and the search indexes:
 python -m scripts.delete_agents
 python -m scripts.delete_agents --toolboxes
 
-# Container Apps (customer support agent + customer/product MCP servers)
+# Container Apps (customer support agent + customer/product MCP servers);
+# add --purge-auth to also delete the <app>-mcp-auth Entra app registrations
 python -m scripts.delete_container_apps
+python -m scripts.delete_container_apps --purge-auth
 
 # the two Azure AI Search indexes (schema + data)
 python -m scripts.delete_search_indexes
