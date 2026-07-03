@@ -174,7 +174,8 @@ shared key.
 - The **Agent 365 Tools** service principal in the tenant (appId
   `ea9ffc3e-8a23-4a7d-836d-234d7c7565c1`). Verify with
   `az ad sp show --id ea9ffc3e-8a23-4a7d-836d-234d7c7565c1`. If missing, an admin
-  provisions it with `scripts/New-Agent365ToolsServicePrincipalProdPublic.ps1`.
+  provisions it with
+  `python -m scripts.create_agent365_tools_service_principals`.
 - **Tenant admin** rights to grant admin consent in step 1.
 
 **Why OAuth passthrough (and not a token)?** Foundry refuses to forward a
