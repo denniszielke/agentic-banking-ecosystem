@@ -24,6 +24,7 @@ conditions live in the linked `data/knowledge/*-products.md` files.
 | `list_products` | List the catalogue, optionally by category | read |
 | `get_product` | A single product definition by code/name | read |
 | `list_holdings` | Product holdings of a customer | read |
+| `detect_opportunities` | Proactive optimisation ideas — idle cash (with annual interest gain) + credit-card candidate | read |
 | `order_product` | Order a new product for a customer | write (HITL) |
 | `update_holding` | Update an existing holding | write (HITL) |
 

@@ -141,6 +141,7 @@ erDiagram
 | `list_products` | `category?` | `Product[]` | read |
 | `get_product` | `product_code` | `Product` | read |
 | `list_holdings` | `customer_id` | `ProductHolding[]` | read |
+| `detect_opportunities` | `customer_id`, `liquidity_buffer?`, `min_idle_balance?`, `min_annual_gain?` | `{ opportunities[], count }` | read |
 | `order_product` | `customer_id`, `product_code` | `ProductHolding` | write (HITL) |
 | `update_holding` | `account_id`, `fields` | `ProductHolding` | write (HITL) |
 

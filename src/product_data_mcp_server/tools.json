@@ -49,6 +49,36 @@
       }
     },
     {
+      "name": "detect_opportunities",
+      "description": "Detect proactive optimisation opportunities for a customer: idle cash on low-interest holdings (with estimated annual interest gain) and a credit-card candidate when none is held.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          },
+          "liquidity_buffer": {
+            "type": "number",
+            "default": 3000.0,
+            "description": "Cash to leave on the current account for liquidity when computing the movable idle amount."
+          },
+          "min_idle_balance": {
+            "type": "number",
+            "default": 10000.0,
+            "description": "Only flag a holding whose balance exceeds this."
+          },
+          "min_annual_gain": {
+            "type": "number",
+            "default": 25.0,
+            "description": "Only flag an idle-cash opportunity whose estimated annual gain is at least this (EUR)."
+          }
+        },
+        "required": ["customer_id"]
+      }
+    },
+    {
       "name": "order_product",
       "description": "Order a new product for a customer (write — human-in-the-loop).",
       "access": "write",

@@ -147,7 +147,10 @@ mcp = FastMCP(
         "Financial product catalogue and per-customer product holdings. Use "
         "these tools to list and explain products (current accounts, savings, "
         "children's savings, credit cards), look up what a customer holds, "
-        "order a new product and update a holding. Interest rates are annual "
+        "order a new product and update a holding. Use 'detect_opportunities' to "
+        "proactively surface optimisation ideas — idle cash on a low-interest "
+        "account (with an estimated annual interest gain) or a credit-card "
+        "candidate when the customer holds none. Interest rates are annual "
         "percentages and all monetary values are in EUR; detailed conditions "
         "are in the linked knowledge files. The 'order_product' and "
         "'update_holding' tools are write operations and require explicit human "
@@ -216,6 +219,152 @@ def list_holdings(customer_id: str) -> list[dict[str, Any]]:
     if customer is None:
         return []
     return copy.deepcopy(customer.get("products", []))
+
+
+def _round2(value: float) -> float:
+    """Round a monetary amount to 2 decimal places."""
+    return round(float(value), 2)
+
+
+def _best_savings_product(exclude_codes: set[str]) -> Optional[dict[str, Any]]:
+    """Return the highest-interest savings product not already held."""
+    savings = [
+        p for p in _catalogue()
+        if p["category"] == "savings"
+        and p["product_code"].upper() not in exclude_codes
+        and p.get("interest_rate") is not None
+    ]
+    if not savings:
+        return None
+    return max(savings, key=lambda p: p["interest_rate"])
+
+
+def _cheapest_credit_card() -> Optional[dict[str, Any]]:
+    """Return the credit card with the lowest annual fee (entry card)."""
+    cards = [p for p in _catalogue() if p["category"] == "credit_card"]
+    if not cards:
+        return None
+    return min(cards, key=lambda p: p.get("annual_fee", 0) or 0)
+
+
+@mcp.tool()
+def detect_opportunities(customer_id: str,
+                         liquidity_buffer: float = 3000.0,
+                         min_idle_balance: float = 10000.0,
+                         min_annual_gain: float = 25.0) -> dict[str, Any]:
+    """Detect proactive optimisation opportunities for a customer (read).
+
+    Powers the agent's *proactive impulse*: it scans the customer's holdings and
+    the product catalogue and flags concrete, personalised opportunities the
+    agent can offer (after asking the customer's permission). Two kinds:
+
+    * ``idle_cash`` — money sitting on a low- or zero-interest holding (typically
+      the current account) that could earn more in the best available savings
+      product. The estimated **annual interest gain** is computed on the amount
+      above ``liquidity_buffer`` at the rate difference.
+    * ``credit_card`` — the customer holds no credit card, so an entry card is a
+      candidate. The concrete cost/benefit must be validated by the agent
+      against the customer's spending (use ``summarize_spending`` on the customer
+      data server); this tool only surfaces the candidate and its annual fee.
+
+    Args:
+        customer_id: The customer id, format ``CUST-1001``.
+        liquidity_buffer: Cash to leave on the current account for day-to-day
+            liquidity when computing the movable idle amount (default 3000).
+        min_idle_balance: Only flag a holding whose balance exceeds this
+            (default 10000).
+        min_annual_gain: Only flag an idle-cash opportunity whose estimated
+            annual gain is at least this (default 25 EUR).
+
+    Returns ``{customer_id, opportunities[], count}``. Each opportunity carries
+    the evidence (account, balances, rates) and, for idle cash, the
+    ``estimated_annual_gain``. Returns an ``error`` if the customer is unknown.
+    """
+    customer = _find_customer(customer_id)
+    if customer is None:
+        return {"error": f"No customer matched '{customer_id}'."}
+
+    holdings = customer.get("products", [])
+    held_codes = {h.get("product_code", "").upper() for h in holdings}
+    best = _best_savings_product(held_codes) or _best_savings_product(set())
+    best_rate = float(best["interest_rate"]) if best else 0.0
+
+    opportunities: list[dict[str, Any]] = []
+
+    # 1) Idle cash on low-/zero-interest holdings (current accounts and savings
+    #    that pay materially less than the best available savings rate).
+    for holding in holdings:
+        category = holding.get("category")
+        if category not in {"current_account", "savings"}:
+            continue
+        balance = float(holding.get("balance", 0.0))
+        if balance < min_idle_balance:
+            continue
+        current_rate = 0.0
+        product = _find_product(holding.get("product_code", ""))
+        if product and product.get("interest_rate") is not None:
+            current_rate = float(product["interest_rate"])
+        if best is None or best_rate <= current_rate:
+            continue
+        # Keep a liquidity buffer only on the transactional current account.
+        buffer = liquidity_buffer if category == "current_account" else 0.0
+        movable = max(0.0, balance - buffer)
+        gain = movable * (best_rate - current_rate) / 100.0
+        if gain < min_annual_gain:
+            continue
+        opportunities.append({
+            "type": "idle_cash",
+            "account_id": holding["account_id"],
+            "product_name": holding.get("product_name"),
+            "category": category,
+            "balance": _round2(balance),
+            "current_interest_rate": current_rate,
+            "liquidity_buffer": _round2(buffer),
+            "movable_amount": _round2(movable),
+            "recommended_product": {
+                "product_code": best["product_code"],
+                "product_name": best["product_name"],
+                "interest_rate": best_rate,
+                "knowledge_ref": best.get("knowledge_ref"),
+            },
+            "estimated_annual_gain": _round2(gain),
+            "rationale": (
+                f"{_round2(movable)} EUR earning {current_rate}% could move to "
+                f"{best['product_name']} at {best_rate}% for about "
+                f"{_round2(gain)} EUR more interest per year."
+            ),
+        })
+
+    # 2) No credit card held -> entry card candidate (benefit validated by the
+    #    agent against actual spending via summarize_spending).
+    if not any(h.get("category") == "credit_card" for h in holdings):
+        card = _cheapest_credit_card()
+        if card is not None:
+            opportunities.append({
+                "type": "credit_card",
+                "reason": "no_card_held",
+                "recommended_product": {
+                    "product_code": card["product_code"],
+                    "product_name": card["product_name"],
+                    "annual_fee": card.get("annual_fee"),
+                    "knowledge_ref": card.get("knowledge_ref"),
+                },
+                "note": (
+                    "Validate the cost/benefit against the customer's spending "
+                    "behaviour (summarize_spending) before recommending; only "
+                    "worthwhile if card benefits outweigh the annual fee."
+                ),
+            })
+
+    # Largest estimated gain first, idle-cash opportunities ahead of the card.
+    opportunities.sort(
+        key=lambda o: o.get("estimated_annual_gain", 0.0), reverse=True
+    )
+    return {
+        "customer_id": customer["customer_id"],
+        "opportunities": opportunities,
+        "count": len(opportunities),
+    }
 
 
 @mcp.tool()

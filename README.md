@@ -149,7 +149,7 @@ and are registered as Foundry toolboxes so agents can consume them.
 | MCP server | What it serves | Tools |
 |------------|----------------|-------|
 | **Customer data** (`src/customer_data_mcp_server`) | Customers, accounts/holdings, balances and transactions | `list_customers`, `get_customer`, `list_accounts`, `get_account`, `list_transactions`, `get_balance`, `summarize_spending`, `get_net_worth` (read); `update_customer` (write, HITL) |
-| **Product data** (`src/product_data_mcp_server`) | Product catalogue + per-customer product holdings and conditions | `list_products`, `get_product`, `list_holdings` (read); `order_product`, `update_holding` (write, HITL) |
+| **Product data** (`src/product_data_mcp_server`) | Product catalogue + per-customer product holdings and conditions | `list_products`, `get_product`, `list_holdings`, `detect_opportunities` (read); `order_product`, `update_holding` (write, HITL) |
 
 **Dependencies**
 

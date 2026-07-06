@@ -18,6 +18,10 @@
       "description": "List the product holdings a customer currently has."
     },
     {
+      "name": "detect_opportunities",
+      "description": "Detect proactive optimisation opportunities for a customer: idle cash on low-interest holdings (with estimated annual interest gain) and a credit-card candidate when none is held."
+    },
+    {
       "name": "order_product",
       "description": "Order a new product for a customer (write — human-in-the-loop)."
     },
