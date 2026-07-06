@@ -143,7 +143,7 @@ erDiagram
 
 - A `Customer` owns **1–3** `ProductHolding` records.
 - Each `ProductHolding` references one `Product` from the catalogue.
-- Each `ProductHolding` has **4–30** `Transaction` records.
+- Each non-securities `ProductHolding` has **4–30** `Transaction` records; securities depots have none.
 - A `Customer` may place `Order` records; each opens one `ProductHolding`.
 
 ---

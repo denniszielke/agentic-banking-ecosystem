@@ -342,13 +342,24 @@ def summarize_spending(customer_id: str,
     ``top_merchants`` by total spend, and the single ``largest_transaction``
     (biggest debit). If the customer does not exist an ``error`` is returned.
     """
-    if _find_customer(customer_id) is None:
+    customer = _find_customer(customer_id)
+    if customer is None:
         return {"error": f"No customer matched '{customer_id}'."}
 
     if account_id:
+        account = _find_account(account_id)
+        if account is None:
+            return {"error": f"No account matched '{account_id}'."}
+        if account["customer_id"].upper() != customer["customer_id"].upper():
+            return {
+                "error": (
+                    f"Account '{account_id}' does not belong to customer "
+                    f"'{customer['customer_id']}'."
+                )
+            }
         txns = _account_transactions(account_id)
     else:
-        txns = _customer_transactions(customer_id)
+        txns = _customer_transactions(customer["customer_id"])
     txns = [t for t in txns if _within_range(t, date_from, date_to)]
 
     needle = category.strip().lower() if category else None
@@ -416,10 +427,11 @@ def get_net_worth(customer_id: str) -> dict[str, Any]:
 
     Sums the balances of every holding the customer has so the agent can give a
     "balance overview across all accounts" answer — current accounts, savings
-    (e.g. instant-access / notice), children's savings and credit cards — plus
-    the overall total. Credit-card balances are typically negative (amount
-    owed), so they reduce the total. Annual interest rates are documented in the
-    product catalogue (product data server) — combine with those to show rates.
+    (e.g. instant-access / notice), children's savings, securities depots and
+    credit cards — plus the overall total. Credit-card balances are typically
+    negative (amount owed), so they reduce the total. Annual interest rates are
+    documented in the product catalogue (product data server) — combine with
+    those to show rates.
 
     Args:
         customer_id: The customer id, format ``CUST-1001``.

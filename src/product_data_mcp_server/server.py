@@ -120,7 +120,7 @@ _CARD_DELIVERY_DAYS = int(os.getenv("CARD_DELIVERY_DAYS", "7"))
 _ORDER_STATUSES = {"requested", "approved", "rejected", "shipped", "delivered"}
 _ORDER_TRANSITIONS: dict[str, set[str]] = {
     "requested": {"approved", "rejected"},
-    "approved": {"shipped", "delivered", "rejected"},
+    "approved": {"shipped"},
     "shipped": {"delivered"},
     "delivered": set(),
     "rejected": set(),
@@ -444,14 +444,17 @@ def order_product(customer_id: str, product_code: str,
     if product is None:
         return {"error": f"No product matched '{product_code}'."}
 
-    is_card = product["category"] == "credit_card"
+    category = product["category"]
+    is_card = category == "credit_card"
     new_holding = {
         "account_id": _next_account_id(),
         "customer_id": customer["customer_id"],
         "product_code": product["product_code"],
         "product_name": product["product_name"],
-        "category": product["category"],
-        "iban": None if is_card else "PENDING-ASSIGNMENT",
+        "category": category,
+        "iban": "PENDING-ASSIGNMENT" if category in {
+            "current_account", "savings", "childrens_savings"
+        } else None,
         "card_number": "PENDING-ASSIGNMENT" if is_card else None,
         "balance": 0.0,
         "credit_limit": 1000 if is_card else None,
@@ -551,11 +554,11 @@ def update_order_status(order_id: str, status: str, note: Optional[str] = None,
     """Advance a product order's status (write — human-in-the-loop).
 
     Moves an order case along its lifecycle: ``requested`` -> ``approved`` |
-    ``rejected``; ``approved`` -> ``shipped`` | ``delivered`` | ``rejected``;
-    ``shipped`` -> ``delivered``. Approving an order activates the linked
-    holding; rejecting it marks the holding ``rejected``. This is a **write**
-    operation — call first with ``confirm=False`` for a preview of the
-    transition, then re-call with ``confirm=True`` once approved.
+    ``rejected``; ``approved`` -> ``shipped``; ``shipped`` -> ``delivered``.
+    Approving an order activates the linked holding; rejecting a requested order
+    marks the holding ``rejected``. This is a **write** operation — call first
+    with ``confirm=False`` for a preview of the transition, then re-call with
+    ``confirm=True`` once approved.
 
     Args:
         order_id: The order id, format ``ORD-000001``.
