@@ -1,31 +1,31 @@
 """Shared helpers for **Entra ID authentication** on the banking MCP servers.
 
-Issue #2 protects the two MCP-server Container Apps
-(``customer_data_mcp_server``, ``product_data_mcp_server``) with **Easy Auth**
-(the Microsoft/Entra ID identity provider built into Azure Container Apps), so
-every request must carry a valid Entra token for the server's audience. All of
-this is gated by a single environment variable so it can be toggled per
-deployment:
+The two MCP-server Container Apps (``customer_data_mcp_server``,
+``product_data_mcp_server``) validate incoming Entra access tokens **inside the
+app** using FastMCP's Azure JWT verifier (issuer + audience + JWKS signature) —
+no Container Apps Easy Auth. These helpers manage the Entra **app registration**
+that backs each server (the audience callers request a token for) and the
+``Mcp.Invoke`` app role granted to the calling agents. Everything is gated by a
+single environment variable so it can be toggled per deployment:
 
     ENTRA_AUTH_ENABLED   "true"/"false" (default: false)
 
-When ``false`` the deploy/registration scripts behave exactly as before
-(anonymous ingress, no connection wiring). When ``true`` the helpers here:
+When ``true`` the deploy scripts:
 
 * ensure an Entra **app registration** exists for each MCP server (the audience
   callers request a token for — ``api://<appId>``), with an ``Mcp.Invoke``
-  application role so access can be restricted to the calling agents;
-* configure **Easy Auth** on the Container App to reject unauthenticated
-  requests (HTTP 401);
+  application role and a ``requestedAccessTokenVersion = 2`` API surface;
+* pass the audience client id + tenant to the MCP container so FastMCP enforces
+  Entra JWT validation at runtime (unauthenticated requests get HTTP 401);
 * grant the calling agents' identities the ``Mcp.Invoke`` app role so they can
   acquire tokens for the MCP audience.
 
-Everything is idempotent and best-effort: the app registration is looked up by
-display name before being created, role assignments swallow "already exists"
-errors, and disabling auth restores anonymous ingress.
+When ``false`` the servers run anonymously (no auth env — local-dev friendly).
 
-All commands go through the Azure CLI (``az``) so no extra Python SDK is needed
-by the container-app deploy scripts.
+Everything is idempotent and best-effort: the app registration is looked up by
+display name before being created and role assignments swallow "already exists"
+errors. All commands go through the Azure CLI (``az``) so no extra Python SDK is
+needed by the container-app deploy scripts.
 """
 
 from __future__ import annotations
@@ -272,65 +272,6 @@ def delete_mcp_app_registration(app_name: str) -> None:
         print(f"  deleted app registration '{display_name}' ({app_id})")
     else:
         print(f"  WARN: could not delete '{display_name}': {(result.stderr or '').strip()}")
-
-
-def configure_container_app_easy_auth(
-    resource_group: str,
-    app_name: str,
-    client_id: str,
-    tenant_id: str,
-    excluded_paths: list[str] | None = None,
-) -> None:
-    """Enable Easy Auth (Microsoft/Entra provider) on a Container App.
-
-    Configures the Microsoft identity provider validating only the **issuer**
-    (this tenant, v2.0 endpoint) and the **audience**, so **any user or app in
-    the tenant** presenting a valid token is accepted (no per-caller allow-list).
-    Unauthenticated requests get ``Return401``. ``excluded_paths`` (e.g. the
-    health probe) bypass auth so Container Apps readiness probes keep working.
-
-    The allowed audience is the **bare client id** (GUID), because the app is set
-    to ``requestedAccessTokenVersion = 2`` and v2 tokens carry the app id GUID in
-    ``aud`` (not the ``api://<appId>`` URI). Idempotent — safe to re-run.
-    """
-    issuer = f"https://login.microsoftonline.com/{tenant_id}/v2.0"
-    print(f"==> Enabling Easy Auth on Container App '{app_name}'")
-    _az(
-        ["az", "containerapp", "auth", "microsoft", "update",
-         "--resource-group", resource_group,
-         "--name", app_name,
-         "--client-id", client_id,
-         "--issuer", issuer,
-         "--allowed-token-audiences", client_id,
-         "--yes"],
-    )
-    update_args = [
-        "az", "containerapp", "auth", "update",
-        "--resource-group", resource_group,
-        "--name", app_name,
-        "--unauthenticated-client-action", "Return401",
-        "--token-store", "false",
-    ]
-    if excluded_paths:
-        update_args += ["--excluded-paths", ",".join(excluded_paths)]
-    _az(update_args)
-    print(f"  Easy Auth on: unauthenticated requests to '{app_name}' now return 401.")
-
-
-def disable_container_app_easy_auth(resource_group: str, app_name: str) -> None:
-    """Restore anonymous ingress on a Container App (auth toggled off).
-
-    Best-effort: if Easy Auth was never configured this is a no-op.
-    """
-    result = _az(
-        ["az", "containerapp", "auth", "update",
-         "--resource-group", resource_group,
-         "--name", app_name,
-         "--unauthenticated-client-action", "AllowAnonymous"],
-        check=False,
-    )
-    if result.returncode == 0:
-        print(f"  Easy Auth off: '{app_name}' allows anonymous ingress.")
 
 
 def grant_mcp_role_to_principal(app_id: str, principal_object_id: str) -> None:

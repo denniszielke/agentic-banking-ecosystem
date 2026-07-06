@@ -48,9 +48,7 @@ import httpx
 from agent_framework import MCPStreamableHTTPTool
 from agent_framework.azure import AzureAISearchContextProvider
 from agent_framework.openai import OpenAIEmbeddingClient
-from azure.identity import DefaultAzureCredential as SyncDefaultAzureCredential
-from azure.identity import get_bearer_token_provider
-from azure.identity.aio import DefaultAzureCredential
+from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 
 # Allow standalone execution / uvicorn module loading from the project root.
@@ -253,20 +251,20 @@ def make_providers(
 # MCP tools (Foundry toolbox, or direct for local dev / intra-environment)
 # ---------------------------------------------------------------------------
 
-_sync_credential = SyncDefaultAzureCredential()
-_toolbox_token_provider = get_bearer_token_provider(
-    _sync_credential, "https://ai.azure.com/.default"
-)
-
-
 class _ToolboxAuth(httpx.Auth):
-    """Inject a fresh Entra token on every Foundry toolbox MCP request."""
+    """Inject a fresh Entra token on every MCP request.
 
-    def __init__(self, token_provider):
-        self._get_token = token_provider
+    Uses an async token provider and an async auth flow so token acquisition
+    (network I/O to IMDS / Entra) never blocks the event loop. A blocking token
+    call here stalls MCP's async connect handshake and surfaces as an
+    ``anyio.WouldBlock`` cancellation during ``session.initialize()``.
+    """
 
-    def auth_flow(self, request):
-        request.headers["Authorization"] = "Bearer " + self._get_token()
+    def __init__(self, async_token_provider):
+        self._get_token = async_token_provider
+
+    async def async_auth_flow(self, request):
+        request.headers["Authorization"] = "Bearer " + await self._get_token()
         yield request
 
 
@@ -274,6 +272,7 @@ def _build_mcp_tool(
     name: str,
     toolbox_endpoint: str,
     direct_url: str,
+    credential: DefaultAzureCredential,
     audience: str = "",
 ) -> MCPStreamableHTTPTool:
     """Build an MCP tool, preferring a direct URL over the Foundry toolbox.
@@ -287,7 +286,7 @@ def _build_mcp_tool(
         if audience:
             logger.info("Attaching Entra token for audience %s", audience)
             token_provider = get_bearer_token_provider(
-                _sync_credential, f"{audience}/.default"
+                credential, f"{audience}/.default"
             )
             http_client = httpx.AsyncClient(
                 auth=_ToolboxAuth(token_provider),
@@ -301,8 +300,11 @@ def _build_mcp_tool(
             )
         return MCPStreamableHTTPTool(name=name, url=direct_url, load_prompts=False)
     logger.info("Using Foundry toolbox %s endpoint %s", name, toolbox_endpoint)
+    token_provider = get_bearer_token_provider(
+        credential, "https://ai.azure.com/.default"
+    )
     http_client = httpx.AsyncClient(
-        auth=_ToolboxAuth(_toolbox_token_provider),
+        auth=_ToolboxAuth(token_provider),
         headers={"Foundry-Features": "Toolboxes=V1Preview"},
         timeout=120.0,
     )
@@ -314,19 +316,27 @@ def _build_mcp_tool(
     )
 
 
-def make_mcp_tools() -> list[MCPStreamableHTTPTool]:
-    """Build the customer-data and product-data MCP tools."""
+def make_mcp_tools(credential: DefaultAzureCredential) -> list[MCPStreamableHTTPTool]:
+    """Build the customer-data and product-data MCP tools.
+
+    ``credential`` is the shared async ``DefaultAzureCredential`` owned by the
+    server. It mints bearer tokens for the Foundry toolbox
+    (``https://ai.azure.com/.default``) or, in direct mode, for the MCP server's
+    Easy Auth audience (``{audience}/.default``).
+    """
     return [
         _build_mcp_tool(
             "customer-data",
             _CUSTOMER_TOOLBOX_ENDPOINT,
             _DIRECT_CUSTOMER_MCP_URL,
+            credential,
             _CUSTOMER_MCP_AUDIENCE,
         ),
         _build_mcp_tool(
             "product-data",
             _PRODUCT_TOOLBOX_ENDPOINT,
             _DIRECT_PRODUCT_MCP_URL,
+            credential,
             _PRODUCT_MCP_AUDIENCE,
         ),
     ]

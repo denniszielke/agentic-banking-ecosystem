@@ -128,31 +128,50 @@ python -m scripts.deploy_product_data_mcp_server  --build --register
 
 #### Protecting the MCP servers with Entra ID
 
-The MCP servers are protected with **Entra ID Easy Auth** by default
+The MCP servers validate Entra ID access tokens **natively inside the app** using
+FastMCP's `AzureJWTVerifier` + `RemoteAuthProvider` (no Container Apps Easy Auth,
+no auth sidecar, no client secret). Auth is on by default
 (`ENTRA_AUTH_ENABLED=true`) — the deploy scripts create an app registration
-(`<app>-mcp-auth`, audience `api://<appId>`), enable Easy Auth so unauthenticated
-requests return **HTTP 401**, and print the required audience:
+(`<app>-mcp-auth`, audience `api://<appId>`), inject the auth config into the
+container (`ENTRA_AUTH_ENABLED`, `MCP_AUTH_CLIENT_ID`, `AZURE_TENANT_ID`,
+`MCP_PUBLIC_BASE_URL`), and print the required audience:
 
 ```bash
 python -m scripts.deploy_customer_data_mcp_server --build --register
 python -m scripts.deploy_product_data_mcp_server  --build --register
 ```
 
-Wire the consumers: pass `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID`
-(a Foundry connection for the MCP audience) so the toolboxes forward
-authenticated calls; the customer support agent deploy grants its identity the
-`Mcp.Invoke` role and injects `CUSTOMER_MCP_AUDIENCE` / `PRODUCT_MCP_AUDIENCE`
-automatically. Set `ENTRA_AUTH_ENABLED=false` and re-deploy to restore anonymous
-ingress. See the ops skill for details.
+On each request the provider verifies the token's **issuer**
+(`https://login.microsoftonline.com/<tenant>/v2.0`), **audience** (accepts both
+the bare `<appId>` GUID and `api://<appId>`) and **JWKS signature**;
+unauthenticated requests return **HTTP 401**.
+
+There are two authenticated consumption paths:
+
+- **Toolbox path (hosted agents, e.g. employee advisory)** — the toolbox
+  authenticates to the MCP server with the agent's **Entra Agent Identity**
+  (no client secret). Attach an `AgenticIdentityToken` Foundry connection (auth
+  type = agent identity, audience `api://<appId>`) to each toolbox and pass its
+  id as `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID`; grant the
+  agent identity the `Mcp.Invoke` role with
+  `python -m scripts.grant_agent_identity_mcp_role` (see
+  [Toolbox → MCP with agent identity](#toolbox--mcp-with-agent-identity)).
+- **Direct path (customer support agent)** — the container calls the MCP
+  servers directly with its **managed identity**; the deploy grants that
+  identity the `Mcp.Invoke` role and injects `CUSTOMER_MCP_AUDIENCE` /
+  `PRODUCT_MCP_AUDIENCE` automatically.
+
+Set `ENTRA_AUTH_ENABLED=false` and re-deploy to run anonymously (local
+development, or auth toggled off). See the ops skill for details.
 
 ##### Who can authenticate — any user or app in the tenant
 
-Easy Auth validates **only** the token **issuer** (this tenant,
-`https://login.microsoftonline.com/<tenant>/v2.0`) and the **audience**
-(`api://<appId>`). It keeps **no per-app allow-list** (`allowedApplications` is
-empty), so **any user or app in the tenant** holding a valid token for the
-audience is accepted. The app registration exposes both a `user_impersonation`
-delegated scope (for users) and an `Mcp.Invoke` application role (for apps).
+The verifier checks **only** the token's issuer, audience and signature — no
+required scope (`required_scopes=[]`), so **both** delegated (user) and app-only
+(managed identity) tokens are accepted, and there is **no per-app allow-list**.
+Any user or app in the tenant holding a valid token for the audience is accepted.
+The app registration exposes both a `user_impersonation` delegated scope (for
+users) and an `Mcp.Invoke` application role (for apps).
 
 Entra still requires each caller to be **granted access once** before it will
 *issue* a token for the custom API — this is a platform invariant that cannot be
@@ -164,13 +183,42 @@ switched off:
 | **User** (interactive) | delegated | consent to `user_impersonation` — run **admin consent** once so users aren't prompted |
 
 Notes:
-- The two MCP servers reserve `/health` as an Easy Auth **excluded path**;
-  Container Apps readiness probes run against the container directly, so the app
-  stays healthy regardless.
+- The two MCP servers expose `/health` as an unauthenticated custom route, so
+  Container Apps readiness probes stay green regardless of auth.
 - Acquire a token for testing with
   `az login --scope api://<appId>/.default` (triggers the one-time user consent),
   then call the `…/mcp` endpoint with `Authorization: Bearer <token>`.
 - An anonymous request to `…/mcp` returns **HTTP 401** when auth is enabled.
+
+##### Toolbox → MCP with agent identity
+
+Foundry hosted agents (the employee advisory agent) reach the MCP servers
+through toolboxes. Rather than a shared secret, the toolbox authenticates with
+the agent's **Entra Agent Identity**
+([docs](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-identity#tool-authentication)):
+Agent Service mints a token for the agent identity scoped to the MCP server's
+audience (`api://<appId>`) and forwards it; the FastMCP verifier accepts it.
+Wire it up once auth is enabled and the hosted agent is deployed:
+
+1. **Grant the role.** Give the agent identity the `Mcp.Invoke` app role on
+   both MCP app registrations (idempotent; auto-discovers the employee agent
+   identity, or pass `--agent-id <objectId>`):
+
+   ```bash
+   python -m scripts.grant_agent_identity_mcp_role
+   ```
+
+2. **Create the connection.** In the Foundry portal, add a **Custom → MCP**
+   connection per server using **Microsoft Entra → agent identity**
+   (`AgenticIdentityToken`), with the **audience** set to the server's
+   `api://<appId>` (not the server URL). Copy each connection id.
+
+3. **Wire and re-register.** Set `CUSTOMER_MCP_CONNECTION_ID` /
+   `PRODUCT_MCP_CONNECTION_ID` in `./.env` and re-register the toolboxes
+   (`register_customer_data_toolbox` / `register_product_data_toolbox`); a
+   successful run prints `forwarding calls via connection <id>`.
+
+Publishing an agent creates a **new** agent identity — re-run step 1 for it.
 
 ### Creating and populating the search indexes
 

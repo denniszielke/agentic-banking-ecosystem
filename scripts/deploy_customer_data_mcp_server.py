@@ -36,8 +36,6 @@ import sys
 from pathlib import Path
 
 from scripts.auth_helpers import (
-    configure_container_app_easy_auth,
-    disable_container_app_easy_auth,
     ensure_mcp_app_registration,
     entra_auth_enabled,
     resolve_tenant_id,
@@ -45,6 +43,7 @@ from scripts.auth_helpers import (
 from scripts.deploy_helpers import (
     build_image,
     deploy_container_app,
+    get_containerapp_env_default_domain,
     get_env,
     resolve_registry,
 )
@@ -73,6 +72,7 @@ def deploy(tag: str | None = None) -> None:
             "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
         ),
     }
+    env_vars.update(_auth_env_vars())
 
     fqdn = deploy_container_app(
         app_name=APP_NAME,
@@ -83,8 +83,6 @@ def deploy(tag: str | None = None) -> None:
         tag=tag,
         readiness_probe_path="/health",
     )
-
-    _apply_entra_auth()
 
     if fqdn:
         mcp_url = f"https://{fqdn}/mcp"
@@ -97,27 +95,34 @@ def deploy(tag: str | None = None) -> None:
     return fqdn
 
 
-def _apply_entra_auth() -> None:
-    """Toggle Entra ID Easy Auth on the Container App from ENTRA_AUTH_ENABLED."""
-    resource_group = get_env("AZURE_RESOURCE_GROUP")
+def _auth_env_vars() -> dict[str, str]:
+    """Build the FastMCP Entra JWT auth env vars for the container.
+
+    When ``ENTRA_AUTH_ENABLED`` is off the server runs anonymously. When on, the
+    server validates incoming Entra access tokens itself (FastMCP's Azure JWT
+    verifier) using the MCP app registration as the token audience — no Container
+    Apps Easy Auth. The audience client id, tenant and the server's own public
+    base URL are injected as env vars the FastMCP ``AzureJWTVerifier`` reads at
+    startup.
+    """
     if not entra_auth_enabled():
-        disable_container_app_easy_auth(resource_group, APP_NAME)
-        return
-    print("\n==> ENTRA_AUTH_ENABLED=true — protecting the MCP server with Easy Auth")
+        print("\n==> ENTRA_AUTH_ENABLED=false — MCP server runs without authentication")
+        return {"ENTRA_AUTH_ENABLED": "false"}
+
+    print("\n==> ENTRA_AUTH_ENABLED=true — protecting the MCP server with FastMCP Entra JWT auth")
     app_id, audience = ensure_mcp_app_registration(APP_NAME)
-    configure_container_app_easy_auth(
-        resource_group=resource_group,
-        app_name=APP_NAME,
-        client_id=app_id,
-        tenant_id=resolve_tenant_id(),
-        excluded_paths=["/health"],
-    )
-    print(
-        "  Callers must request a token for audience "
-        f"'{audience}/.default'.\n"
-        "  Set CUSTOMER_MCP_CONNECTION_ID so the Foundry toolbox forwards "
-        "authenticated calls."
-    )
+    tenant_id = resolve_tenant_id()
+    resource_group = get_env("AZURE_RESOURCE_GROUP")
+    environment_name = get_env("AZURE_CONTAINER_APPS_ENVIRONMENT_NAME")
+    default_domain = get_containerapp_env_default_domain(resource_group, environment_name)
+    base_url = f"https://{APP_NAME}.{default_domain}" if default_domain else ""
+    print(f"  Callers must request a token for audience '{audience}/.default'.")
+    return {
+        "ENTRA_AUTH_ENABLED": "true",
+        "MCP_AUTH_CLIENT_ID": app_id,
+        "AZURE_TENANT_ID": tenant_id,
+        "MCP_PUBLIC_BASE_URL": base_url,
+    }
 
 
 def register_toolbox(fqdn: str | None) -> None:

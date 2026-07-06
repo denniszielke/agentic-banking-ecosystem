@@ -18,8 +18,12 @@ Environment variables:
                                ingress FQDN using AZURE_RESOURCE_GROUP.
   PRODUCT_MCP_APP_NAME         Container App name to resolve the URL from
                                (default: product-data-mcp-server).
-  PRODUCT_MCP_CONNECTION_ID    Optional Foundry connection id to authorise calls
-                               to a network-restricted MCP server.
+  PRODUCT_MCP_CONNECTION_ID    Foundry connection id used to authenticate calls
+                               to the Entra-protected MCP server. Use an
+                               AgenticIdentityToken (agent identity) connection
+                               with audience api://<appId>; grant the agent
+                               identity Mcp.Invoke via
+                               scripts.grant_agent_identity_mcp_role.
 """
 
 from __future__ import annotations

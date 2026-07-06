@@ -33,7 +33,7 @@ from typing import Any, Optional
 
 import json
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -117,6 +117,43 @@ def _within_range(txn: dict[str, Any], date_from: Optional[str],
     return True
 
 
+_HOST = os.getenv("CUSTOMER_MCP_HOST", "127.0.0.1")
+_PORT = int(os.getenv("CUSTOMER_MCP_PORT", "8092"))
+
+
+def _build_auth():
+    """Build the FastMCP Microsoft Entra ID JWT auth provider, or ``None``.
+
+    Enabled only when ``ENTRA_AUTH_ENABLED`` is truthy and both the API audience
+    (``MCP_AUTH_CLIENT_ID``) and ``AZURE_TENANT_ID`` are set. The provider
+    validates incoming Entra access tokens (issuer, audience and JWKS signature)
+    inside the app itself — no Container Apps Easy Auth and no client secret.
+    No scope is required, so both delegated (user) and app-only (managed
+    identity) tokens are accepted. Returns ``None`` to run anonymously (local
+    development, or auth toggled off).
+    """
+    enabled = os.getenv("ENTRA_AUTH_ENABLED", "false").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+    client_id = os.getenv("MCP_AUTH_CLIENT_ID", "").strip()
+    tenant_id = os.getenv("AZURE_TENANT_ID", "").strip()
+    if not (enabled and client_id and tenant_id):
+        return None
+    from fastmcp.server.auth import RemoteAuthProvider
+    from fastmcp.server.auth.providers.azure import AzureJWTVerifier
+    from pydantic import AnyHttpUrl
+
+    base_url = os.getenv("MCP_PUBLIC_BASE_URL", "").strip() or f"http://{_HOST}:{_PORT}"
+    verifier = AzureJWTVerifier(client_id=client_id, tenant_id=tenant_id)
+    return RemoteAuthProvider(
+        token_verifier=verifier,
+        authorization_servers=[
+            AnyHttpUrl(f"https://login.microsoftonline.com/{tenant_id}/v2.0")
+        ],
+        base_url=base_url,
+    )
+
+
 mcp = FastMCP(
     name="customer_data",
     instructions=(
@@ -128,8 +165,7 @@ mcp = FastMCP(
         "is a write operation and requires explicit human approval "
         "(human-in-the-loop) before it commits."
     ),
-    host=os.getenv("CUSTOMER_MCP_HOST", "127.0.0.1"),
-    port=int(os.getenv("CUSTOMER_MCP_PORT", "8092")),
+    auth=_build_auth(),
 )
 
 
@@ -328,7 +364,18 @@ def update_customer(customer_id: str, fields: dict[str, Any],
 
 def main() -> None:
     """Entry point — serve the customer data over streamable-HTTP MCP."""
-    mcp.run(transport="streamable-http")
+    # ``host_origin_protection`` is FastMCP's DNS-rebinding guard for browser
+    # clients hitting localhost dev servers; it rejects any Host header outside
+    # 127.0.0.1/localhost with HTTP 421. This server runs behind the Container
+    # Apps ingress (which routes by host) and is protected by Entra JWT auth, so
+    # the guard is both unnecessary and would block the public FQDN + health
+    # probe. Disable it and rely on the ingress + JWT verification instead.
+    mcp.run(
+        transport="http",
+        host=_HOST,
+        port=_PORT,
+        host_origin_protection=False,
+    )
 
 
 if __name__ == "__main__":

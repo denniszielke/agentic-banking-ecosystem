@@ -133,7 +133,7 @@ STATE_SCHEMA: dict = {
 
 _credential = DefaultAzureCredential()
 _product_provider, _compliance_provider, _embedding_client = make_providers(_credential)
-_mcp_tools = make_mcp_tools()
+_mcp_tools = make_mcp_tools(_credential)
 
 _agent = Agent(
     client=FoundryChatClient(
