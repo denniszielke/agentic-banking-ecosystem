@@ -84,7 +84,8 @@ via Entra ID. The canonical schema for all entities is defined in `data/products
    - **Entities served:** `Customer`, `ProductHolding`/`Account`, `Transaction`
      (see `data/products.md`).
    - **Tools:** `list_customers`, `get_customer`, `list_accounts`, `get_account`,
-     `list_transactions`, `get_balance` (read); `update_customer` (write, HITL).
+     `list_transactions`, `get_balance`, `summarize_spending`, `get_net_worth`
+     (read); `update_customer` (write, HITL).
 
 2. Product data mcp server (product_data_mcp_server in code) that provide customer details about customer products like credit card, bank account, saving account. The product data should contain conditions for monthly costs, interest rates on yearly basis
    - **Data sources:** the product catalogue in `data/products.md`, per-customer

@@ -130,6 +130,8 @@ erDiagram
 | `get_account` | `account_id` | `ProductHolding` | read |
 | `list_transactions` | `account_id` \| `customer_id`, `from?`, `to?` | `Transaction[]` | read |
 | `get_balance` | `account_id` | `{ balance, currency }` | read |
+| `summarize_spending` | `customer_id`, `from?`, `to?`, `account_id?`, `category?`, `top_merchants?` | `{ total_spending, total_income, net, by_category[], top_merchants[], largest_transaction }` | read |
+| `get_net_worth` | `customer_id` | `{ total_net_worth, by_category[], accounts[] }` | read |
 | `update_customer` | `customer_id`, `fields` | `Customer` | write (HITL) |
 
 ### 3.2 `product_data_mcp_server`
