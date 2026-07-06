@@ -103,6 +103,27 @@ _DIRECT_PRODUCT_MCP_URL = os.getenv("PRODUCT_MCP_URL", "").strip()
 _CUSTOMER_MCP_AUDIENCE = os.getenv("CUSTOMER_MCP_AUDIENCE", "").strip()
 _PRODUCT_MCP_AUDIENCE = os.getenv("PRODUCT_MCP_AUDIENCE", "").strip()
 
+# Cross-organisation A2A: Bank South's customer support agent can consume Bank
+# North's Compliance agent as an A2A service (narrative edge 4). This is the
+# core cross-org story — a real agent-to-agent call across subscription/tenant
+# boundaries, authenticated with Entra ID. It is opt-in: when
+# COMPLIANCE_A2A_ENABLED is truthy the agent gains an ``ask_compliance`` tool
+# backed by the remote agent; otherwise it falls back to the local Compliance
+# rules search index for guardrails (unchanged behaviour). The Compliance rules
+# index remains attached either way.
+_COMPLIANCE_A2A_ENABLED = os.getenv("COMPLIANCE_A2A_ENABLED", "false").strip().lower() in {
+    "1", "true", "yes", "on",
+}
+_COMPLIANCE_AGENT_NAME = os.getenv("AZURE_AI_COMPLIANCE_AGENT_NAME", "compliance-agent")
+# Direct A2A endpoint override; otherwise derive the Foundry hosted-agent A2A
+# endpoint from the project endpoint + agent name (see agent_deploy_helpers).
+_COMPLIANCE_A2A_URL = os.getenv("COMPLIANCE_AGENT_A2A_URL", "").strip() or (
+    f"{_PROJECT_ENDPOINT.rstrip('/')}/agents/{_COMPLIANCE_AGENT_NAME}/endpoint/protocols/a2a"
+)
+# Entra audience for the bearer token sent to the compliance agent. Foundry
+# hosted agents accept the Foundry scope; override for a custom audience.
+_COMPLIANCE_A2A_AUDIENCE = os.getenv("COMPLIANCE_AGENT_AUDIENCE", "https://ai.azure.com").strip()
+
 _SKILLS_DIR = Path(__file__).parent / "skills"
 
 
@@ -124,6 +145,9 @@ You can:
     balance on their current account) using detect_opportunities, and — only
     after asking permission — offer two concrete, personalised recommendations
     (a reshuffle with a concrete annual interest gain, and a suitable product).
+  - When available, consult Bank North's Compliance agent over A2A via the
+    ask_compliance tool for a regulatory / eligibility decision, and relay its
+    cited guidance.
 
 Operating principles:
   1. You only ever act for the ONE signed-in customer in context. Never reveal
@@ -132,9 +156,10 @@ Operating principles:
      branch details) in a tool result, and name the source — the MCP tool, or
      the knowledge file and its numbered section (e.g. "bank-south.md §2.1").
   3. For any regulatory, eligibility or advice question, apply the compliance
-     guardrails first; if it needs personalised financial advice or a
-     compliance decision, say so and defer to compliance / a human adviser
-     rather than guessing.
+     guardrails first. If the ask_compliance tool is available, consult it for a
+     compliance decision and cite its answer; otherwise rely on the Compliance
+     rules grounding. If it needs personalised financial advice, say so and
+     defer to a human adviser rather than guessing.
   4. Never commit a write (order_product, update_customer) without an explicit
      confirmation step: preview the change, ask the customer to confirm, and
      only then commit with confirm=true.
@@ -347,3 +372,61 @@ def make_mcp_tools(credential: DefaultAzureCredential) -> list[MCPStreamableHTTP
             _PRODUCT_MCP_AUDIENCE,
         ),
     ]
+
+
+# ---------------------------------------------------------------------------
+# Cross-organisation A2A tool (Bank South -> Bank North Compliance agent)
+# ---------------------------------------------------------------------------
+
+_COMPLIANCE_TOOL_DESCRIPTION = (
+    "Ask Bank North's Compliance agent (a cross-organisation A2A service) a "
+    "regulatory, KYC/AML, sanctions, fraud or product-eligibility question. Use "
+    "it whenever a customer request needs a compliance decision or a rule you "
+    "must cite before acting (e.g. eligibility for a product order). The remote "
+    "agent returns grounded guidance with cited sources; relay the decision and "
+    "the citation, and defer to it rather than guessing."
+)
+
+
+def make_compliance_a2a_tool(credential: DefaultAzureCredential):
+    """Build the cross-org Compliance A2A tool, or ``(None, None)`` if disabled.
+
+    When ``COMPLIANCE_A2A_ENABLED`` is truthy, wraps Bank North's Compliance
+    hosted agent (exposed over A2A) as an ``ask_compliance`` function tool so the
+    customer support agent can consult it across organisational boundaries. The
+    call is authenticated with an Entra bearer token for the Foundry audience,
+    minted per request via the shared credential (reusing the same auth flow as
+    the MCP toolbox calls).
+
+    Returns ``(tool, a2a_agent)`` where ``a2a_agent`` is an async context manager
+    the caller must enter/exit for the app lifetime, or ``(None, None)`` when the
+    A2A integration is disabled.
+    """
+    if not _COMPLIANCE_A2A_ENABLED:
+        logger.info("Compliance A2A disabled; using the Compliance rules index only.")
+        return None, None
+
+    # Imported lazily so the module still loads where agent-framework-a2a is not
+    # installed and the A2A integration is switched off.
+    from agent_framework.a2a import A2AAgent
+
+    logger.info("Wiring cross-org Compliance A2A agent at %s", _COMPLIANCE_A2A_URL)
+    token_provider = get_bearer_token_provider(
+        credential, f"{_COMPLIANCE_A2A_AUDIENCE.rstrip('/')}/.default"
+    )
+    http_client = httpx.AsyncClient(
+        auth=_ToolboxAuth(token_provider),
+        timeout=120.0,
+    )
+    a2a_agent = A2AAgent(
+        name="compliance",
+        url=_COMPLIANCE_A2A_URL,
+        http_client=http_client,
+    )
+    tool = a2a_agent.as_tool(
+        name="ask_compliance",
+        description=_COMPLIANCE_TOOL_DESCRIPTION,
+        arg_name="question",
+        arg_description="The regulatory / compliance / eligibility question in natural language.",
+    )
+    return tool, a2a_agent

@@ -50,6 +50,7 @@ from src.customer_support_agent.customer_support_agent import (  # noqa: E402
     _MODEL,
     _PROJECT_ENDPOINT,
     SYSTEM_PROMPT,
+    make_compliance_a2a_tool,
     make_mcp_tools,
     make_providers,
 )
@@ -134,6 +135,11 @@ STATE_SCHEMA: dict = {
 _credential = DefaultAzureCredential()
 _product_provider, _compliance_provider, _embedding_client = make_providers(_credential)
 _mcp_tools = make_mcp_tools(_credential)
+# Cross-org A2A: Bank North's Compliance agent as an ask_compliance tool
+# (None when the A2A integration is disabled — the Compliance rules index still
+# provides guardrails either way).
+_compliance_tool, _compliance_a2a_agent = make_compliance_a2a_tool(_credential)
+_extra_tools = [_compliance_tool] if _compliance_tool is not None else []
 
 _agent = Agent(
     client=FoundryChatClient(
@@ -143,7 +149,7 @@ _agent = Agent(
     ),
     name="CustomerSupportAgent",
     instructions=SYSTEM_PROMPT,
-    tools=[update_overview, *_mcp_tools],
+    tools=[update_overview, *_mcp_tools, *_extra_tools],
     context_providers=[_product_provider, _compliance_provider],
 )
 
@@ -156,6 +162,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await stack.enter_async_context(_compliance_provider)
         for mcp_tool in _mcp_tools:
             await stack.enter_async_context(mcp_tool)
+        if _compliance_a2a_agent is not None:
+            await stack.enter_async_context(_compliance_a2a_agent)
         await stack.enter_async_context(_agent)
         logger.info("Customer Support Agent ready (model=%s).", _MODEL)
         try:
