@@ -18,6 +18,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from scripts._cli import normalize
+
 # Load the repository-root .env explicitly so the scripts work regardless of the
 # current working directory (azd writes it there via the postdeploy hook).
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -40,21 +42,24 @@ def _registry_name(login_server: str) -> str:
 
 
 def _discover_registry(resource_group: str) -> str:
-    """Find the first ACR login server in the resource group (empty if none)."""
+    """Find the first ACR login server in the resource group (empty if none).
+
+    Uses the provider-specific ``az acr list`` API, which reflects a freshly
+    created registry immediately (the generic ``az resource list`` can lag for a
+    brand-new resource group).
+    """
     result = subprocess.run(
-        [
-            "az", "resource", "list",
+        normalize([
+            "az", "acr", "list",
             "-g", resource_group,
-            "--resource-type", "Microsoft.ContainerRegistry/registries",
-            "--query", "[0].name",
+            "--query", "[0].loginServer",
             "-o", "tsv",
-        ],
+        ]),
         check=False,
         capture_output=True,
         text=True,
     )
-    name = result.stdout.strip()
-    return f"{name}.azurecr.io" if name else ""
+    return result.stdout.strip()
 
 
 def resolve_registry() -> str:
@@ -111,7 +116,7 @@ def build_image(
             rel = dockerfile_path
         cmd += ["--file", str(rel)]
     cmd.append(str(context_path))
-    subprocess.run(cmd, check=True)
+    subprocess.run(normalize(cmd), check=True)
     print(f"==> Built {image_tag} (also tagged :latest)")
     return build_tag
 
@@ -119,13 +124,13 @@ def build_image(
 def get_container_app_fqdn(resource_group: str, app_name: str) -> str:
     """Return the ingress FQDN of a deployed Container App (empty if none)."""
     result = subprocess.run(
-        [
+        normalize([
             "az", "containerapp", "show",
             "--resource-group", resource_group,
             "--name", app_name,
             "--query", "properties.configuration.ingress.fqdn",
             "--output", "tsv",
-        ],
+        ]),
         check=True,
         capture_output=True,
         text=True,
@@ -142,13 +147,13 @@ def get_containerapp_env_default_domain(resource_group: str, environment_name: s
     protected-resource metadata).
     """
     result = subprocess.run(
-        [
+        normalize([
             "az", "containerapp", "env", "show",
             "--resource-group", resource_group,
             "--name", environment_name,
             "--query", "properties.defaultDomain",
             "--output", "tsv",
-        ],
+        ]),
         check=False,
         capture_output=True,
         text=True,
@@ -203,12 +208,12 @@ def deploy_container_app(
 
     print(f"==> Deploying Container App '{app_name}' with image {image_ref}")
     subprocess.run(
-        [
+        normalize([
             "az", "deployment", "group", "create",
             "--resource-group", resource_group,
             "--template-file", str(app_bicep),
             "--parameters", *params,
-        ],
+        ]),
         check=True,
     )
     return get_container_app_fqdn(resource_group, app_name)

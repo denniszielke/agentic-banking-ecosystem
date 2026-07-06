@@ -54,6 +54,8 @@ import json
 import os
 import subprocess
 import sys
+
+from scripts._cli import normalize
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -76,7 +78,7 @@ _GRAPH = "https://graph.microsoft.com"
 def _az(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     """Run an ``az`` command, capturing stdout/stderr."""
     result = subprocess.run(
-        ["az", *args], check=False, capture_output=True, text=True
+        normalize(["az", *args]), check=False, capture_output=True, text=True
     )
     if check and result.returncode != 0:
         raise RuntimeError(

@@ -35,6 +35,8 @@ import os
 import subprocess
 import time
 
+from scripts._cli import normalize
+
 # Stable identifier for the application role granted to calling agents. Using a
 # fixed GUID keeps re-runs idempotent (the role is matched by id, not name).
 MCP_INVOKE_ROLE_ID = "b9f4a1e2-3c5d-4a7b-8e6f-1d2c3b4a5e6f"
@@ -64,7 +66,7 @@ def entra_auth_enabled() -> bool:
 
 
 def _az(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess:
-    result = subprocess.run(args, check=False, capture_output=True, text=True)
+    result = subprocess.run(normalize(args), check=False, capture_output=True, text=True)
     if check and result.returncode != 0:
         stderr = (result.stderr or "").strip()
         raise RuntimeError(

@@ -46,6 +46,8 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+
+from scripts._cli import normalize
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -88,12 +90,12 @@ def _resolve_mcp_url(url_env: str, app_env: str, app_default: str) -> str:
 
 
 def _azd(*args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["azd", *args], check=False, capture_output=True, text=True)
+    return subprocess.run(normalize(["azd", *args]), check=False, capture_output=True, text=True)
 
 
 def _ensure_azd() -> bool:
     """Verify the azd CLI and the Foundry extension (`azd ai`) are available."""
-    if subprocess.run(["which", "azd"], check=False, capture_output=True).returncode != 0:
+    if subprocess.run(normalize(["which", "azd"]), check=False, capture_output=True).returncode != 0:
         print(
             "ERROR: the Azure Developer CLI (azd) is not installed. Install it, then "
             "run 'azd ext install microsoft.foundry'.",

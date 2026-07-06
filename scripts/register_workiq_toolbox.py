@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from scripts._cli import normalize
 
 from azure.ai.projects.models import MCPToolboxTool
 
@@ -65,7 +66,7 @@ def _resolve_tenant_id() -> str:
     if tenant:
         return tenant
     result = subprocess.run(
-        ["az", "account", "show", "--query", "tenantId", "-o", "tsv"],
+        normalize(["az", "account", "show", "--query", "tenantId", "-o", "tsv"]),
         check=False,
         capture_output=True,
         text=True,
