@@ -208,15 +208,30 @@ Wire it up once auth is enabled and the hosted agent is deployed:
    python -m scripts.grant_agent_identity_mcp_role
    ```
 
-2. **Create the connection.** In the Foundry portal, add a **Custom → MCP**
-   connection per server using **Microsoft Entra → agent identity**
-   (`AgenticIdentityToken`), with the **audience** set to the server's
-   `api://<appId>` (not the server URL). Copy each connection id.
+2. **Create the connection.** Run the helper, which creates a `remote-tool`
+   connection per server with `--auth-type agentic-identity` and the server's
+   `api://<appId>` audience (no secret; it just declares the auth type +
+   audience). Install the Foundry azd extension once
+   (`azd ext install microsoft.foundry`), then:
+
+   ```bash
+   # reads AZURE_AI_PROJECT_ENDPOINT + the MCP URLs/audiences from ./.env;
+   # --grant also runs step 1 (Mcp.Invoke) in the same pass
+   python -m scripts.create_mcp_agent_identity_connections --grant
+   ```
+
+   It prints the `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID`
+   lines to add to `./.env`. Under the hood it runs
+   `azd ai connection create <name> --kind remote-tool --target "$*_MCP_URL"
+   --auth-type agentic-identity --audience api://<appId>` per server (you can
+   also create it in the portal: **Custom → MCP → Microsoft Entra → agent
+   identity**). Either way there is no client secret.
 
 3. **Wire and re-register.** Set `CUSTOMER_MCP_CONNECTION_ID` /
-   `PRODUCT_MCP_CONNECTION_ID` in `./.env` and re-register the toolboxes
-   (`register_customer_data_toolbox` / `register_product_data_toolbox`); a
-   successful run prints `forwarding calls via connection <id>`.
+   `PRODUCT_MCP_CONNECTION_ID` in `./.env` to the connection names/ids from
+   step 2 and re-register the toolboxes (`register_customer_data_toolbox` /
+   `register_product_data_toolbox`); a successful run prints
+   `forwarding calls via connection <id>`.
 
 Publishing an agent creates a **new** agent identity — re-run step 1 for it.
 

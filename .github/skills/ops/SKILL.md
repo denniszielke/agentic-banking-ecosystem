@@ -190,18 +190,22 @@ ENTRA_AUTH_ENABLED=true python -m scripts.deploy_product_data_mcp_server  --regi
 Wire the consumers:
 - **Toolbox path (hosted agents, e.g. employee advisory).** The toolbox
   authenticates to the MCP server with the agent's **Entra Agent Identity** (no
-  secret). Attach an `AgenticIdentityToken` Foundry connection (auth type =
-  agent identity, audience `api://<appId>`) to each toolbox and pass its id as
-  `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID`. Grant the agent
-  identity the `Mcp.Invoke` role first:
+  secret). One helper does both the role grant and the connection creation
+  (needs the Foundry azd extension: `azd ext install microsoft.foundry`):
 
   ```bash
-  # auto-discovers the employee advisory agent identity; or --agent-id <objectId>
-  python -m scripts.grant_agent_identity_mcp_role
+  # grants the agent identity Mcp.Invoke on both MCP apps, then creates a
+  # remote-tool/agentic-identity connection per server (audience api://<appId>)
+  python -m scripts.create_mcp_agent_identity_connections --grant
   ```
 
-  Without the connection the toolbox registration warns and tool calls return
-  401. Publishing an agent creates a new identity — re-run the grant for it.
+  It prints the `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID` lines
+  to add to `./.env`; then re-register the toolboxes. Under the hood it runs
+  `python -m scripts.grant_agent_identity_mcp_role` +
+  `azd ai connection create <name> --kind remote-tool --auth-type
+  agentic-identity --audience api://<appId>`. Without the connection the toolbox
+  registration warns and tool calls return 401. Publishing an agent creates a
+  new identity — re-run for it.
 - **Direct path (customer support agent).** `deploy_customer_support_agent`
   resolves the MCP audiences, grants the agent's managed identity the
   `Mcp.Invoke` role, and injects `CUSTOMER_MCP_AUDIENCE` / `PRODUCT_MCP_AUDIENCE`
