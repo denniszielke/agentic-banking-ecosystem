@@ -127,6 +127,69 @@
         },
         "required": ["account_id", "fields"]
       }
+    },
+    {
+      "name": "list_orders",
+      "description": "List product-order cases (the Vorgangs-Log), newest first, optionally filtered by customer and/or status.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "Optional customer id filter, format 'CUST-1001'."
+          },
+          "status": {
+            "type": "string",
+            "description": "Optional status filter: 'requested', 'approved', 'rejected', 'shipped' or 'delivered'."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "get_order",
+      "description": "Get a single product-order case by id, including its status history.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "The order id, format 'ORD-000001'."
+          }
+        },
+        "required": ["order_id"]
+      }
+    },
+    {
+      "name": "update_order_status",
+      "description": "Advance a product order's status along its lifecycle (requested -> approved | rejected; approved -> shipped | delivered) (write — human-in-the-loop).",
+      "access": "write",
+      "humanInTheLoop": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "The order id, format 'ORD-000001'."
+          },
+          "status": {
+            "type": "string",
+            "description": "Target status: 'approved', 'rejected', 'shipped' or 'delivered'."
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional free-text note recorded in the status history."
+          },
+          "confirm": {
+            "type": "boolean",
+            "default": false,
+            "description": "Set to true only after a human has approved the preview."
+          }
+        },
+        "required": ["order_id", "status"]
+      }
     }
   ]
 }

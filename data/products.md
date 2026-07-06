@@ -102,6 +102,29 @@ Represents a single money movement on a `ProductHolding`.
 
 ---
 
+### 1.5 Order (product application)
+
+Represents a product application and its lifecycle — the "Vorgangs-Log" tracked
+by the product data server. Created when a customer confirms `order_product`;
+held in-memory for the life of the server process (not persisted in this demo).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `order_id` | string | Primary key, format `ORD-<6 digits>`. |
+| `customer_id` | string | Foreign key → `Customer.customer_id`. |
+| `product_code` | string | Foreign key → `Product.product_code`. |
+| `account_id` | string | Foreign key → the `ProductHolding` opened for the order. |
+| `status` | enum | `requested` \| `approved` \| `rejected` \| `shipped` \| `delivered`. |
+| `created_at` / `updated_at` | datetime | ISO-8601 timestamps. |
+| `delivery` | object \| null | For cards: `{ estimated_business_days, shipping_address }`. |
+| `history` | array | Append-only status changes `{ status, at, note }`. |
+
+Lifecycle: `requested` → `approved` \| `rejected`; `approved` → `shipped` \|
+`delivered`; `shipped` → `delivered`. Approving an order activates the linked
+holding; rejecting it marks the holding `rejected`.
+
+---
+
 ## 2. Relationships
 
 ```mermaid
@@ -110,11 +133,14 @@ erDiagram
     PRODUCT  ||--o{ PRODUCTHOLDING : "instantiated as"
     PRODUCTHOLDING ||--o{ TRANSACTION : records
     CUSTOMER ||--o{ TRANSACTION : "attributed to"
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|| PRODUCTHOLDING : opens
 ```
 
 - A `Customer` owns **1–3** `ProductHolding` records.
 - Each `ProductHolding` references one `Product` from the catalogue.
 - Each `ProductHolding` has **4–30** `Transaction` records.
+- A `Customer` may place `Order` records; each opens one `ProductHolding`.
 
 ---
 
@@ -142,8 +168,11 @@ erDiagram
 | `get_product` | `product_code` | `Product` | read |
 | `list_holdings` | `customer_id` | `ProductHolding[]` | read |
 | `detect_opportunities` | `customer_id`, `liquidity_buffer?`, `min_idle_balance?`, `min_annual_gain?` | `{ opportunities[], count }` | read |
-| `order_product` | `customer_id`, `product_code` | `ProductHolding` | write (HITL) |
+| `list_orders` | `customer_id?`, `status?` | `Order[]` | read |
+| `get_order` | `order_id` | `Order` | read |
+| `order_product` | `customer_id`, `product_code` | `{ order, holding }` | write (HITL) |
 | `update_holding` | `account_id`, `fields` | `ProductHolding` | write (HITL) |
+| `update_order_status` | `order_id`, `status`, `note?` | `Order` | write (HITL) |
 
 > **Human-in-the-loop:** All `write` tools (ordering products, updating customers/holdings)
 > require explicit human approval before the change is committed, per the flows in

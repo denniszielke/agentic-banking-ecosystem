@@ -32,6 +32,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
@@ -104,6 +105,48 @@ def _next_account_id() -> str:
     return f"ACC-{highest + 1:06d}"
 
 
+# In-memory product-application (order) log — the "Vorgangs-Log" for product
+# orders. Every order_product commit appends a case here and tracks its status
+# lifecycle: requested -> approved | rejected, and (for cards) approved ->
+# shipped -> delivered. Like the holding writes, this lives only for the life of
+# the process and is deliberately not persisted to disk in this demo.
+_ORDERS: list[dict[str, Any]] = []
+
+# Business days a new credit card takes to arrive (used to quote a delivery ETA
+# in the order confirmation, per the "Lieferzeit / Versandadresse" next steps).
+_CARD_DELIVERY_DAYS = int(os.getenv("CARD_DELIVERY_DAYS", "7"))
+
+# Allowed order statuses and the transitions the lifecycle permits.
+_ORDER_STATUSES = {"requested", "approved", "rejected", "shipped", "delivered"}
+_ORDER_TRANSITIONS: dict[str, set[str]] = {
+    "requested": {"approved", "rejected"},
+    "approved": {"shipped", "delivered", "rejected"},
+    "shipped": {"delivered"},
+    "delivered": set(),
+    "rejected": set(),
+}
+
+
+def _now_iso() -> str:
+    """Return the current UTC time as an ISO-8601 string."""
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _next_order_id() -> str:
+    """Return the next free ``ORD-<6 digits>`` id."""
+    highest = 0
+    for order in _ORDERS:
+        digits = order["order_id"].split("-")[-1]
+        if digits.isdigit():
+            highest = max(highest, int(digits))
+    return f"ORD-{highest + 1:06d}"
+
+
+def _find_order(order_id: str) -> Optional[dict[str, Any]]:
+    oid = order_id.strip().upper()
+    return next((o for o in _ORDERS if o["order_id"].upper() == oid), None)
+
+
 _HOST = os.getenv("PRODUCT_MCP_HOST", "127.0.0.1")
 _PORT = int(os.getenv("PRODUCT_MCP_PORT", "8093"))
 
@@ -150,11 +193,15 @@ mcp = FastMCP(
         "order a new product and update a holding. Use 'detect_opportunities' to "
         "proactively surface optimisation ideas — idle cash on a low-interest "
         "account (with an estimated annual interest gain) or a credit-card "
-        "candidate when the customer holds none. Interest rates are annual "
-        "percentages and all monetary values are in EUR; detailed conditions "
-        "are in the linked knowledge files. The 'order_product' and "
-        "'update_holding' tools are write operations and require explicit human "
-        "approval (human-in-the-loop) before they commit."
+        "candidate when the customer holds none. Product orders follow a status "
+        "lifecycle (requested -> approved | rejected; approved -> shipped -> "
+        "delivered): 'order_product' opens an order case, and 'list_orders' / "
+        "'get_order' / 'update_order_status' track and advance it. Interest "
+        "rates are annual percentages and all monetary values are in EUR; "
+        "detailed conditions are in the linked knowledge files. The "
+        "'order_product', 'update_holding' and 'update_order_status' tools are "
+        "write operations and require explicit human approval (human-in-the-loop) "
+        "before they commit."
     ),
     auth=_build_auth(),
 )
@@ -382,8 +429,12 @@ def order_product(customer_id: str, product_code: str,
         product_code: The product to order (e.g. ``GOLDCARD``).
         confirm: Set to ``True`` only after a human has approved the preview.
 
-    Returns a ``pending_approval`` preview when ``confirm`` is ``False``, or the
-    newly created holding once committed.
+    Returns a ``pending_approval`` preview when ``confirm`` is ``False``, or —
+    once committed — an order case (status ``requested``) plus the newly opened
+    holding (status ``pending`` until the order is approved). For credit cards
+    the confirmation includes a delivery estimate and the shipping address so
+    the agent can state the next steps. Track and advance the order with
+    ``list_orders`` / ``get_order`` / ``update_order_status``.
     """
     customer = _find_customer(customer_id)
     if customer is None:
@@ -415,13 +466,146 @@ def order_product(customer_id: str, product_code: str,
             "proposed_holding": new_holding,
         }
 
-    # Commit against the in-memory cache. The change lives for the life of the
-    # process — deliberately not persisted to disk in this demo.
-    new_holding["status"] = "active"
+    # Commit against the in-memory cache. The holding is opened in 'pending'
+    # status and only becomes active once the order is approved
+    # (update_order_status). The change lives for the life of the process —
+    # deliberately not persisted to disk in this demo.
     customer.setdefault("products", []).append(
         {k: v for k, v in new_holding.items() if k != "customer_id"}
     )
-    return {"status": "committed", "holding": new_holding}
+
+    now = _now_iso()
+    delivery = None
+    if is_card:
+        delivery = {
+            "estimated_business_days": _CARD_DELIVERY_DAYS,
+            "shipping_address": customer.get("address"),
+        }
+    order = {
+        "order_id": _next_order_id(),
+        "customer_id": customer["customer_id"],
+        "product_code": product["product_code"],
+        "product_name": product["product_name"],
+        "category": product["category"],
+        "account_id": new_holding["account_id"],
+        "status": "requested",
+        "created_at": now,
+        "updated_at": now,
+        "delivery": delivery,
+        "history": [{"status": "requested", "at": now, "note": "Order placed by customer."}],
+    }
+    _ORDERS.append(order)
+    return {"status": "committed", "order": copy.deepcopy(order),
+            "holding": new_holding}
+
+
+@mcp.tool()
+def list_orders(customer_id: Optional[str] = None,
+                status: Optional[str] = None) -> list[dict[str, Any]]:
+    """List product-order cases (the Vorgangs-Log), newest first.
+
+    Returns the order log — every product application placed via
+    ``order_product`` and its current lifecycle status (``requested`` /
+    ``approved`` / ``rejected`` / ``shipped`` / ``delivered``). Optionally filter
+    by customer and/or status.
+
+    Args:
+        customer_id: Optional customer id filter, format ``CUST-1001``.
+        status: Optional status filter (one of ``requested``, ``approved``,
+            ``rejected``, ``shipped``, ``delivered``).
+
+    Returns the matching orders (most recent first). Empty if none match.
+    """
+    orders = _ORDERS
+    if customer_id:
+        cid = customer_id.strip().upper()
+        orders = [o for o in orders if o["customer_id"].upper() == cid]
+    if status:
+        needle = status.strip().lower()
+        orders = [o for o in orders if o["status"] == needle]
+    return [copy.deepcopy(o) for o in sorted(
+        orders, key=lambda o: o["created_at"], reverse=True)]
+
+
+@mcp.tool()
+def get_order(order_id: str) -> dict[str, Any]:
+    """Get a single product-order case by id, including its status history.
+
+    Args:
+        order_id: The order id, format ``ORD-000001``.
+
+    Returns the order case with its current status, delivery details (for cards)
+    and the full status ``history``. If no order matches, an ``error`` field is
+    returned instead.
+    """
+    order = _find_order(order_id)
+    if order is None:
+        return {"error": f"No order matched '{order_id}'."}
+    return copy.deepcopy(order)
+
+
+@mcp.tool()
+def update_order_status(order_id: str, status: str, note: Optional[str] = None,
+                        confirm: bool = False) -> dict[str, Any]:
+    """Advance a product order's status (write — human-in-the-loop).
+
+    Moves an order case along its lifecycle: ``requested`` -> ``approved`` |
+    ``rejected``; ``approved`` -> ``shipped`` | ``delivered`` | ``rejected``;
+    ``shipped`` -> ``delivered``. Approving an order activates the linked
+    holding; rejecting it marks the holding ``rejected``. This is a **write**
+    operation — call first with ``confirm=False`` for a preview of the
+    transition, then re-call with ``confirm=True`` once approved.
+
+    Args:
+        order_id: The order id, format ``ORD-000001``.
+        status: The target status (``approved``, ``rejected``, ``shipped`` or
+            ``delivered``).
+        note: Optional free-text note recorded in the status history.
+        confirm: Set to ``True`` only after a human has approved the preview.
+
+    Returns a ``pending_approval`` preview when ``confirm`` is ``False``, or the
+    updated order once committed.
+    """
+    order = _find_order(order_id)
+    if order is None:
+        return {"error": f"No order matched '{order_id}'."}
+
+    target = status.strip().lower()
+    if target not in _ORDER_STATUSES:
+        return {"error": f"Unknown status '{status}'.",
+                "allowed": sorted(_ORDER_STATUSES)}
+
+    current = order["status"]
+    allowed = _ORDER_TRANSITIONS.get(current, set())
+    if target not in allowed:
+        return {
+            "error": f"Cannot move order from '{current}' to '{target}'.",
+            "allowed_transitions": sorted(allowed),
+        }
+
+    if not confirm:
+        return {
+            "status": "pending_approval",
+            "order_id": order["order_id"],
+            "requires": "human approval (call again with confirm=true)",
+            "transition": {"from": current, "to": target},
+        }
+
+    now = _now_iso()
+    order["status"] = target
+    order["updated_at"] = now
+    order["history"].append({"status": target, "at": now,
+                             "note": note or f"Status changed to {target}."})
+
+    # Reflect the decision on the linked holding.
+    holding = _find_holding(order["account_id"])
+    if holding is not None:
+        if target == "approved":
+            holding["status"] = "active"
+        elif target == "rejected":
+            holding["status"] = "rejected"
+
+    return {"status": "committed", "order": copy.deepcopy(order)}
 
 
 # Fields a holding is allowed to change through this tool. Identity and money

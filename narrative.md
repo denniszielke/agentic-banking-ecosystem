@@ -95,7 +95,8 @@ via Entra ID. The canonical schema for all entities is defined in `data/products
      `data/knowledge/childrens-savings-products.md`.
    - **Entities served:** `Product` (catalogue), `ProductHolding`.
    - **Tools:** `list_products`, `get_product`, `list_holdings`,
-     `detect_opportunities` (read); `order_product`, `update_holding` (write, HITL).
+     `detect_opportunities`, `list_orders`, `get_order` (read); `order_product`,
+     `update_holding`, `update_order_status` (write, HITL).
 
 
 ### Vector Indexes

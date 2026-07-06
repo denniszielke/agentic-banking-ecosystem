@@ -25,15 +25,27 @@ Every write is human-in-the-loop and must be confirmed before it commits.
    (`update_overview` with `awaiting_confirmation=true`) and ask them to confirm
    in words.
 4. **Commit.** Only after an explicit "yes", call the same tool with
-   `confirm=true`. Then refresh the sidebar (accounts + cleared pending action)
-   and confirm what was done.
+   `confirm=true`. `order_product` opens an **order case** (status `requested`,
+   the holding starts `pending`) and returns an `order_id`.
+5. **State the next steps.** Confirm what was placed and, for a credit card,
+   read the `delivery` details from the order (estimated business days +
+   shipping address) and tell the customer when it will arrive and where.
+6. **Track the order.** The order moves through its lifecycle — `requested` →
+   `approved` | `rejected`; `approved` → `shipped` → `delivered`. Use
+   `list_orders` / `get_order` to report status ("Your GoldCard application is
+   approved and shipping"). Advancing the status (`update_order_status`) is a
+   bank-side decision and is itself human-in-the-loop; approving an order
+   activates the holding, rejecting it marks the holding `rejected`.
 
 ## Output format
 - **Preview:** the product/holding or field change, with any fee/condition.
 - **Ask:** "Shall I go ahead?"
-- **After commit:** confirmation, new account id (for orders), and next steps.
+- **After commit:** confirmation, the `order_id`, new account id (for orders),
+  the delivery ETA + address (for cards), and the current order status.
 
 ## Guardrails
 - Never call a write tool with `confirm=true` without an explicit customer "yes".
 - Never bypass an eligibility rule. If compliance requires a human decision,
   stop and hand off.
+- Do not tell the customer an order is complete while it is still `requested` or
+  `pending`; report the actual status from the order case.
