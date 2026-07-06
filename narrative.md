@@ -308,6 +308,223 @@ flowchart LR
     PDATA_S -. "OTel" .-> OBS
 ```
 
+#### Application Flow
+
+How a request travels from a channel through the agent layer to the tools and knowledge
+sources. Front ends never touch an MCP server directly — every data access is mediated by
+an agent, and the two cross-org edges (to `compliance_agent`) are the core of the story.
+
+```mermaid
+flowchart TD
+    subgraph Channels["Interaction channels"]
+        WEB[customer_app - web]
+        TEAMS[employee_app - Microsoft Teams]
+        COP[Copilot / Copilot Studio / Scout]
+    end
+
+    subgraph Agents["Agent layer - A2A + Responses API"]
+        CSA[customer_support_agent]
+        EAA[employee_advisory_agent]
+        CCA[credit_card_agent]
+        COMP[compliance_agent - Bank North]
+    end
+
+    subgraph Tools["Tool layer - MCP, Entra-authenticated"]
+        CDATA[customer_data_mcp_server]
+        PDATA[product_data_mcp_server]
+        WIQ[WorkIQ MCP]
+    end
+
+    subgraph Knowledge["Knowledge - Azure AI Search"]
+        FIDX[Financial products index]
+        CIDX[Compliance rules index]
+    end
+
+    WEB --> CSA
+    TEAMS --> EAA
+    COP -.-> CSA
+    COP -.-> EAA
+
+    CSA -->|A2A handoff| CCA
+    CSA -->|A2A cross-org| COMP
+    CCA -->|A2A cross-org guardrail| COMP
+
+    CSA --> CDATA
+    CSA --> PDATA
+    EAA --> PDATA
+    EAA --> CDATA
+    EAA --> WIQ
+    CCA --> PDATA
+    CCA --> CDATA
+
+    CSA --> FIDX
+    EAA --> FIDX
+    CCA --> FIDX
+    COMP --> CIDX
+
+    style Channels fill:#00A36C1F,stroke:#0b6b46
+    style Agents fill:#4129911F,stroke:#2a1a5e
+    style Tools fill:#0078D41F,stroke:#004e8c
+    style Knowledge fill:#50E6FF1F,stroke:#0099bb
+
+    classDef ch fill:#00A36C4D,color:#0b3d29,stroke:#0b6b46,stroke-width:1px;
+    classDef ag fill:#4129914D,color:#241452,stroke:#2a1a5e,stroke-width:1px;
+    classDef tl fill:#0078D44D,color:#003a66,stroke:#004e8c,stroke-width:1px;
+    classDef kn fill:#50E6FF4D,color:#04434f,stroke:#0099bb,stroke-width:1px;
+
+    class WEB,TEAMS,COP ch;
+    class CSA,EAA,CCA,COMP ag;
+    class CDATA,PDATA,WIQ tl;
+    class FIDX,CIDX kn;
+```
+
+#### Data Flow
+
+A concrete runtime scenario end to end: a customer checks a balance, then orders a credit
+card. The card order triggers an intra-bank hand-off to `credit_card_agent`, a cross-org
+compliance check against Bank North, and a human-in-the-loop confirmation before the write
+tool commits. Every hop carries an Entra token and emits OpenTelemetry.
+
+```mermaid
+sequenceDiagram
+    actor U as Customer
+    participant APP as customer_app (web)
+    participant CSA as customer_support_agent
+    participant EID as Microsoft Entra ID
+    participant CDATA as customer_data_mcp_server
+    participant FIDX as Financial products index
+    participant CCA as credit_card_agent
+    participant COMP as compliance_agent (Bank North)
+    participant PDATA as product_data_mcp_server
+    participant OBS as Application Insights
+
+    U->>APP: "What is my balance?"
+    APP->>CSA: A2A / Responses API request
+    CSA->>EID: acquire token (managed identity)
+    EID-->>CSA: access token (api://appId)
+    CSA->>CDATA: get_balance(account_id) + bearer token
+    CDATA->>CDATA: validate JWT (issuer/audience/JWKS)
+    CDATA-->>CSA: { balance, currency }
+    CSA-->>APP: balance + cited source
+    APP-->>U: Answer
+
+    U->>APP: "I want to order a credit card"
+    APP->>CSA: A2A request
+    CSA->>FIDX: grounding query (card options)
+    FIDX-->>CSA: matching product docs
+    CSA->>CCA: A2A handoff (order intent)
+    CCA->>COMP: A2A cross-org (compliance check)
+    COMP->>COMP: search Compliance rules index
+    COMP-->>CCA: guidance (KYC/AML ok, disclosures)
+    CCA-->>U: HITL preview - confirm order?
+    U-->>CCA: confirm
+    CCA->>PDATA: order_product(...) + bearer token
+    Note over CCA,PDATA: write tool = human-in-the-loop
+    PDATA-->>CCA: holding created
+    CCA-->>APP: confirmation + cited source
+
+    par Telemetry on every hop
+        CSA-->>OBS: OTel spans
+        CCA-->>OBS: OTel spans
+        COMP-->>OBS: OTel spans
+    end
+```
+
+#### Component Architecture
+
+The code components and their wiring, grouped by layer. Agents live under `src/*_agent`
+(domain flows in each `skills/` subfolder), MCP servers under `src/*_mcp_server`, and the
+canonical data under `data/`. This maps the repository layout onto the runtime.
+
+```mermaid
+graph TB
+    subgraph Apps["Interaction - apps"]
+        CAPP[customer_app - web UI]
+        EAPP[employee_app - Teams]
+    end
+
+    subgraph AgentLayer["Agents - src/*_agent + skills"]
+        CSA[customer_support_agent<br/>account-enquiry, product-and-branch, product-ordering]
+        EAA[employee_advisory_agent<br/>contact-routing, product-recommendation]
+        CCA[credit_card_agent]
+        COMP[compliance_agent<br/>regulatory-guidance, escalation]
+    end
+
+    subgraph MCPLayer["MCP servers - src/*_mcp_server on Container Apps"]
+        CDATA[customer_data_mcp_server<br/>customers, accounts, transactions, balance, update_customer]
+        PDATA[product_data_mcp_server<br/>products, holdings, order_product, update_holding]
+    end
+
+    subgraph DataLayer["Data - data/"]
+        CJSON[(customers.json)]
+        TJSON[(transactions.json)]
+        PMD[(products.md)]
+        KNOW[(knowledge/*.md)]
+    end
+
+    subgraph SearchLayer["Azure AI Search"]
+        FIDX[[financial-products]]
+        CIDX[[compliance-rules]]
+    end
+
+    subgraph Platform["Platform - cross-cutting"]
+        EID[Microsoft Entra ID]
+        OBS[App Insights + Log Analytics]
+        A365[Agent 365]
+        ACR[Container Registry]
+    end
+
+    CAPP --> CSA
+    EAPP --> EAA
+    CSA --> CDATA
+    CSA --> PDATA
+    EAA --> PDATA
+    EAA --> CDATA
+    CCA --> PDATA
+    CCA --> CDATA
+    CSA --> CCA
+    CSA --> COMP
+    CCA --> COMP
+
+    CDATA --> CJSON
+    CDATA --> TJSON
+    PDATA --> PMD
+    PDATA --> CJSON
+    PDATA --> KNOW
+
+    CSA --> FIDX
+    EAA --> FIDX
+    COMP --> CIDX
+
+    CDATA -. auth .-> EID
+    PDATA -. auth .-> EID
+    CSA -. OTel .-> OBS
+    COMP -. OTel .-> OBS
+    CSA -. identity/inventory .-> A365
+    ACR -. images .-> CDATA
+
+    classDef apps fill:#00A36C4D,color:#0b3d29,stroke:#0b6b46,stroke-width:1px;
+    classDef agents fill:#4129914D,color:#241452,stroke:#2a1a5e,stroke-width:1px;
+    classDef mcp fill:#0078D44D,color:#003a66,stroke:#004e8c,stroke-width:1px;
+    classDef data fill:#8661C54D,color:#3a2a5e,stroke:#5b3f8c,stroke-width:1px;
+    classDef search fill:#50E6FF4D,color:#04434f,stroke:#0099bb,stroke-width:1px;
+    classDef platform fill:#F2C8114D,color:#5c4a00,stroke:#b8960c,stroke-width:1px;
+
+    class CAPP,EAPP apps;
+    class CSA,EAA,CCA,COMP agents;
+    class CDATA,PDATA mcp;
+    class CJSON,TJSON,PMD,KNOW data;
+    class FIDX,CIDX search;
+    class EID,OBS,A365,ACR platform;
+
+    style Apps fill:#00A36C14,stroke:#0b6b46
+    style AgentLayer fill:#41299114,stroke:#2a1a5e
+    style MCPLayer fill:#0078D414,stroke:#004e8c
+    style DataLayer fill:#8661C514,stroke:#5b3f8c
+    style SearchLayer fill:#50E6FF14,stroke:#0099bb
+    style Platform fill:#F2C81114,stroke:#b8960c
+```
+
 
 ### Implementation
 
