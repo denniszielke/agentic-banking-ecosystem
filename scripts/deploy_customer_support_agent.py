@@ -25,6 +25,8 @@ Environment variables (populated from ``.env`` by ``azd up``):
   CUSTOMER_SUPPORT_AGENT_ID              stable gen_ai.agent.id for traces; must
                                          match the external-agent registration
                                          (default: customer-support-agent)
+  OTEL_SERVICE_NAME                      OTel service.name → App Insights
+                                         cloud_RoleName (default: customer-support-agent)
   OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT  capture message content on
                                          GenAI spans (default: true)
   CUSTOMER_SUPPORT_APP_NAME              Container App name (default: customer-support-agent)
@@ -227,6 +229,7 @@ def deploy(tag: str | None = None) -> None:
         # installs the Agent Framework instrumentation without breaking streaming).
         "APPLICATIONINSIGHTS_CONNECTION_STRING": _resolve_appinsights_connection_string(),
         "CUSTOMER_SUPPORT_AGENT_ID": os.getenv("CUSTOMER_SUPPORT_AGENT_ID", "customer-support-agent"),
+        "OTEL_SERVICE_NAME": os.getenv("OTEL_SERVICE_NAME", "customer-support-agent"),
         "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": os.getenv(
             "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true"
         ),
