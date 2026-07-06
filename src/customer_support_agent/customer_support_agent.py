@@ -82,6 +82,50 @@ _MODEL = (
 _AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", "").strip()
 _EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME", "").strip()
 
+# Observability: a stable agent id emitted as ``gen_ai.agent.id`` on every span.
+# It MUST match the ``otel_agent_id`` used when registering this agent as a
+# Foundry external agent (scripts/register_customer_support_external_agent.py),
+# otherwise the emitted traces won't line up with the registration in the portal.
+_CUSTOMER_SUPPORT_AGENT_ID = os.getenv("CUSTOMER_SUPPORT_AGENT_ID", "customer-support-agent")
+
+_APPLICATIONINSIGHTS_CONNECTION_STRING = os.getenv(
+    "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
+).strip()
+
+
+def setup_observability() -> bool:
+    """Configure the Microsoft OpenTelemetry distro → Azure Monitor, once.
+
+    Wires the Microsoft OpenTelemetry distro so Agent Framework model calls, MCP
+    tool calls and human-in-the-loop confirmations are emitted as GenAI
+    spans/events and exported to Application Insights (via
+    ``APPLICATIONINSIGHTS_CONNECTION_STRING``). Must be called **before** the
+    agent is built so the instrumentation hooks are in place.
+
+    Returns ``True`` when telemetry was enabled, or ``False`` when it is skipped
+    because no connection string is configured (local dev). The import is lazy so
+    the module still loads where the telemetry packages are not installed.
+    """
+    if not _APPLICATIONINSIGHTS_CONNECTION_STRING:
+        logger.info("Observability disabled: APPLICATIONINSIGHTS_CONNECTION_STRING not set.")
+        return False
+    try:
+        from microsoft.opentelemetry import use_microsoft_opentelemetry
+    except ImportError:
+        logger.warning(
+            "Observability requested but 'microsoft-opentelemetry' is not "
+            "installed; skipping telemetry setup."
+        )
+        return False
+    # enable_azure_monitor picks up APPLICATIONINSIGHTS_CONNECTION_STRING from the
+    # environment and installs the Agent Framework GenAI instrumentation.
+    use_microsoft_opentelemetry(enable_azure_monitor=True)
+    logger.info(
+        "Observability enabled: exporting GenAI telemetry to Application Insights "
+        "(agent id=%s).", _CUSTOMER_SUPPORT_AGENT_ID,
+    )
+    return True
+
 # MCP servers — Foundry toolbox by default, direct URL override for local dev.
 _CUSTOMER_TOOLBOX_NAME = os.getenv("CUSTOMER_TOOLBOX_NAME", "customer-data-tools")
 _CUSTOMER_TOOLBOX_ENDPOINT = os.getenv("CUSTOMER_TOOLBOX_MCP_ENDPOINT") or (

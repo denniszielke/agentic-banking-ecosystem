@@ -47,16 +47,23 @@ if str(_src_root) not in sys.path:
     sys.path.insert(0, str(_src_root))
 
 from src.customer_support_agent.customer_support_agent import (  # noqa: E402
+    _CUSTOMER_SUPPORT_AGENT_ID,
     _MODEL,
     _PROJECT_ENDPOINT,
     SYSTEM_PROMPT,
     make_mcp_tools,
     make_providers,
+    setup_observability,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logging.getLogger("azure").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
+
+# Configure telemetry BEFORE building the agent so the Agent Framework GenAI
+# instrumentation is installed and model / MCP-tool / human-confirmation spans
+# are exported to Application Insights. No-op when no connection string is set.
+setup_observability()
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
@@ -141,6 +148,7 @@ _agent = Agent(
         model=_MODEL,
         credential=_credential,
     ),
+    id=_CUSTOMER_SUPPORT_AGENT_ID,
     name="CustomerSupportAgent",
     instructions=SYSTEM_PROMPT,
     tools=[update_overview, *_mcp_tools],

@@ -10,3 +10,7 @@ mcp==1.28.1
 fastapi==0.133.0
 uvicorn[standard]==0.49.0
 httpx==0.28.1
+# Observability — Microsoft OpenTelemetry distro exporting GenAI telemetry
+# (model calls, MCP tool calls, human confirmations) to Application Insights.
+microsoft-opentelemetry==1.3.3
+azure-monitor-opentelemetry==1.8.8

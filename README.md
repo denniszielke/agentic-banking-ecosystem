@@ -530,6 +530,38 @@ with `A365_OBSERVABILITY_AGENT_IDS` (comma-separated object ids) or `--agent-id`
 Assignments can take 2–5 minutes to propagate. See
 [the Foundry docs](https://aka.ms/foundry-grant-agent-365-permissions).
 
+### Customer support agent observability (external agent)
+
+The customer support agent runs as a Container App (not a Foundry hosted agent),
+so it is instrumented in-process: on startup it configures the **Microsoft
+OpenTelemetry distro** (`setup_observability()` in
+`src/customer_support_agent/customer_support_agent.py`), exporting GenAI
+telemetry — model calls, **MCP tool calls** and **human confirmations** for write
+operations (`order_product` / `update_customer`) — to Application Insights via
+`APPLICATIONINSIGHTS_CONNECTION_STRING`. Telemetry is a no-op locally when that
+variable is unset.
+
+The deploy script (`scripts/deploy_customer_support_agent.py`) resolves the
+connection string (from `./.env` or the resource group), grants the agent's
+managed identity **Monitoring Metrics Publisher**, and sets a stable
+`CUSTOMER_SUPPORT_AGENT_ID` (the `gen_ai.agent.id` on every span).
+
+To make the spans light up in the portal, register the agent as a Foundry
+**external agent** (preview) — its `otel_agent_id` must match
+`CUSTOMER_SUPPORT_AGENT_ID`. Run once after the agent is deployed:
+
+```bash
+python -m scripts.register_customer_support_external_agent
+```
+
+The script uses `AIProjectClient(..., allow_preview=True)` (adds the
+`Foundry-Features: ExternalAgents=V1Preview` header), assigns the required RBAC
+(Monitoring Metrics Publisher for the managed identity; the project management
+role for the signed-in principal, best-effort), and registers the agent via
+`agents.create_version(ExternalAgentDefinition(otel_agent_id=…))`. Traces then
+appear under **Portal → Project → Agents → `customer-support-agent` → Traces**.
+See the [external-agent registration docs](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/register-external-agent?tabs=python).
+
 ### Cleaning up
 
 Delete the Foundry hosted agents (and optionally their toolboxes), the Container
