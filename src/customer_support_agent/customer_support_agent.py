@@ -5,14 +5,19 @@ customer's everyday questions — "what is my balance?", "list my transactions
 from last month", "what products do I have?", "explain this savings account",
 "where is my nearest branch?" — and can start a product order (human-in-the-loop).
 
-It is grounded on two Azure AI Search indexes (surfaced as context providers):
+It is grounded on a single Azure AI Search index (surfaced as a context
+provider):
 
   1. **Financial products** (``banking-products``) — product discovery and
      explanations.
-  2. **Compliance rules** (``banking-compliance``) — guardrails for
-     regulatory / advice questions.
 
-and reaches the customer's live data through two MCP servers:
+Compliance / regulatory grounding is NOT bundled into this agent. It is only
+available when Bank North's Compliance agent is linked over A2A
+(``COMPLIANCE_A2A_ENABLED=true``), exposed as the ``ask_compliance`` tool. When
+the A2A link is absent the agent has no compliance grounding and must defer
+regulatory / eligibility questions to a human adviser.
+
+It reaches the customer's live data through two MCP servers:
 
   * ``customer_data_mcp_server`` — balances, transactions, personal details.
   * ``product_data_mcp_server`` — list / explain products, order a product.
@@ -28,7 +33,6 @@ Environment variables:
   AZURE_SEARCH_ENDPOINT                   — required
   AZURE_SEARCH_ADMIN_KEY                  — optional; else DefaultAzureCredential
   AZURE_SEARCH_PRODUCT_INDEX_NAME         — default: banking-products
-  AZURE_SEARCH_COMPLIANCE_INDEX_NAME      — default: banking-compliance
   AZURE_AI_PROJECT_ENDPOINT               — Foundry project endpoint (required)
   AZURE_OPENAI_CHAT_DEPLOYMENT_NAME       — model deployment name
   AZURE_AI_MODEL_DEPLOYMENT_NAME          — fallback model name
@@ -71,7 +75,6 @@ _SEARCH_ENDPOINT = os.environ["AZURE_SEARCH_ENDPOINT"]
 _SEARCH_API_KEY = os.getenv("AZURE_SEARCH_ADMIN_KEY", "").strip() or None
 
 _PRODUCT_INDEX = os.getenv("AZURE_SEARCH_PRODUCT_INDEX_NAME", "banking-products")
-_COMPLIANCE_INDEX = os.getenv("AZURE_SEARCH_COMPLIANCE_INDEX_NAME", "banking-compliance")
 
 _PROJECT_ENDPOINT = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
 _MODEL = (
@@ -108,9 +111,9 @@ _PRODUCT_MCP_AUDIENCE = os.getenv("PRODUCT_MCP_AUDIENCE", "").strip()
 # core cross-org story — a real agent-to-agent call across subscription/tenant
 # boundaries, authenticated with Entra ID. It is opt-in: when
 # COMPLIANCE_A2A_ENABLED is truthy the agent gains an ``ask_compliance`` tool
-# backed by the remote agent; otherwise it falls back to the local Compliance
-# rules search index for guardrails (unchanged behaviour). The Compliance rules
-# index remains attached either way.
+# backed by the remote agent. When it is disabled the agent has NO compliance
+# grounding at all — there is no local compliance index fallback — and it must
+# defer regulatory / eligibility questions to a human adviser.
 _COMPLIANCE_A2A_ENABLED = os.getenv("COMPLIANCE_A2A_ENABLED", "false").strip().lower() in {
     "1", "true", "yes", "on",
 }
@@ -155,11 +158,18 @@ Operating principles:
   2. Ground every factual claim (balances, transactions, product conditions,
      branch details) in a tool result, and name the source — the MCP tool, or
      the knowledge file and its numbered section (e.g. "bank-south.md §2.1").
-  3. For any regulatory, eligibility or advice question, apply the compliance
-     guardrails first. If the ask_compliance tool is available, consult it for a
-     compliance decision and cite its answer; otherwise rely on the Compliance
-     rules grounding. If it needs personalised financial advice, say so and
-     defer to a human adviser rather than guessing.
+  3. For any regulatory, eligibility or advice question, you have NO built-in
+     compliance grounding. If the ask_compliance tool is available, consult it
+     for a compliance decision and cite its answer. Before you call it, gather
+     the signed-in customer's relevant data (get_customer, list_accounts) and
+     send a structured, self-contained question — the scenario, the specific
+     product with its category/credit exposure, and the customer's fields
+     (derived age, nationality, tax_residency, kyc_status, segment, existing
+     holdings and whether a reference account exists) — so the answer is specific
+     to this customer, per the compliance-consultation skill. If ask_compliance
+     is NOT available, do not answer from your own knowledge — tell the customer
+     the compliance service is unavailable and defer the question to a human
+     adviser. Always defer personalised financial advice to a human adviser.
   4. Never commit a write (order_product, update_customer) without an explicit
      confirmation step: preview the change, ask the customer to confirm, and
      only then commit with confirm=true.
@@ -243,40 +253,21 @@ def _make_product_provider(
     )
 
 
-def _make_compliance_provider(
-    credential: DefaultAzureCredential,
-    embedding_client: OpenAIEmbeddingClient | None,
-) -> AzureAISearchContextProvider:
-    """Semantic provider for the Compliance rules index — guardrails."""
-    return _FlatFieldContextProvider(
-        source_id="compliance_rules",
-        endpoint=_SEARCH_ENDPOINT,
-        index_name=_COMPLIANCE_INDEX,
-        api_key=_SEARCH_API_KEY,
-        credential=credential if not _SEARCH_API_KEY else None,
-        mode="semantic",
-        top_k=10,
-        embedding_function=embedding_client,
-        vector_field_name="description_vector" if embedding_client else None,
-    )
-
-
 def make_providers(
     credential: DefaultAzureCredential,
 ) -> tuple[
     AzureAISearchContextProvider,
-    AzureAISearchContextProvider,
     OpenAIEmbeddingClient | None,
 ]:
-    """Build the two Azure AI Search context providers and the embedding client.
+    """Build the Financial products context provider and the embedding client.
 
-    Returns ``(product_provider, compliance_provider, embedding_client)``. The
-    providers are async context managers — the caller enters/exits them.
+    Returns ``(product_provider, embedding_client)``. The provider is an async
+    context manager — the caller enters/exits it. Compliance grounding is not
+    included here; it is only available via the ``ask_compliance`` A2A tool.
     """
     embedding_client = _make_embedding_client(credential)
     product_provider = _make_product_provider(credential, embedding_client)
-    compliance_provider = _make_compliance_provider(credential, embedding_client)
-    return product_provider, compliance_provider, embedding_client
+    return product_provider, embedding_client
 
 
 # ---------------------------------------------------------------------------
@@ -382,9 +373,17 @@ _COMPLIANCE_TOOL_DESCRIPTION = (
     "Ask Bank North's Compliance agent (a cross-organisation A2A service) a "
     "regulatory, KYC/AML, sanctions, fraud or product-eligibility question. Use "
     "it whenever a customer request needs a compliance decision or a rule you "
-    "must cite before acting (e.g. eligibility for a product order). The remote "
-    "agent returns grounded guidance with cited sources; relay the decision and "
-    "the citation, and defer to it rather than guessing."
+    "must cite before acting (e.g. eligibility for a product order). "
+    "IMPORTANT: gather the signed-in customer's data first (get_customer, "
+    "list_accounts) and pass a structured, self-contained question that includes "
+    "the scenario, the specific product with its category/credit exposure, and "
+    "the customer's relevant fields (derived age, nationality, tax_residency, "
+    "kyc_status, segment, existing holdings and whether a reference account "
+    "exists) — see the compliance-consultation skill. A question carrying the "
+    "customer facts yields a specific, field-level answer; a bare question yields "
+    "a generic one. The remote agent returns grounded guidance with cited "
+    "sources; relay the decision and the citation, and defer to it rather than "
+    "guessing."
 )
 
 
@@ -448,6 +447,15 @@ def make_compliance_a2a_tool(credential: DefaultAzureCredential):
         name="ask_compliance",
         description=_COMPLIANCE_TOOL_DESCRIPTION,
         arg_name="question",
-        arg_description="The regulatory / compliance / eligibility question in natural language.",
+        arg_description=(
+            "A structured, self-contained compliance question. Include the "
+            "scenario and specific product (with category/credit exposure) plus "
+            "the customer's relevant data-model facts — derived age and DOB, "
+            "nationality, tax_residency, kyc_status, segment, customer-since "
+            "year, and existing holdings (including whether a reference account "
+            "exists). Ask it to list every required field/document, each one's "
+            "required state, and the determination with citations. Mark any fact "
+            "you could not fetch as 'unknown' rather than omitting it."
+        ),
     )
     return tool, a2a_agent
