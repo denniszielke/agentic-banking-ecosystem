@@ -133,6 +133,29 @@ def get_container_app_fqdn(resource_group: str, app_name: str) -> str:
     return result.stdout.strip()
 
 
+def get_containerapp_env_default_domain(resource_group: str, environment_name: str) -> str:
+    """Return the Container Apps environment default domain (empty if none).
+
+    The public FQDN of an external Container App is ``<app-name>.<default-domain>``.
+    Resolving the domain up front lets a deploy set the app's own public base URL
+    as an env var *before* the container starts (needed by FastMCP's OAuth
+    protected-resource metadata).
+    """
+    result = subprocess.run(
+        [
+            "az", "containerapp", "env", "show",
+            "--resource-group", resource_group,
+            "--name", environment_name,
+            "--query", "properties.defaultDomain",
+            "--output", "tsv",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
 def deploy_container_app(
     *,
     app_name: str,

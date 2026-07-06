@@ -126,6 +126,115 @@ python -m scripts.deploy_customer_data_mcp_server --build --register
 python -m scripts.deploy_product_data_mcp_server  --build --register
 ```
 
+#### Protecting the MCP servers with Entra ID
+
+The MCP servers validate Entra ID access tokens **natively inside the app** using
+FastMCP's `AzureJWTVerifier` + `RemoteAuthProvider` (no Container Apps Easy Auth,
+no auth sidecar, no client secret). Auth is on by default
+(`ENTRA_AUTH_ENABLED=true`) — the deploy scripts create an app registration
+(`<app>-mcp-auth`, audience `api://<appId>`), inject the auth config into the
+container (`ENTRA_AUTH_ENABLED`, `MCP_AUTH_CLIENT_ID`, `AZURE_TENANT_ID`,
+`MCP_PUBLIC_BASE_URL`), and print the required audience:
+
+```bash
+python -m scripts.deploy_customer_data_mcp_server --build --register
+python -m scripts.deploy_product_data_mcp_server  --build --register
+```
+
+On each request the provider verifies the token's **issuer**
+(`https://login.microsoftonline.com/<tenant>/v2.0`), **audience** (accepts both
+the bare `<appId>` GUID and `api://<appId>`) and **JWKS signature**;
+unauthenticated requests return **HTTP 401**.
+
+There are two authenticated consumption paths:
+
+- **Toolbox path (hosted agents, e.g. employee advisory)** — the toolbox
+  authenticates to the MCP server with the agent's **Entra Agent Identity**
+  (no client secret). Attach an `AgenticIdentityToken` Foundry connection (auth
+  type = agent identity, audience `api://<appId>`) to each toolbox and pass its
+  id as `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID`; grant the
+  agent identity the `Mcp.Invoke` role with
+  `python -m scripts.grant_agent_identity_mcp_role` (see
+  [Toolbox → MCP with agent identity](#toolbox--mcp-with-agent-identity)).
+- **Direct path (customer support agent)** — the container calls the MCP
+  servers directly with its **managed identity**; the deploy grants that
+  identity the `Mcp.Invoke` role and injects `CUSTOMER_MCP_AUDIENCE` /
+  `PRODUCT_MCP_AUDIENCE` automatically.
+
+Set `ENTRA_AUTH_ENABLED=false` and re-deploy to run anonymously (local
+development, or auth toggled off). See the ops skill for details.
+
+##### Who can authenticate — any user or app in the tenant
+
+The verifier checks **only** the token's issuer, audience and signature — no
+required scope (`required_scopes=[]`), so **both** delegated (user) and app-only
+(managed identity) tokens are accepted, and there is **no per-app allow-list**.
+Any user or app in the tenant holding a valid token for the audience is accepted.
+The app registration exposes both a `user_impersonation` delegated scope (for
+users) and an `Mcp.Invoke` application role (for apps).
+
+Entra still requires each caller to be **granted access once** before it will
+*issue* a token for the custom API — this is a platform invariant that cannot be
+switched off:
+
+| Caller | Flow | One-time grant |
+|---|---|---|
+| **App** (managed identity / service principal) | client credentials, `api://<appId>/.default` | assign the `Mcp.Invoke` app role to its SP (done automatically for the customer support agent) |
+| **User** (interactive) | delegated | consent to `user_impersonation` — run **admin consent** once so users aren't prompted |
+
+Notes:
+- The two MCP servers expose `/health` as an unauthenticated custom route, so
+  Container Apps readiness probes stay green regardless of auth.
+- Acquire a token for testing with
+  `az login --scope api://<appId>/.default` (triggers the one-time user consent),
+  then call the `…/mcp` endpoint with `Authorization: Bearer <token>`.
+- An anonymous request to `…/mcp` returns **HTTP 401** when auth is enabled.
+
+##### Toolbox → MCP with agent identity
+
+Foundry hosted agents (the employee advisory agent) reach the MCP servers
+through toolboxes. Rather than a shared secret, the toolbox authenticates with
+the agent's **Entra Agent Identity**
+([docs](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-identity#tool-authentication)):
+Agent Service mints a token for the agent identity scoped to the MCP server's
+audience (`api://<appId>`) and forwards it; the FastMCP verifier accepts it.
+Wire it up once auth is enabled and the hosted agent is deployed:
+
+1. **Grant the role.** Give the agent identity the `Mcp.Invoke` app role on
+   both MCP app registrations (idempotent; auto-discovers the employee agent
+   identity, or pass `--agent-id <objectId>`):
+
+   ```bash
+   python -m scripts.grant_agent_identity_mcp_role
+   ```
+
+2. **Create the connection.** Run the helper, which creates a `remote-tool`
+   connection per server with `--auth-type agentic-identity` and the server's
+   `api://<appId>` audience (no secret; it just declares the auth type +
+   audience). Install the Foundry azd extension once
+   (`azd ext install microsoft.foundry`), then:
+
+   ```bash
+   # reads AZURE_AI_PROJECT_ENDPOINT + the MCP URLs/audiences from ./.env;
+   # --grant also runs step 1 (Mcp.Invoke) in the same pass
+   python -m scripts.create_mcp_agent_identity_connections --grant
+   ```
+
+   It prints the `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID`
+   lines to add to `./.env`. Under the hood it runs
+   `azd ai connection create <name> --kind remote-tool --target "$*_MCP_URL"
+   --auth-type agentic-identity --audience api://<appId>` per server (you can
+   also create it in the portal: **Custom → MCP → Microsoft Entra → agent
+   identity**). Either way there is no client secret.
+
+3. **Wire and re-register.** Set `CUSTOMER_MCP_CONNECTION_ID` /
+   `PRODUCT_MCP_CONNECTION_ID` in `./.env` to the connection names/ids from
+   step 2 and re-register the toolboxes (`register_customer_data_toolbox` /
+   `register_product_data_toolbox`); a successful run prints
+   `forwarding calls via connection <id>`.
+
+Publishing an agent creates a **new** agent identity — re-run step 1 for it.
+
 ### Creating and populating the search indexes
 
 Create the two Azure AI Search indexes — **Financial products**
@@ -321,8 +430,10 @@ Apps, and the search indexes:
 python -m scripts.delete_agents
 python -m scripts.delete_agents --toolboxes
 
-# Container Apps (customer support agent + customer/product MCP servers)
+# Container Apps (customer support agent + customer/product MCP servers);
+# add --purge-auth to also delete the <app>-mcp-auth Entra app registrations
 python -m scripts.delete_container_apps
+python -m scripts.delete_container_apps --purge-auth
 
 # the two Azure AI Search indexes (schema + data)
 python -m scripts.delete_search_indexes

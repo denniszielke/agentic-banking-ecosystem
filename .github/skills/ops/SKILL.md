@@ -157,7 +157,67 @@ scope / `mcp_WorkIQTools` server; use a granular capability (default:
 3. `WORKIQ_CONNECTION_NAME=workiq-connection python -m scripts.register_workiq_toolbox`.
 
 ---
+## 5b. Protect the MCP Servers with Entra ID
 
+The two MCP servers validate Entra ID access tokens **natively inside the app**
+via FastMCP's `AzureJWTVerifier` + `RemoteAuthProvider` — no Container Apps Easy
+Auth, no auth sidecar, no client secret. Auth is on by default
+(`ENTRA_AUTH_ENABLED=true`), so every request must present a valid token. Opt out
+per deployment for anonymous ingress:
+
+```bash
+azd env set ENTRA_AUTH_ENABLED false   # (or export ENTRA_AUTH_ENABLED=false)
+```
+
+With auth enabled (the default), running the MCP deploy scripts (§4) will, for
+each server:
+- ensure an Entra **app registration** (`<app>-mcp-auth`) with an `Mcp.Invoke`
+  app role — the token audience is `api://<appId>`;
+- inject the auth config into the container (`ENTRA_AUTH_ENABLED`,
+  `MCP_AUTH_CLIENT_ID`, `AZURE_TENANT_ID`, `MCP_PUBLIC_BASE_URL`) so the app
+  verifies each token's **issuer**
+  (`https://login.microsoftonline.com/<tenant>/v2.0`), **audience** (accepts both
+  the bare `<appId>` GUID and `api://<appId>`) and **JWKS signature**; anonymous
+  requests get **HTTP 401**. No required scope, so delegated (user) and app-only
+  (managed identity) tokens are both accepted;
+- print the audience callers must request a token for.
+
+```bash
+ENTRA_AUTH_ENABLED=true python -m scripts.deploy_customer_data_mcp_server --register
+ENTRA_AUTH_ENABLED=true python -m scripts.deploy_product_data_mcp_server  --register
+```
+
+Wire the consumers:
+- **Toolbox path (hosted agents, e.g. employee advisory).** The toolbox
+  authenticates to the MCP server with the agent's **Entra Agent Identity** (no
+  secret). One helper does both the role grant and the connection creation
+  (needs the Foundry azd extension: `azd ext install microsoft.foundry`):
+
+  ```bash
+  # grants the agent identity Mcp.Invoke on both MCP apps, then creates a
+  # remote-tool/agentic-identity connection per server (audience api://<appId>)
+  python -m scripts.create_mcp_agent_identity_connections --grant
+  ```
+
+  It prints the `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID` lines
+  to add to `./.env`; then re-register the toolboxes. Under the hood it runs
+  `python -m scripts.grant_agent_identity_mcp_role` +
+  `azd ai connection create <name> --kind remote-tool --auth-type
+  agentic-identity --audience api://<appId>`. Without the connection the toolbox
+  registration warns and tool calls return 401. Publishing an agent creates a
+  new identity — re-run for it.
+- **Direct path (customer support agent).** `deploy_customer_support_agent`
+  resolves the MCP audiences, grants the agent's managed identity the
+  `Mcp.Invoke` role, and injects `CUSTOMER_MCP_AUDIENCE` / `PRODUCT_MCP_AUDIENCE`
+  so the container attaches an Entra bearer token to its direct MCP calls.
+
+The MCP servers expose `/health` as an unauthenticated custom route, so Container
+Apps readiness probes stay green regardless of auth. Turn auth off by setting
+`ENTRA_AUTH_ENABLED=false` and re-deploying the MCP servers — the app then runs
+anonymously. Requires `az login` with rights to create app registrations and
+app-role assignments.
+
+---
 ## 6. Create & Populate the Search Indexes
 
 Two Azure AI Search indexes: **Financial products** (`banking-products`) and
@@ -295,6 +355,9 @@ python -m scripts.delete_agents --toolboxes   # also delete the toolboxes
 
 # Container Apps (customer support agent + customer/product MCP servers)
 python -m scripts.delete_container_apps
+python -m scripts.delete_container_apps --purge-auth   # also delete the
+                                                      # <app>-mcp-auth Entra
+                                                      # app registrations
 
 # the two Azure AI Search indexes (schema + data)
 python -m scripts.delete_search_indexes
@@ -335,6 +398,10 @@ Most variables are written to `./.env` by `azd up`.
 | `PRODUCT_TOOLBOX_NAME` | manual | default: `product-data-tools` |
 | `WORKIQ_TOOLBOX_NAME` | manual | default: `workiq-tools` |
 | `WORKIQ_MCP_URL` / `WORKIQ_CONNECTION_ID` | manual | WorkIQ MCP URL / OAuth connection id |
+| `ENTRA_AUTH_ENABLED` | manual | validate Entra JWT in-app on MCP servers (default: true) |
+| `CUSTOMER_MCP_CONNECTION_ID` / `PRODUCT_MCP_CONNECTION_ID` | manual | AgenticIdentityToken (agent identity) Foundry connection id the toolbox uses to reach the MCP server |
+| `AGENT_IDENTITY_MCP_IDS` | manual | Entra Agent Identity object ids to grant `Mcp.Invoke` (overrides auto-discovery) |
+| `CUSTOMER_MCP_AUDIENCE` / `PRODUCT_MCP_AUDIENCE` | auto (deploy) | `api://<appId>` audience for direct MCP bearer tokens |
 | `AZURE_AI_COMPLIANCE_AGENT_NAME` | manual | default: `compliance-agent` |
 | `AZURE_AI_EMPLOYEE_AGENT_NAME` | manual | default: `employee-advisory-agent` |
 | `A365_OBSERVABILITY_AGENT_IDS` | manual | agent identity object ids to grant OtelWrite (overrides discovery) |
