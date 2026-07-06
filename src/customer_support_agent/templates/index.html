@@ -152,6 +152,11 @@
         { t: "Recent transactions", q: "I'm customer CUST-1001. List my transactions from last month with categories." },
         { t: "Explain my products", q: "I'm customer CUST-1001. What products do I hold and explain the conditions of my savings account." },
         { t: "Find a branch", q: "Where is my nearest Bank South branch and what are the opening hours?" },
+        // Compliance questions — only answerable when Bank North's compliance
+        // agent is linked over A2A (COMPLIANCE_A2A_ENABLED=true). Without the
+        // A2A link the agent has no compliance grounding and will defer.
+        { t: "Platinum Card limit", q: "What's the typical credit limit for a Platinum Card?", needsComplianceA2A: true },
+        { t: "Credit card application", q: "What income and documentation does a customer need to apply for a credit card?", needsComplianceA2A: true },
       ];
 
       function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
@@ -182,7 +187,8 @@
       STARTERS.forEach(s => {
         const b = document.createElement("button");
         b.type = "button"; b.className = "chip";
-        b.innerHTML = `${s.t}<span>${escapeHtml(s.q.slice(0, 70))}…</span>`;
+        const title = s.needsComplianceA2A ? `${s.t} <em title="Only answered when Bank North's compliance agent is linked via A2A">⚖️ needs compliance A2A</em>` : s.t;
+        b.innerHTML = `${title}<span>${escapeHtml(s.q.slice(0, 70))}…</span>`;
         b.onclick = () => { if (!running) send(s.q); };
         chipsBox.appendChild(b);
       });
