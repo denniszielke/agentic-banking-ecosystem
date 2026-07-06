@@ -393,10 +393,10 @@ def make_compliance_a2a_tool(credential: DefaultAzureCredential):
 
     When ``COMPLIANCE_A2A_ENABLED`` is truthy, wraps Bank North's Compliance
     hosted agent (exposed over A2A) as an ``ask_compliance`` function tool so the
-    customer support agent can consult it across organisational boundaries. The
-    call is authenticated with an Entra bearer token for the Foundry audience,
-    minted per request via the shared credential (reusing the same auth flow as
-    the MCP toolbox calls).
+    customer support agent can consult it across organisational boundaries. Each
+    A2A request is authenticated with a fresh Entra bearer token for the Foundry
+    audience, injected via an A2A client interceptor (minted per request from the
+    shared credential).
 
     Returns ``(tool, a2a_agent)`` where ``a2a_agent`` is an async context manager
     the caller must enter/exit for the app lifetime, or ``(None, None)`` when the
@@ -408,20 +408,41 @@ def make_compliance_a2a_tool(credential: DefaultAzureCredential):
 
     # Imported lazily so the module still loads where agent-framework-a2a is not
     # installed and the A2A integration is switched off.
+    from a2a.client.middleware import ClientCallInterceptor
     from agent_framework.a2a import A2AAgent
 
-    logger.info("Wiring cross-org Compliance A2A agent at %s", _COMPLIANCE_A2A_URL)
     token_provider = get_bearer_token_provider(
         credential, f"{_COMPLIANCE_A2A_AUDIENCE.rstrip('/')}/.default"
     )
-    http_client = httpx.AsyncClient(
-        auth=_ToolboxAuth(token_provider),
-        timeout=120.0,
-    )
+
+    class _BearerTokenInterceptor(ClientCallInterceptor):
+        """Attach a fresh Entra bearer token to every outgoing A2A request.
+
+        The built-in ``AuthInterceptor`` only injects credentials declared in the
+        remote agent card's security schemes; a URL-derived minimal card has
+        none, so we set the Authorization header unconditionally instead.
+        """
+
+        def __init__(self, get_token):
+            self._get_token = get_token
+
+        async def intercept(self, method_name, request_payload, http_kwargs,
+                            agent_card, context):
+            headers = dict(http_kwargs.get("headers") or {})
+            headers["Authorization"] = "Bearer " + await self._get_token()
+            http_kwargs["headers"] = headers
+            return request_payload, http_kwargs
+
+    logger.info("Wiring cross-org Compliance A2A agent at %s", _COMPLIANCE_A2A_URL)
+    # Do NOT pass a custom http_client: when one is supplied together with a
+    # URL-derived card, A2AAgent leaves _close_http_client unset and its
+    # __aexit__ fails / leaks the client. Letting A2AAgent own the client keeps
+    # cleanup correct; auth is applied through the interceptor above.
     a2a_agent = A2AAgent(
         name="compliance",
         url=_COMPLIANCE_A2A_URL,
-        http_client=http_client,
+        auth_interceptor=_BearerTokenInterceptor(token_provider),
+        timeout=120.0,
     )
     tool = a2a_agent.as_tool(
         name="ask_compliance",
