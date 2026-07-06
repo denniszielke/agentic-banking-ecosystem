@@ -162,6 +162,15 @@ def deploy(tag: str | None = None) -> None:
         "AZURE_OPENAI_ENDPOINT": os.getenv("AZURE_OPENAI_ENDPOINT", ""),
         "AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME": os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME", "text-embedding-3-small"),
         "OPENAI_API_VERSION": os.getenv("OPENAI_API_VERSION", "2024-05-01-preview"),
+        # Keep the azure-ai-projects Responses instrumentor OFF (it defaults to
+        # enabled): its AsyncStreamWrapper breaks agent-framework-openai's
+        # streaming with_raw_response...parse() path. Enable via
+        # AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING=true in ./.env.
+        "AZURE_TRACING_GEN_AI_INSTRUMENT_RESPONSES_API": (
+            "true"
+            if os.getenv("AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING", "false").strip().lower() == "true"
+            else "false"
+        ),
         "AZURE_SEARCH_ENDPOINT": get_env("AZURE_SEARCH_ENDPOINT"),
         "AZURE_SEARCH_ADMIN_KEY": os.getenv("AZURE_SEARCH_ADMIN_KEY", ""),
         "AZURE_SEARCH_PRODUCT_INDEX_NAME": os.getenv("AZURE_SEARCH_PRODUCT_INDEX_NAME", "banking-products"),

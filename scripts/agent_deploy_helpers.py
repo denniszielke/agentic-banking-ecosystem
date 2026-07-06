@@ -262,18 +262,26 @@ def patch_agent_card_via_rest(
 def shared_agent_env(project_endpoint: str) -> dict[str, str]:
     """Environment variables common to every banking Foundry hosted agent."""
     model_deployment_name = os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4.1-mini")
+    # Experimental GenAI tracing is OFF by default. When enabled it turns on the
+    # azure-ai-projects Responses instrumentor, which monkeypatches
+    # ``openai.resources.responses.AsyncResponses.create`` and — for streaming —
+    # returns its own ``AsyncStreamWrapper``. That breaks agent-framework-openai's
+    # ``responses.with_raw_response.create(...).parse()`` streaming path with
+    # ``AttributeError: 'AsyncStreamWrapper' object has no attribute 'parse'``.
+    # The azure-ai-projects switch (AZURE_TRACING_GEN_AI_INSTRUMENT_RESPONSES_API)
+    # DEFAULTS TO ENABLED, so we must set it explicitly to "false" to keep the
+    # instrumentor off; the custom AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING flag
+    # is the single opt-in that drives both. Set it to "true" in ./.env to enable.
+    genai_tracing = (
+        os.getenv("AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING", "false").strip().lower()
+        == "true"
+    )
+    tracing_value = "true" if genai_tracing else "false"
     return {
-        # Experimental GenAI tracing is OFF by default. When enabled it turns on
-        # the azure-ai-projects Responses instrumentor, which monkeypatches
-        # ``openai.resources.responses.AsyncResponses.create`` and — for
-        # streaming — returns its own ``AsyncStreamWrapper``. That breaks
-        # agent-framework-openai's ``responses.with_raw_response.create(...).parse()``
-        # streaming path with ``AttributeError: 'AsyncStreamWrapper' object has
-        # no attribute 'parse'``. Opt back in per-deployment by setting
-        # AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING=true in ./.env.
-        "AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING": os.getenv(
-            "AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING", "false"
-        ),
+        "AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING": tracing_value,
+        # The actual azure-ai-projects gate — explicitly disabled by default so
+        # the Responses instrumentor never patches the streaming path.
+        "AZURE_TRACING_GEN_AI_INSTRUMENT_RESPONSES_API": tracing_value,
         "AZURE_SEARCH_ENDPOINT": os.getenv("AZURE_SEARCH_ENDPOINT", ""),
         "AZURE_SEARCH_ADMIN_KEY": os.getenv("AZURE_SEARCH_ADMIN_KEY", ""),
         "AZURE_SEARCH_PRODUCT_INDEX_NAME": os.getenv(
