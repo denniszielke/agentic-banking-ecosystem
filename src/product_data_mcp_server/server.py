@@ -189,19 +189,20 @@ mcp = FastMCP(
     instructions=(
         "Financial product catalogue and per-customer product holdings. Use "
         "these tools to list and explain products (current accounts, savings, "
-        "children's savings, credit cards), look up what a customer holds, "
-        "order a new product and update a holding. Use 'detect_opportunities' to "
-        "proactively surface optimisation ideas — idle cash on a low-interest "
-        "account (with an estimated annual interest gain) or a credit-card "
-        "candidate when the customer holds none. Product orders follow a status "
-        "lifecycle (requested -> approved | rejected; approved -> shipped -> "
-        "delivered): 'order_product' opens an order case, and 'list_orders' / "
-        "'get_order' / 'update_order_status' track and advance it. Interest "
-        "rates are annual percentages and all monetary values are in EUR; "
-        "detailed conditions are in the linked knowledge files. The "
-        "'order_product', 'update_holding' and 'update_order_status' tools are "
-        "write operations and require explicit human approval (human-in-the-loop) "
-        "before they commit."
+        "children's savings, securities depots, credit cards), look up what a "
+        "customer holds, order a new product and update a holding. Use "
+        "'detect_opportunities' to proactively surface optimisation ideas — idle "
+        "cash on a low-interest account (with an estimated annual interest gain) "
+        "or a credit-card candidate when the customer holds none. Product orders "
+        "follow a status lifecycle (requested -> approved | rejected; approved -> "
+        "shipped -> delivered): 'order_product' opens an order case, and "
+        "'list_orders' / 'get_order' / 'update_order_status' track and advance "
+        "it. Interest rates are annual percentages and all monetary values are "
+        "in EUR; a securities depot has no interest rate and its balance is the "
+        "portfolio market value. Detailed conditions are in the linked knowledge "
+        "files. The 'order_product', 'update_holding' and 'update_order_status' "
+        "tools are write operations and require explicit human approval "
+        "(human-in-the-loop) before they commit."
     ),
     auth=_build_auth(),
 )
@@ -219,8 +220,8 @@ def list_products(category: Optional[str] = None) -> list[dict[str, Any]]:
 
     Args:
         category: Optional category filter — ``current_account``, ``savings``,
-            ``childrens_savings`` or ``credit_card`` (case-insensitive). Omit to
-            list every product.
+            ``childrens_savings``, ``securities`` or ``credit_card``
+            (case-insensitive). Omit to list every product.
 
     Each product includes its code, name, category, currency, annual interest
     rate, annual fee, minimum deposit and a reference to the knowledge file that

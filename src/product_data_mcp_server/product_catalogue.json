@@ -85,6 +85,28 @@
       "knowledge_ref": "data/knowledge/childrens-savings-products.md"
     },
     {
+      "product_code": "SECURITIESDEPOT",
+      "product_name": "Securities Depot",
+      "category": "securities",
+      "currency": "EUR",
+      "interest_rate": null,
+      "annual_fee": 0,
+      "min_deposit": 0,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/securities-products.md"
+    },
+    {
+      "product_code": "WEALTHDEPOT",
+      "product_name": "Wealth Depot",
+      "category": "securities",
+      "currency": "EUR",
+      "interest_rate": null,
+      "annual_fee": 48,
+      "min_deposit": 25000,
+      "max_balance": null,
+      "knowledge_ref": "data/knowledge/securities-products.md"
+    },
+    {
       "product_code": "CLASSICCARD",
       "product_name": "ClassicCard",
       "category": "credit_card",

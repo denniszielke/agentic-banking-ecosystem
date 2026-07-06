@@ -12,7 +12,7 @@
         "properties": {
           "category": {
             "type": "string",
-            "description": "Optional category filter — 'current_account', 'savings', 'childrens_savings' or 'credit_card' (case-insensitive). Omit to list every product."
+            "description": "Optional category filter — 'current_account', 'savings', 'childrens_savings', 'securities' or 'credit_card' (case-insensitive). Omit to list every product."
           }
         },
         "required": []

@@ -41,7 +41,8 @@ repository.
    - **Grounding docs:** branch directory `data/knowledge/bank-south.md`; product
      conditions in `data/knowledge/savings-products.md`,
      `data/knowledge/credit-card-products.md`,
-     `data/knowledge/childrens-savings-products.md`.
+     `data/knowledge/childrens-savings-products.md`,
+     `data/knowledge/securities-products.md`.
    - **Hand-offs (A2A):** `credit_card_agent` for card ordering, `compliance_agent`
      for regulatory/advice questions.
 
@@ -92,8 +93,9 @@ via Entra ID. The canonical schema for all entities is defined in `data/products
      holdings in `data/customers.json`, and product conditions in
      `data/knowledge/savings-products.md`,
      `data/knowledge/credit-card-products.md`,
-     `data/knowledge/childrens-savings-products.md`.
-   - **Entities served:** `Product` (catalogue), `ProductHolding`.
+     `data/knowledge/childrens-savings-products.md`,
+     `data/knowledge/securities-products.md`.
+   - **Entities served:** `Product` (catalogue), `ProductHolding`, `Order`.
    - **Tools:** `list_products`, `get_product`, `list_holdings`,
      `detect_opportunities`, `list_orders`, `get_order` (read); `order_product`,
      `update_holding`, `update_order_status` (write, HITL).
@@ -109,7 +111,8 @@ The vector database should support vector searching for products based on the de
    - **Indexer sources:** `data/products.md` (catalogue rows) and the product knowledge
      docs `data/knowledge/savings-products.md`,
      `data/knowledge/credit-card-products.md`,
-     `data/knowledge/childrens-savings-products.md`.
+     `data/knowledge/childrens-savings-products.md`,
+     `data/knowledge/securities-products.md`.
    - **Consumed by:** `customer_support_agent`, `employee_advisory_agent`,
      `credit_card_agent`.
 
@@ -133,7 +136,8 @@ The vector database should support vector searching for scenario_vector and by d
 ### Datamodels
 
 We need three data sets for customers with detailed products.
-Products as described in data/knowledge for credit card products, savings products, and children's savings products.
+Products as described in data/knowledge for credit card products, savings products,
+children's savings products, and securities/depot products.
 
 The canonical data model — entities, fields, relationships, and the MCP tool surface — is
 documented in `data/products.md`. The concrete data instances are:
@@ -147,6 +151,7 @@ documented in `data/products.md`. The concrete data instances are:
 | `data/transactions/CUST-*_transactions.md` | Per-customer transaction mirror | documentation |
 | `data/knowledge/savings-products.md` | FlexSave, GrowthSaver, FixedDeposit Plus conditions | product_data_mcp_server, Financial products index |
 | `data/knowledge/childrens-savings-products.md` | KidsSave, TeenSaver, FutureBuilder conditions | product_data_mcp_server, Financial products index |
+| `data/knowledge/securities-products.md` | Securities Depot, Wealth Depot conditions | product_data_mcp_server, Financial products index |
 | `data/knowledge/credit-card-products.md` | ClassicCard, GoldCard, PlatinumCard conditions | credit_card_agent, Financial products index |
 | `data/knowledge/compliance-regulatory.md` | KYC/AML/sanctions/fraud rules | compliance_agent, Compliance rules index |
 | `data/knowledge/bank-north.md` | Bank North branch directory + routing | customer_support_agent, employee_advisory_agent |
@@ -591,6 +596,7 @@ data/
   knowledge/
     savings-products.md           # -> product_data_mcp_server, Financial products index
     childrens-savings-products.md # -> product_data_mcp_server, Financial products index
+    securities-products.md        # -> product_data_mcp_server, Financial products index
     credit-card-products.md       # -> credit_card_agent, Financial products index
     compliance-regulatory.md      # -> compliance_agent, Compliance rules index
     bank-north.md                 # -> Bank North agents (branch directory + routing)

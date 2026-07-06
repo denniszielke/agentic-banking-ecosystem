@@ -41,7 +41,7 @@ the knowledge base (`data/knowledge/*.md`).
 |-------|------|-------------|
 | `product_code` | string | Primary key (e.g. `FLEXSAVE`, `GOLDCARD`). |
 | `product_name` | string | Display name (e.g. `FlexSave`, `GoldCard`). |
-| `category` | enum | `current_account` \| `savings` \| `childrens_savings` \| `credit_card`. |
+| `category` | enum | `current_account` \| `savings` \| `childrens_savings` \| `securities` \| `credit_card`. |
 | `currency` | string | ISO 4217 (default `EUR`). |
 | `interest_rate` | number | Annual rate in percent (`null` if not applicable). |
 | `annual_fee` | number | Annual fee in EUR (`0` if free). |
@@ -60,6 +60,8 @@ the knowledge base (`data/knowledge/*.md`).
 | KIDSSAVE | KidsSave | childrens_savings | 2.25 | 0 | data/knowledge/childrens-savings-products.md |
 | TEENSAVER | TeenSaver | childrens_savings | 2.75 | 0 | data/knowledge/childrens-savings-products.md |
 | FUTUREBUILDER | FutureBuilder | childrens_savings | 3.25 | 0 | data/knowledge/childrens-savings-products.md |
+| SECURITIESDEPOT | Securities Depot | securities | null | 0 | data/knowledge/securities-products.md |
+| WEALTHDEPOT | Wealth Depot | securities | null | 48 | data/knowledge/securities-products.md |
 | CLASSICCARD | ClassicCard | credit_card | null | 29 | data/knowledge/credit-card-products.md |
 | GOLDCARD | GoldCard | credit_card | null | 89 | data/knowledge/credit-card-products.md |
 | PLATINUMCARD | PlatinumCard | credit_card | null | 199 | data/knowledge/credit-card-products.md |
@@ -67,7 +69,9 @@ the knowledge base (`data/knowledge/*.md`).
 ### 1.3 ProductHolding (a.k.a. Account)
 
 Represents an instance of a product held by a customer. Savings and current accounts have
-an `iban`; credit cards have a `card_number`. Transactions are attached to a holding.
+an `iban`; credit cards have a `card_number`. A securities depot has neither — its
+`balance` is the current **market value** of the portfolio and it carries no transaction
+ledger in this demo. Transactions are attached to a holding.
 
 | Field | Type | Description |
 |-------|------|-------------|

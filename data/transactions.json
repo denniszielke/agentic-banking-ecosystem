@@ -555,104 +555,13 @@
       "products": [
         {
           "account_id": "ACC-100005",
-          "product_code": "CLASSICCARD",
-          "product_name": "ClassicCard",
-          "category": "credit_card",
+          "product_code": "SECURITIESDEPOT",
+          "product_name": "Securities Depot",
+          "category": "securities",
           "iban": null,
-          "card_number": "4539 0100 5003 0155",
+          "card_number": null,
           "currency": "EUR",
-          "transactions": [
-            {
-              "transaction_id": "TXN-14091711",
-              "date": "2026-05-24",
-              "direction": "debit",
-              "amount": 594.02,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Airbnb Stays",
-              "balance_after": 432.21
-            },
-            {
-              "transaction_id": "TXN-85719868",
-              "date": "2026-05-29",
-              "direction": "debit",
-              "amount": 193.0,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "eBuy",
-              "balance_after": 239.21
-            },
-            {
-              "transaction_id": "TXN-50736336",
-              "date": "2026-05-30",
-              "direction": "debit",
-              "amount": 126.96,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "Telekom",
-              "balance_after": 112.25
-            },
-            {
-              "transaction_id": "TXN-48669043",
-              "date": "2026-06-04",
-              "direction": "debit",
-              "amount": 113.68,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "Telekom",
-              "balance_after": -1.43
-            },
-            {
-              "transaction_id": "TXN-42266970",
-              "date": "2026-06-06",
-              "direction": "debit",
-              "amount": 63.58,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Standing Order",
-              "balance_after": -65.01
-            },
-            {
-              "transaction_id": "TXN-84505798",
-              "date": "2026-06-08",
-              "direction": "debit",
-              "amount": 422.79,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "Zalarno",
-              "balance_after": -487.8
-            },
-            {
-              "transaction_id": "TXN-77489688",
-              "date": "2026-06-13",
-              "direction": "debit",
-              "amount": 195.11,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "eBuy",
-              "balance_after": -682.91
-            },
-            {
-              "transaction_id": "TXN-81224089",
-              "date": "2026-06-19",
-              "direction": "debit",
-              "amount": 23.17,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "eBuy",
-              "balance_after": -706.08
-            },
-            {
-              "transaction_id": "TXN-98017841",
-              "date": "2026-06-24",
-              "direction": "debit",
-              "amount": 95.43,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Booking Nest",
-              "balance_after": -801.51
-            }
-          ]
+          "transactions": []
         }
       ]
     },
@@ -1942,646 +1851,535 @@
           "currency": "EUR",
           "transactions": [
             {
-              "transaction_id": "TXN-53582463",
-              "date": "2026-04-19",
-              "direction": "debit",
-              "amount": 407.93,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Deutsche Bahn",
-              "balance_after": 4976.22
-            },
-            {
-              "transaction_id": "TXN-67838356",
-              "date": "2026-04-20",
-              "direction": "credit",
-              "amount": 3323.76,
-              "currency": "EUR",
-              "category": "salary",
-              "merchant": "Umbrella Corp",
-              "balance_after": 8299.98
-            },
-            {
-              "transaction_id": "TXN-99385720",
-              "date": "2026-04-26",
-              "direction": "debit",
-              "amount": 978.89,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Standing Order",
-              "balance_after": 7321.09
-            },
-            {
-              "transaction_id": "TXN-64882280",
-              "date": "2026-05-02",
-              "direction": "debit",
-              "amount": 694.4,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Booking Nest",
-              "balance_after": 6626.69
-            },
-            {
-              "transaction_id": "TXN-96900596",
-              "date": "2026-05-05",
-              "direction": "debit",
-              "amount": 25.88,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "eBuy",
-              "balance_after": 6600.81
-            },
-            {
-              "transaction_id": "TXN-93848314",
-              "date": "2026-05-11",
-              "direction": "debit",
-              "amount": 886.65,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Deutsche Bahn",
-              "balance_after": 5714.16
-            },
-            {
-              "transaction_id": "TXN-14218732",
-              "date": "2026-05-13",
-              "direction": "debit",
-              "amount": 79.22,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "DeskMart",
-              "balance_after": 5634.94
-            },
-            {
-              "transaction_id": "TXN-50993729",
-              "date": "2026-05-17",
-              "direction": "credit",
-              "amount": 1092.85,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Transfer to Savings",
-              "balance_after": 6727.79
-            },
-            {
-              "transaction_id": "TXN-38067779",
-              "date": "2026-05-20",
-              "direction": "debit",
-              "amount": 305.85,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "TechNest",
-              "balance_after": 6421.94
-            },
-            {
-              "transaction_id": "TXN-40824217",
-              "date": "2026-05-25",
-              "direction": "debit",
-              "amount": 30.43,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Carrefour",
-              "balance_after": 6391.51
-            },
-            {
-              "transaction_id": "TXN-49300983",
-              "date": "2026-05-27",
-              "direction": "credit",
-              "amount": 920.62,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Transfer to Savings",
-              "balance_after": 7312.13
-            },
-            {
-              "transaction_id": "TXN-83690229",
-              "date": "2026-05-29",
-              "direction": "debit",
-              "amount": 65.52,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Lidl",
-              "balance_after": 7246.61
-            },
-            {
-              "transaction_id": "TXN-47970082",
-              "date": "2026-05-31",
-              "direction": "debit",
-              "amount": 346.09,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Hotel Meridian",
-              "balance_after": 6900.52
-            },
-            {
-              "transaction_id": "TXN-33014285",
-              "date": "2026-06-01",
-              "direction": "debit",
-              "amount": 256.78,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "RentACar EU",
-              "balance_after": 6643.74
-            },
-            {
-              "transaction_id": "TXN-92063468",
-              "date": "2026-06-03",
-              "direction": "debit",
-              "amount": 655.0,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "RentACar EU",
-              "balance_after": 5988.74
-            },
-            {
-              "transaction_id": "TXN-98410413",
-              "date": "2026-06-04",
-              "direction": "debit",
-              "amount": 124.48,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "Staples Direct",
-              "balance_after": 5864.26
-            },
-            {
-              "transaction_id": "TXN-24272809",
-              "date": "2026-06-07",
-              "direction": "debit",
-              "amount": 217.27,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "Office Depot",
-              "balance_after": 5646.99
-            },
-            {
-              "transaction_id": "TXN-44912565",
-              "date": "2026-06-10",
-              "direction": "debit",
-              "amount": 99.48,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "Office Depot",
-              "balance_after": 5547.51
-            },
-            {
-              "transaction_id": "TXN-24056116",
-              "date": "2026-06-15",
-              "direction": "debit",
-              "amount": 472.46,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "FlixExpress",
-              "balance_after": 5075.05
-            },
-            {
-              "transaction_id": "TXN-98446707",
-              "date": "2026-06-20",
-              "direction": "debit",
-              "amount": 183.2,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "HomeStyle Online",
-              "balance_after": 4891.85
-            },
-            {
-              "transaction_id": "TXN-81475129",
-              "date": "2026-06-25",
-              "direction": "debit",
-              "amount": 56.54,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Burger Loft",
-              "balance_after": 4835.31
-            }
-          ]
-        },
-        {
-          "account_id": "ACC-100013",
-          "product_code": "CLASSICCARD",
-          "product_name": "ClassicCard",
-          "category": "credit_card",
-          "iban": null,
-          "card_number": "4539 0101 3003 0399",
-          "currency": "EUR",
-          "transactions": [
-            {
-              "transaction_id": "TXN-44080119",
-              "date": "2026-03-05",
-              "direction": "debit",
-              "amount": 57.93,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Trattoria Roma",
-              "balance_after": 5241.97
-            },
-            {
-              "transaction_id": "TXN-18684585",
-              "date": "2026-03-07",
-              "direction": "debit",
-              "amount": 150.59,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Lidl",
-              "balance_after": 5091.38
-            },
-            {
-              "transaction_id": "TXN-64801149",
-              "date": "2026-03-12",
-              "direction": "debit",
-              "amount": 922.79,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Deutsche Bahn",
-              "balance_after": 4168.59
-            },
-            {
-              "transaction_id": "TXN-61984386",
-              "date": "2026-03-17",
-              "direction": "debit",
-              "amount": 11.05,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Green Bowl",
-              "balance_after": 4157.54
-            },
-            {
-              "transaction_id": "TXN-99564564",
-              "date": "2026-03-22",
-              "direction": "debit",
-              "amount": 65.24,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "REWE",
-              "balance_after": 4092.3
-            },
-            {
-              "transaction_id": "TXN-24850362",
-              "date": "2026-03-28",
-              "direction": "debit",
-              "amount": 114.16,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Rent Payment",
-              "balance_after": 3978.14
-            },
-            {
-              "transaction_id": "TXN-82264900",
-              "date": "2026-04-01",
-              "direction": "debit",
-              "amount": 71.89,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "REWE",
-              "balance_after": 3906.25
-            },
-            {
-              "transaction_id": "TXN-85481277",
-              "date": "2026-04-03",
-              "direction": "debit",
-              "amount": 152.18,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Carrefour",
-              "balance_after": 3754.07
-            },
-            {
-              "transaction_id": "TXN-86742989",
-              "date": "2026-04-06",
-              "direction": "debit",
-              "amount": 36.57,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "AquaCity",
-              "balance_after": 3717.5
-            },
-            {
-              "transaction_id": "TXN-15737634",
-              "date": "2026-04-08",
-              "direction": "debit",
-              "amount": 110.06,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "P2P Transfer",
-              "balance_after": 3607.44
-            },
-            {
-              "transaction_id": "TXN-74818063",
-              "date": "2026-04-13",
-              "direction": "debit",
-              "amount": 57.91,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "eBuy",
-              "balance_after": 3549.53
-            },
-            {
-              "transaction_id": "TXN-86576432",
-              "date": "2026-04-15",
-              "direction": "debit",
-              "amount": 148.99,
-              "currency": "EUR",
-              "category": "salary",
-              "merchant": "ACME Payroll",
-              "balance_after": 3400.54
-            },
-            {
-              "transaction_id": "TXN-35986082",
-              "date": "2026-04-16",
-              "direction": "debit",
-              "amount": 196.2,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "Stadtwerke",
-              "balance_after": 3204.34
-            },
-            {
-              "transaction_id": "TXN-53256775",
-              "date": "2026-04-20",
-              "direction": "debit",
-              "amount": 166.18,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "Vattenfall",
-              "balance_after": 3038.16
-            },
-            {
-              "transaction_id": "TXN-74519618",
-              "date": "2026-04-25",
-              "direction": "debit",
-              "amount": 237.95,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "TechNest",
-              "balance_after": 2800.21
-            },
-            {
-              "transaction_id": "TXN-55356327",
-              "date": "2026-04-29",
-              "direction": "debit",
-              "amount": 70.63,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Aldi Nord",
-              "balance_after": 2729.58
-            },
-            {
-              "transaction_id": "TXN-83830908",
-              "date": "2026-05-02",
-              "direction": "debit",
-              "amount": 199.78,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "PaperPlus",
-              "balance_after": 2529.8
-            },
-            {
-              "transaction_id": "TXN-38888421",
-              "date": "2026-05-03",
-              "direction": "debit",
-              "amount": 80.52,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "REWE",
-              "balance_after": 2449.28
-            },
-            {
-              "transaction_id": "TXN-34683066",
-              "date": "2026-05-09",
-              "direction": "debit",
-              "amount": 48.11,
-              "currency": "EUR",
-              "category": "salary",
-              "merchant": "ACME Payroll",
-              "balance_after": 2401.17
-            },
-            {
-              "transaction_id": "TXN-22217778",
-              "date": "2026-05-15",
-              "direction": "debit",
-              "amount": 93.37,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Standing Order",
-              "balance_after": 2307.8
-            },
-            {
-              "transaction_id": "TXN-16299882",
-              "date": "2026-05-17",
-              "direction": "debit",
-              "amount": 913.32,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "RentACar EU",
-              "balance_after": 1394.48
-            },
-            {
-              "transaction_id": "TXN-52833462",
-              "date": "2026-05-21",
-              "direction": "debit",
-              "amount": 130.09,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "EDEKA",
-              "balance_after": 1264.39
-            },
-            {
-              "transaction_id": "TXN-92771127",
-              "date": "2026-05-23",
-              "direction": "debit",
-              "amount": 331.16,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "TechNest",
-              "balance_after": 933.23
-            },
-            {
-              "transaction_id": "TXN-84122538",
-              "date": "2026-05-27",
-              "direction": "debit",
-              "amount": 93.43,
-              "currency": "EUR",
-              "category": "salary",
-              "merchant": "Initech AG",
-              "balance_after": 839.8
-            },
-            {
-              "transaction_id": "TXN-91142108",
-              "date": "2026-06-02",
-              "direction": "debit",
-              "amount": 131.42,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Aldi Nord",
-              "balance_after": 708.38
-            },
-            {
-              "transaction_id": "TXN-54179087",
-              "date": "2026-06-06",
-              "direction": "debit",
-              "amount": 153.5,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Carrefour",
-              "balance_after": 554.88
-            },
-            {
-              "transaction_id": "TXN-66143147",
-              "date": "2026-06-12",
-              "direction": "debit",
-              "amount": 442.8,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Booking Nest",
-              "balance_after": 112.08
-            },
-            {
-              "transaction_id": "TXN-69473922",
-              "date": "2026-06-16",
-              "direction": "debit",
-              "amount": 78.4,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "AquaCity",
-              "balance_after": 33.68
-            },
-            {
-              "transaction_id": "TXN-17966795",
-              "date": "2026-06-20",
-              "direction": "debit",
-              "amount": 146.07,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "TechNest",
-              "balance_after": -112.39
-            },
-            {
               "transaction_id": "TXN-72823391",
-              "date": "2026-06-26",
+              "date": "2026-04-14",
               "direction": "debit",
               "amount": 606.67,
               "currency": "EUR",
               "category": "travel",
               "merchant": "Airbnb Stays",
-              "balance_after": -719.06
+              "balance_after": 44329.97
+            },
+            {
+              "transaction_id": "TXN-53582463",
+              "date": "2026-04-18",
+              "direction": "debit",
+              "amount": 407.93,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Deutsche Bahn",
+              "balance_after": 43922.04
+            },
+            {
+              "transaction_id": "TXN-67838356",
+              "date": "2026-04-19",
+              "direction": "credit",
+              "amount": 3323.76,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "Umbrella Corp",
+              "balance_after": 47245.8
+            },
+            {
+              "transaction_id": "TXN-99385720",
+              "date": "2026-04-25",
+              "direction": "debit",
+              "amount": 978.89,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Standing Order",
+              "balance_after": 46266.91
+            },
+            {
+              "transaction_id": "TXN-64882280",
+              "date": "2026-05-01",
+              "direction": "debit",
+              "amount": 694.4,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Booking Nest",
+              "balance_after": 45572.51
+            },
+            {
+              "transaction_id": "TXN-96900596",
+              "date": "2026-05-04",
+              "direction": "debit",
+              "amount": 25.88,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "eBuy",
+              "balance_after": 45546.63
+            },
+            {
+              "transaction_id": "TXN-93848314",
+              "date": "2026-05-10",
+              "direction": "debit",
+              "amount": 886.65,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Deutsche Bahn",
+              "balance_after": 44659.98
+            },
+            {
+              "transaction_id": "TXN-14218732",
+              "date": "2026-05-12",
+              "direction": "debit",
+              "amount": 79.22,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "DeskMart",
+              "balance_after": 44580.76
+            },
+            {
+              "transaction_id": "TXN-50993729",
+              "date": "2026-05-16",
+              "direction": "credit",
+              "amount": 1092.85,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Transfer to Savings",
+              "balance_after": 45673.61
+            },
+            {
+              "transaction_id": "TXN-38067779",
+              "date": "2026-05-19",
+              "direction": "debit",
+              "amount": 305.85,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": 45367.76
+            },
+            {
+              "transaction_id": "TXN-40824217",
+              "date": "2026-05-24",
+              "direction": "debit",
+              "amount": 30.43,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Carrefour",
+              "balance_after": 45337.33
+            },
+            {
+              "transaction_id": "TXN-49300983",
+              "date": "2026-05-26",
+              "direction": "credit",
+              "amount": 920.62,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Transfer to Savings",
+              "balance_after": 46257.95
+            },
+            {
+              "transaction_id": "TXN-83690229",
+              "date": "2026-05-28",
+              "direction": "debit",
+              "amount": 65.52,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Lidl",
+              "balance_after": 46192.43
+            },
+            {
+              "transaction_id": "TXN-47970082",
+              "date": "2026-05-30",
+              "direction": "debit",
+              "amount": 346.09,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Hotel Meridian",
+              "balance_after": 45846.34
+            },
+            {
+              "transaction_id": "TXN-33014285",
+              "date": "2026-05-31",
+              "direction": "debit",
+              "amount": 256.78,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "RentACar EU",
+              "balance_after": 45589.56
+            },
+            {
+              "transaction_id": "TXN-92063468",
+              "date": "2026-06-02",
+              "direction": "debit",
+              "amount": 655.0,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "RentACar EU",
+              "balance_after": 44934.56
+            },
+            {
+              "transaction_id": "TXN-98410413",
+              "date": "2026-06-03",
+              "direction": "debit",
+              "amount": 124.48,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "Staples Direct",
+              "balance_after": 44810.08
+            },
+            {
+              "transaction_id": "TXN-24272809",
+              "date": "2026-06-06",
+              "direction": "debit",
+              "amount": 217.27,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "Office Depot",
+              "balance_after": 44592.81
+            },
+            {
+              "transaction_id": "TXN-44912565",
+              "date": "2026-06-09",
+              "direction": "debit",
+              "amount": 99.48,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "Office Depot",
+              "balance_after": 44493.33
+            },
+            {
+              "transaction_id": "TXN-24056116",
+              "date": "2026-06-14",
+              "direction": "debit",
+              "amount": 472.46,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "FlixExpress",
+              "balance_after": 44020.87
+            },
+            {
+              "transaction_id": "TXN-98446707",
+              "date": "2026-06-19",
+              "direction": "debit",
+              "amount": 183.2,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "HomeStyle Online",
+              "balance_after": 43837.67
+            },
+            {
+              "transaction_id": "TXN-81475129",
+              "date": "2026-06-24",
+              "direction": "debit",
+              "amount": 214.15,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": 43623.52
             }
           ]
         },
         {
-          "account_id": "ACC-100014",
-          "product_code": "GOLDCARD",
-          "product_name": "GoldCard",
-          "category": "credit_card",
+          "account_id": "ACC-100013",
+          "product_code": "SECURITIESDEPOT",
+          "product_name": "Securities Depot",
+          "category": "securities",
           "iban": null,
-          "card_number": "4539 0101 4003 0421",
+          "card_number": null,
+          "currency": "EUR",
+          "transactions": []
+        },
+        {
+          "account_id": "ACC-100014",
+          "product_code": "CURRENTPLUS",
+          "product_name": "Current Account Plus",
+          "category": "current_account",
+          "iban": "DE89 3714 0000 1014 2014 00",
+          "card_number": null,
           "currency": "EUR",
           "transactions": [
             {
-              "transaction_id": "TXN-72065691",
-              "date": "2026-05-20",
-              "direction": "debit",
-              "amount": 152.27,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "FlixExpress",
-              "balance_after": -2036.01
-            },
-            {
-              "transaction_id": "TXN-17620990",
-              "date": "2026-05-21",
-              "direction": "debit",
-              "amount": 90.91,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "Vodafone",
-              "balance_after": -2126.92
-            },
-            {
-              "transaction_id": "TXN-26956981",
-              "date": "2026-05-27",
-              "direction": "debit",
-              "amount": 159.53,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Aldi Nord",
-              "balance_after": -2286.45
-            },
-            {
-              "transaction_id": "TXN-43474635",
-              "date": "2026-05-31",
-              "direction": "debit",
-              "amount": 86.64,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Carrefour",
-              "balance_after": -2373.09
-            },
-            {
-              "transaction_id": "TXN-56447106",
-              "date": "2026-06-02",
-              "direction": "debit",
-              "amount": 164.55,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Rent Payment",
-              "balance_after": -2537.64
-            },
-            {
-              "transaction_id": "TXN-60496807",
-              "date": "2026-06-08",
-              "direction": "debit",
-              "amount": 278.72,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "Amazonia",
-              "balance_after": -2816.36
-            },
-            {
-              "transaction_id": "TXN-92426758",
-              "date": "2026-06-13",
-              "direction": "debit",
-              "amount": 64.18,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "TonerHub",
-              "balance_after": -2880.54
-            },
-            {
-              "transaction_id": "TXN-74150512",
-              "date": "2026-06-16",
-              "direction": "debit",
-              "amount": 50.62,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "DeskMart",
-              "balance_after": -2931.16
-            },
-            {
-              "transaction_id": "TXN-50416913",
-              "date": "2026-06-19",
-              "direction": "debit",
-              "amount": 516.0,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Lufthansa",
-              "balance_after": -3447.16
-            },
-            {
               "transaction_id": "TXN-44000576",
-              "date": "2026-06-21",
+              "date": "2026-03-22",
               "direction": "debit",
               "amount": 243.35,
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "TechNest",
-              "balance_after": -3690.51
+              "balance_after": 28062.89
             },
             {
               "transaction_id": "TXN-75493231",
-              "date": "2026-06-26",
+              "date": "2026-03-27",
               "direction": "debit",
-              "amount": 854.16,
+              "amount": 182.2,
               "currency": "EUR",
               "category": "travel",
-              "merchant": "FlixExpress",
-              "balance_after": -4544.67
+              "merchant": "Hotel Meridian",
+              "balance_after": 27880.69
+            },
+            {
+              "transaction_id": "TXN-44080119",
+              "date": "2026-03-29",
+              "direction": "debit",
+              "amount": 57.93,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Trattoria Roma",
+              "balance_after": 27822.76
+            },
+            {
+              "transaction_id": "TXN-18684585",
+              "date": "2026-03-31",
+              "direction": "debit",
+              "amount": 402.13,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Standing Order",
+              "balance_after": 27420.63
+            },
+            {
+              "transaction_id": "TXN-23915651",
+              "date": "2026-04-03",
+              "direction": "debit",
+              "amount": 137.19,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "TonerHub",
+              "balance_after": 27283.44
+            },
+            {
+              "transaction_id": "TXN-10959534",
+              "date": "2026-04-08",
+              "direction": "debit",
+              "amount": 798.84,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Airbnb Stays",
+              "balance_after": 26484.6
+            },
+            {
+              "transaction_id": "TXN-94772852",
+              "date": "2026-04-10",
+              "direction": "debit",
+              "amount": 833.38,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Rent Payment",
+              "balance_after": 25651.22
+            },
+            {
+              "transaction_id": "TXN-82264900",
+              "date": "2026-04-14",
+              "direction": "debit",
+              "amount": 55.66,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Trattoria Roma",
+              "balance_after": 25595.56
+            },
+            {
+              "transaction_id": "TXN-27056512",
+              "date": "2026-04-19",
+              "direction": "debit",
+              "amount": 93.48,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "REWE",
+              "balance_after": 25502.08
+            },
+            {
+              "transaction_id": "TXN-75446726",
+              "date": "2026-04-21",
+              "direction": "debit",
+              "amount": 418.71,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "HomeStyle Online",
+              "balance_after": 25083.37
+            },
+            {
+              "transaction_id": "TXN-81717097",
+              "date": "2026-04-22",
+              "direction": "debit",
+              "amount": 205.52,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "P2P Transfer",
+              "balance_after": 24877.85
+            },
+            {
+              "transaction_id": "TXN-74818063",
+              "date": "2026-04-27",
+              "direction": "debit",
+              "amount": 57.91,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "eBuy",
+              "balance_after": 24819.94
+            },
+            {
+              "transaction_id": "TXN-86576432",
+              "date": "2026-04-29",
+              "direction": "credit",
+              "amount": 4287.12,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "ACME Payroll",
+              "balance_after": 29107.06
+            },
+            {
+              "transaction_id": "TXN-35986082",
+              "date": "2026-04-30",
+              "direction": "debit",
+              "amount": 196.2,
+              "currency": "EUR",
+              "category": "utilities",
+              "merchant": "Stadtwerke",
+              "balance_after": 28910.86
+            },
+            {
+              "transaction_id": "TXN-53256775",
+              "date": "2026-05-04",
+              "direction": "debit",
+              "amount": 166.18,
+              "currency": "EUR",
+              "category": "utilities",
+              "merchant": "Vattenfall",
+              "balance_after": 28744.68
+            },
+            {
+              "transaction_id": "TXN-74519618",
+              "date": "2026-05-09",
+              "direction": "debit",
+              "amount": 237.95,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": 28506.73
+            },
+            {
+              "transaction_id": "TXN-55356327",
+              "date": "2026-05-13",
+              "direction": "debit",
+              "amount": 70.63,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Aldi Nord",
+              "balance_after": 28436.1
+            },
+            {
+              "transaction_id": "TXN-83830908",
+              "date": "2026-05-16",
+              "direction": "debit",
+              "amount": 199.78,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "PaperPlus",
+              "balance_after": 28236.32
+            },
+            {
+              "transaction_id": "TXN-38888421",
+              "date": "2026-05-17",
+              "direction": "debit",
+              "amount": 598.7,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Rent Payment",
+              "balance_after": 27637.62
+            },
+            {
+              "transaction_id": "TXN-17869408",
+              "date": "2026-05-19",
+              "direction": "credit",
+              "amount": 917.45,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Standing Order",
+              "balance_after": 28555.07
+            },
+            {
+              "transaction_id": "TXN-16299882",
+              "date": "2026-05-21",
+              "direction": "debit",
+              "amount": 913.32,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "RentACar EU",
+              "balance_after": 27641.75
+            },
+            {
+              "transaction_id": "TXN-52833462",
+              "date": "2026-05-25",
+              "direction": "debit",
+              "amount": 130.09,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "EDEKA",
+              "balance_after": 27511.66
+            },
+            {
+              "transaction_id": "TXN-92771127",
+              "date": "2026-05-27",
+              "direction": "debit",
+              "amount": 331.16,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": 27180.5
+            },
+            {
+              "transaction_id": "TXN-84122538",
+              "date": "2026-05-31",
+              "direction": "credit",
+              "amount": 3292.87,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "Initech AG",
+              "balance_after": 30473.37
+            },
+            {
+              "transaction_id": "TXN-91142108",
+              "date": "2026-06-06",
+              "direction": "debit",
+              "amount": 131.42,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Aldi Nord",
+              "balance_after": 30341.95
+            },
+            {
+              "transaction_id": "TXN-54179087",
+              "date": "2026-06-10",
+              "direction": "debit",
+              "amount": 153.5,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Carrefour",
+              "balance_after": 30188.45
+            },
+            {
+              "transaction_id": "TXN-66143147",
+              "date": "2026-06-16",
+              "direction": "debit",
+              "amount": 442.8,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Booking Nest",
+              "balance_after": 29745.65
+            },
+            {
+              "transaction_id": "TXN-69473922",
+              "date": "2026-06-20",
+              "direction": "debit",
+              "amount": 78.4,
+              "currency": "EUR",
+              "category": "utilities",
+              "merchant": "AquaCity",
+              "balance_after": 29667.25
+            },
+            {
+              "transaction_id": "TXN-17966795",
+              "date": "2026-06-24",
+              "direction": "debit",
+              "amount": 146.07,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": 29521.18
             }
           ]
         }
@@ -2712,74 +2510,13 @@
       "products": [
         {
           "account_id": "ACC-100016",
-          "product_code": "CLASSICCARD",
-          "product_name": "ClassicCard",
-          "category": "credit_card",
+          "product_code": "SECURITIESDEPOT",
+          "product_name": "Securities Depot",
+          "category": "securities",
           "iban": null,
-          "card_number": "4539 0101 6003 0483",
+          "card_number": null,
           "currency": "EUR",
-          "transactions": [
-            {
-              "transaction_id": "TXN-48290883",
-              "date": "2026-06-08",
-              "direction": "debit",
-              "amount": 45.26,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Trattoria Roma",
-              "balance_after": 521.36
-            },
-            {
-              "transaction_id": "TXN-41384545",
-              "date": "2026-06-12",
-              "direction": "debit",
-              "amount": 75.24,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "Zalarno",
-              "balance_after": 446.12
-            },
-            {
-              "transaction_id": "TXN-91226414",
-              "date": "2026-06-18",
-              "direction": "debit",
-              "amount": 361.37,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Booking Nest",
-              "balance_after": 84.75
-            },
-            {
-              "transaction_id": "TXN-45566781",
-              "date": "2026-06-21",
-              "direction": "debit",
-              "amount": 914.72,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "FlixExpress",
-              "balance_after": -829.97
-            },
-            {
-              "transaction_id": "TXN-32142480",
-              "date": "2026-06-25",
-              "direction": "debit",
-              "amount": 643.99,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Hotel Meridian",
-              "balance_after": -1473.96
-            },
-            {
-              "transaction_id": "TXN-51540720",
-              "date": "2026-06-28",
-              "direction": "debit",
-              "amount": 224.73,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "TechNest",
-              "balance_after": -1698.69
-            }
-          ]
+          "transactions": []
         },
         {
           "account_id": "ACC-100017",
@@ -2791,6 +2528,77 @@
           "currency": "EUR",
           "transactions": [
             {
+              "transaction_id": "TXN-48290883",
+              "date": "2026-06-08",
+              "direction": "debit",
+              "amount": 45.26,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Trattoria Roma",
+              "balance_after": 168.98
+            },
+            {
+              "transaction_id": "TXN-41384545",
+              "date": "2026-06-12",
+              "direction": "debit",
+              "amount": 75.24,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Zalarno",
+              "balance_after": 93.74
+            },
+            {
+              "transaction_id": "TXN-91226414",
+              "date": "2026-06-18",
+              "direction": "debit",
+              "amount": 361.37,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Booking Nest",
+              "balance_after": -267.63
+            },
+            {
+              "transaction_id": "TXN-45566781",
+              "date": "2026-06-21",
+              "direction": "debit",
+              "amount": 914.72,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "FlixExpress",
+              "balance_after": -1182.35
+            },
+            {
+              "transaction_id": "TXN-32142480",
+              "date": "2026-06-25",
+              "direction": "debit",
+              "amount": 643.99,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Hotel Meridian",
+              "balance_after": -1826.34
+            },
+            {
+              "transaction_id": "TXN-51540720",
+              "date": "2026-06-28",
+              "direction": "debit",
+              "amount": 224.73,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": -2051.07
+            }
+          ]
+        },
+        {
+          "account_id": "ACC-100018",
+          "product_code": "CLASSICCARD",
+          "product_name": "ClassicCard",
+          "category": "credit_card",
+          "iban": null,
+          "card_number": "4539 0101 8003 0547",
+          "currency": "EUR",
+          "transactions": [
+            {
               "transaction_id": "TXN-70696896",
               "date": "2026-03-25",
               "direction": "debit",
@@ -2798,7 +2606,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "RentACar EU",
-              "balance_after": 2374.26
+              "balance_after": 3559.72
             },
             {
               "transaction_id": "TXN-93558572",
@@ -2808,7 +2616,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Cafe Central",
-              "balance_after": 2320.13
+              "balance_after": 3505.59
             },
             {
               "transaction_id": "TXN-67039991",
@@ -2818,7 +2626,7 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "EDEKA",
-              "balance_after": 2229.19
+              "balance_after": 3414.65
             },
             {
               "transaction_id": "TXN-60244223",
@@ -2828,7 +2636,7 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "Lidl",
-              "balance_after": 2136.81
+              "balance_after": 3322.27
             },
             {
               "transaction_id": "TXN-21847007",
@@ -2838,7 +2646,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "Airbnb Stays",
-              "balance_after": 1406.7
+              "balance_after": 2592.16
             },
             {
               "transaction_id": "TXN-12590728",
@@ -2848,7 +2656,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Cafe Central",
-              "balance_after": 1323.41
+              "balance_after": 2508.87
             },
             {
               "transaction_id": "TXN-17326727",
@@ -2858,7 +2666,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Burger Loft",
-              "balance_after": 1215.23
+              "balance_after": 2400.69
             },
             {
               "transaction_id": "TXN-52819047",
@@ -2868,7 +2676,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Sushi Bar Ken",
-              "balance_after": 1139.66
+              "balance_after": 2325.12
             },
             {
               "transaction_id": "TXN-94845278",
@@ -2878,7 +2686,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Burger Loft",
-              "balance_after": 1112.7
+              "balance_after": 2298.16
             },
             {
               "transaction_id": "TXN-69758074",
@@ -2888,7 +2696,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "Booking Nest",
-              "balance_after": 1056.29
+              "balance_after": 2241.75
             },
             {
               "transaction_id": "TXN-36384944",
@@ -2898,7 +2706,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "Hotel Meridian",
-              "balance_after": 541.3
+              "balance_after": 1726.76
             },
             {
               "transaction_id": "TXN-44439518",
@@ -2908,7 +2716,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Sushi Bar Ken",
-              "balance_after": 443.44
+              "balance_after": 1628.9
             },
             {
               "transaction_id": "TXN-38468751",
@@ -2918,7 +2726,7 @@
               "currency": "EUR",
               "category": "salary",
               "merchant": "Initech AG",
-              "balance_after": 291.93
+              "balance_after": 1477.39
             },
             {
               "transaction_id": "TXN-15168101",
@@ -2928,7 +2736,7 @@
               "currency": "EUR",
               "category": "supplies",
               "merchant": "DeskMart",
-              "balance_after": 235.74
+              "balance_after": 1421.2
             },
             {
               "transaction_id": "TXN-45010922",
@@ -2938,7 +2746,7 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "Lidl",
-              "balance_after": 146.96
+              "balance_after": 1332.42
             },
             {
               "transaction_id": "TXN-99861957",
@@ -2948,7 +2756,7 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "Aldi Nord",
-              "balance_after": 27.29
+              "balance_after": 1212.75
             },
             {
               "transaction_id": "TXN-30444267",
@@ -2958,7 +2766,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "FlixExpress",
-              "balance_after": -446.8
+              "balance_after": 738.66
             },
             {
               "transaction_id": "TXN-33095086",
@@ -2968,7 +2776,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Cafe Central",
-              "balance_after": -556.29
+              "balance_after": 629.17
             },
             {
               "transaction_id": "TXN-53326435",
@@ -2978,7 +2786,7 @@
               "currency": "EUR",
               "category": "utilities",
               "merchant": "Vattenfall",
-              "balance_after": -649.59
+              "balance_after": 535.87
             },
             {
               "transaction_id": "TXN-41201686",
@@ -2988,7 +2796,7 @@
               "currency": "EUR",
               "category": "transfer",
               "merchant": "Rent Payment",
-              "balance_after": -744.63
+              "balance_after": 440.83
             },
             {
               "transaction_id": "TXN-98300939",
@@ -2998,7 +2806,7 @@
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "TechNest",
-              "balance_after": -1141.04
+              "balance_after": 44.42
             },
             {
               "transaction_id": "TXN-61856245",
@@ -3008,7 +2816,7 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "Carrefour",
-              "balance_after": -1150.66
+              "balance_after": 34.8
             },
             {
               "transaction_id": "TXN-40170748",
@@ -3018,7 +2826,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Green Bowl",
-              "balance_after": -1174.02
+              "balance_after": 11.44
             },
             {
               "transaction_id": "TXN-78125718",
@@ -3028,7 +2836,7 @@
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "HomeStyle Online",
-              "balance_after": -1580.19
+              "balance_after": -394.73
             },
             {
               "transaction_id": "TXN-20607856",
@@ -3038,7 +2846,7 @@
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "Zalarno",
-              "balance_after": -1831.01
+              "balance_after": -645.55
             },
             {
               "transaction_id": "TXN-96556130",
@@ -3048,148 +2856,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "Airbnb Stays",
-              "balance_after": -2051.07
-            }
-          ]
-        },
-        {
-          "account_id": "ACC-100018",
-          "product_code": "FLEXSAVE",
-          "product_name": "FlexSave",
-          "category": "savings",
-          "iban": "DE44 3718 0000 1018 2018 00",
-          "card_number": null,
-          "currency": "EUR",
-          "transactions": [
-            {
-              "transaction_id": "TXN-67743731",
-              "date": "2026-05-18",
-              "direction": "debit",
-              "amount": 726.42,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "FlixExpress",
-              "balance_after": 20716.85
-            },
-            {
-              "transaction_id": "TXN-45503061",
-              "date": "2026-05-19",
-              "direction": "debit",
-              "amount": 85.28,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "EDEKA",
-              "balance_after": 20631.57
-            },
-            {
-              "transaction_id": "TXN-66516085",
-              "date": "2026-05-21",
-              "direction": "debit",
-              "amount": 117.43,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "AquaCity",
-              "balance_after": 20514.14
-            },
-            {
-              "transaction_id": "TXN-75870021",
-              "date": "2026-05-23",
-              "direction": "debit",
-              "amount": 45.71,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Burger Loft",
-              "balance_after": 20468.43
-            },
-            {
-              "transaction_id": "TXN-57391347",
-              "date": "2026-05-29",
-              "direction": "debit",
-              "amount": 629.92,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Lufthansa",
-              "balance_after": 19838.51
-            },
-            {
-              "transaction_id": "TXN-92625462",
-              "date": "2026-06-03",
-              "direction": "debit",
-              "amount": 198.42,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "HomeStyle Online",
-              "balance_after": 19640.09
-            },
-            {
-              "transaction_id": "TXN-86610481",
-              "date": "2026-06-05",
-              "direction": "debit",
-              "amount": 133.84,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "AquaCity",
-              "balance_after": 19506.25
-            },
-            {
-              "transaction_id": "TXN-77744431",
-              "date": "2026-06-10",
-              "direction": "debit",
-              "amount": 481.02,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Booking Nest",
-              "balance_after": 19025.23
-            },
-            {
-              "transaction_id": "TXN-70363041",
-              "date": "2026-06-13",
-              "direction": "debit",
-              "amount": 54.62,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Burger Loft",
-              "balance_after": 18970.61
-            },
-            {
-              "transaction_id": "TXN-73273372",
-              "date": "2026-06-19",
-              "direction": "debit",
-              "amount": 371.93,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "TechNest",
-              "balance_after": 18598.68
-            },
-            {
-              "transaction_id": "TXN-51726267",
-              "date": "2026-06-23",
-              "direction": "debit",
-              "amount": 19.33,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "HomeStyle Online",
-              "balance_after": 18579.35
-            },
-            {
-              "transaction_id": "TXN-55141186",
-              "date": "2026-06-25",
-              "direction": "debit",
-              "amount": 385.35,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Hotel Meridian",
-              "balance_after": 18194.0
-            },
-            {
-              "transaction_id": "TXN-92942167",
-              "date": "2026-06-28",
-              "direction": "debit",
-              "amount": 45.16,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Aldi Nord",
-              "balance_after": 18148.84
+              "balance_after": -865.61
             }
           ]
         }
@@ -4344,366 +4011,515 @@
           "currency": "EUR",
           "transactions": [
             {
-              "transaction_id": "TXN-84209489",
-              "date": "2026-05-14",
-              "direction": "debit",
-              "amount": 111.17,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Transfer to Savings",
-              "balance_after": -466.8
-            },
-            {
-              "transaction_id": "TXN-69873600",
-              "date": "2026-05-15",
-              "direction": "debit",
-              "amount": 22.67,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "DeskMart",
-              "balance_after": -489.47
-            },
-            {
-              "transaction_id": "TXN-36440740",
-              "date": "2026-05-17",
-              "direction": "debit",
-              "amount": 66.31,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Standing Order",
-              "balance_after": -555.78
-            },
-            {
-              "transaction_id": "TXN-31956180",
-              "date": "2026-05-23",
-              "direction": "debit",
-              "amount": 432.83,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "Amazonia",
-              "balance_after": -988.61
-            },
-            {
-              "transaction_id": "TXN-66277345",
-              "date": "2026-05-29",
-              "direction": "debit",
-              "amount": 37.72,
-              "currency": "EUR",
-              "category": "salary",
-              "merchant": "Umbrella Corp",
-              "balance_after": -1026.33
-            },
-            {
-              "transaction_id": "TXN-59591050",
-              "date": "2026-05-31",
-              "direction": "debit",
-              "amount": 108.04,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Trattoria Roma",
-              "balance_after": -1134.37
-            },
-            {
-              "transaction_id": "TXN-51712693",
-              "date": "2026-06-05",
-              "direction": "debit",
-              "amount": 372.44,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "Amazonia",
-              "balance_after": -1506.81
-            },
-            {
-              "transaction_id": "TXN-68250031",
-              "date": "2026-06-06",
-              "direction": "debit",
-              "amount": 16.46,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "TechNest",
-              "balance_after": -1523.27
-            },
-            {
-              "transaction_id": "TXN-73612282",
-              "date": "2026-06-11",
-              "direction": "debit",
-              "amount": 32.18,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "eBuy",
-              "balance_after": -1555.45
-            },
-            {
-              "transaction_id": "TXN-55803538",
-              "date": "2026-06-13",
-              "direction": "debit",
-              "amount": 402.16,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Deutsche Bahn",
-              "balance_after": -1957.61
-            },
-            {
-              "transaction_id": "TXN-59596453",
-              "date": "2026-06-17",
-              "direction": "debit",
-              "amount": 66.54,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Rent Payment",
-              "balance_after": -2024.15
-            },
-            {
-              "transaction_id": "TXN-39394563",
-              "date": "2026-06-22",
-              "direction": "debit",
-              "amount": 176.25,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Rent Payment",
-              "balance_after": -2200.4
-            },
-            {
-              "transaction_id": "TXN-20038529",
-              "date": "2026-06-26",
-              "direction": "debit",
-              "amount": 42.65,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Aldi Nord",
-              "balance_after": -2243.05
-            }
-          ]
-        },
-        {
-          "account_id": "ACC-100026",
-          "product_code": "GOLDCARD",
-          "product_name": "GoldCard",
-          "category": "credit_card",
-          "iban": null,
-          "card_number": "4539 0102 6003 0789",
-          "currency": "EUR",
-          "transactions": [
-            {
-              "transaction_id": "TXN-23083288",
-              "date": "2026-06-04",
-              "direction": "debit",
-              "amount": 103.23,
-              "currency": "EUR",
-              "category": "salary",
-              "merchant": "Umbrella Corp",
-              "balance_after": -1271.18
-            },
-            {
-              "transaction_id": "TXN-20854804",
-              "date": "2026-06-06",
-              "direction": "debit",
-              "amount": 459.04,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "FlixExpress",
-              "balance_after": -1730.22
-            },
-            {
-              "transaction_id": "TXN-61699682",
-              "date": "2026-06-09",
-              "direction": "debit",
-              "amount": 73.42,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "TonerHub",
-              "balance_after": -1803.64
-            },
-            {
-              "transaction_id": "TXN-65867147",
-              "date": "2026-06-10",
-              "direction": "debit",
-              "amount": 160.91,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "P2P Transfer",
-              "balance_after": -1964.55
-            },
-            {
-              "transaction_id": "TXN-61709146",
-              "date": "2026-06-16",
-              "direction": "debit",
-              "amount": 11.24,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "REWE",
-              "balance_after": -1975.79
-            },
-            {
-              "transaction_id": "TXN-81943198",
-              "date": "2026-06-17",
-              "direction": "debit",
-              "amount": 158.64,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "Vattenfall",
-              "balance_after": -2134.43
-            },
-            {
-              "transaction_id": "TXN-82799226",
-              "date": "2026-06-20",
-              "direction": "debit",
-              "amount": 196.81,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "AquaCity",
-              "balance_after": -2331.24
-            },
-            {
-              "transaction_id": "TXN-99072330",
-              "date": "2026-06-25",
-              "direction": "debit",
-              "amount": 157.33,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Carrefour",
-              "balance_after": -2488.57
-            }
-          ]
-        },
-        {
-          "account_id": "ACC-100027",
-          "product_code": "FIXEDPLUS",
-          "product_name": "FixedDeposit Plus",
-          "category": "savings",
-          "iban": "DE44 3727 0000 1027 2027 00",
-          "card_number": null,
-          "currency": "EUR",
-          "transactions": [
-            {
-              "transaction_id": "TXN-65377085",
-              "date": "2026-05-06",
-              "direction": "debit",
-              "amount": 108.37,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Carrefour",
-              "balance_after": 31804.79
-            },
-            {
-              "transaction_id": "TXN-74701650",
-              "date": "2026-05-12",
-              "direction": "debit",
-              "amount": 70.99,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Sushi Bar Ken",
-              "balance_after": 31733.8
-            },
-            {
-              "transaction_id": "TXN-76289807",
-              "date": "2026-05-18",
-              "direction": "debit",
-              "amount": 63.97,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "EDEKA",
-              "balance_after": 31669.83
-            },
-            {
-              "transaction_id": "TXN-92058198",
-              "date": "2026-05-20",
-              "direction": "debit",
-              "amount": 225.59,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "TechNest",
-              "balance_after": 31444.24
-            },
-            {
-              "transaction_id": "TXN-74768912",
-              "date": "2026-05-23",
-              "direction": "debit",
-              "amount": 59.97,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Sushi Bar Ken",
-              "balance_after": 31384.27
-            },
-            {
-              "transaction_id": "TXN-62650731",
-              "date": "2026-05-29",
-              "direction": "credit",
-              "amount": 841.24,
-              "currency": "EUR",
-              "category": "transfer",
-              "merchant": "Rent Payment",
-              "balance_after": 32225.51
-            },
-            {
-              "transaction_id": "TXN-12284639",
-              "date": "2026-06-02",
-              "direction": "debit",
-              "amount": 125.5,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "Vattenfall",
-              "balance_after": 32100.01
-            },
-            {
-              "transaction_id": "TXN-62032353",
-              "date": "2026-06-03",
-              "direction": "debit",
-              "amount": 23.7,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "PaperPlus",
-              "balance_after": 32076.31
-            },
-            {
-              "transaction_id": "TXN-72194337",
-              "date": "2026-06-07",
-              "direction": "debit",
-              "amount": 158.57,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "REWE",
-              "balance_after": 31917.74
-            },
-            {
-              "transaction_id": "TXN-29798425",
-              "date": "2026-06-09",
-              "direction": "debit",
-              "amount": 768.48,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Airbnb Stays",
-              "balance_after": 31149.26
-            },
-            {
               "transaction_id": "TXN-45363992",
-              "date": "2026-06-15",
+              "date": "2026-04-02",
               "direction": "debit",
               "amount": 170.46,
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "eBuy",
-              "balance_after": 30978.8
+              "balance_after": -11803.33
             },
             {
               "transaction_id": "TXN-19771217",
-              "date": "2026-06-21",
+              "date": "2026-04-08",
               "direction": "debit",
               "amount": 46.1,
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "Amazonia",
-              "balance_after": 30932.7
+              "balance_after": -11849.43
             },
             {
               "transaction_id": "TXN-87587967",
-              "date": "2026-06-27",
+              "date": "2026-04-14",
               "direction": "debit",
-              "amount": 34.45,
+              "amount": 65.19,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": -11914.62
+            },
+            {
+              "transaction_id": "TXN-23083288",
+              "date": "2026-04-17",
+              "direction": "debit",
+              "amount": 103.23,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "Umbrella Corp",
+              "balance_after": -12017.85
+            },
+            {
+              "transaction_id": "TXN-20854804",
+              "date": "2026-04-19",
+              "direction": "debit",
+              "amount": 459.04,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "FlixExpress",
+              "balance_after": -12476.89
+            },
+            {
+              "transaction_id": "TXN-61699682",
+              "date": "2026-04-22",
+              "direction": "debit",
+              "amount": 73.42,
               "currency": "EUR",
               "category": "supplies",
               "merchant": "TonerHub",
-              "balance_after": 30898.25
+              "balance_after": -12550.31
+            },
+            {
+              "transaction_id": "TXN-65867147",
+              "date": "2026-04-23",
+              "direction": "debit",
+              "amount": 160.91,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "P2P Transfer",
+              "balance_after": -12711.22
+            },
+            {
+              "transaction_id": "TXN-61709146",
+              "date": "2026-04-29",
+              "direction": "debit",
+              "amount": 11.24,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "REWE",
+              "balance_after": -12722.46
+            },
+            {
+              "transaction_id": "TXN-81943198",
+              "date": "2026-04-30",
+              "direction": "debit",
+              "amount": 350.91,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": -13073.37
+            },
+            {
+              "transaction_id": "TXN-55092401",
+              "date": "2026-05-05",
+              "direction": "debit",
+              "amount": 71.8,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Green Bowl",
+              "balance_after": -13145.17
+            },
+            {
+              "transaction_id": "TXN-87401676",
+              "date": "2026-05-10",
+              "direction": "debit",
+              "amount": 116.94,
+              "currency": "EUR",
+              "category": "utilities",
+              "merchant": "AquaCity",
+              "balance_after": -13262.11
+            },
+            {
+              "transaction_id": "TXN-84209489",
+              "date": "2026-05-12",
+              "direction": "debit",
+              "amount": 111.17,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Transfer to Savings",
+              "balance_after": -13373.28
+            },
+            {
+              "transaction_id": "TXN-69873600",
+              "date": "2026-05-13",
+              "direction": "debit",
+              "amount": 22.67,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "DeskMart",
+              "balance_after": -13395.95
+            },
+            {
+              "transaction_id": "TXN-36440740",
+              "date": "2026-05-15",
+              "direction": "debit",
+              "amount": 66.31,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Standing Order",
+              "balance_after": -13462.26
+            },
+            {
+              "transaction_id": "TXN-31956180",
+              "date": "2026-05-21",
+              "direction": "debit",
+              "amount": 432.83,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": -13895.09
+            },
+            {
+              "transaction_id": "TXN-66277345",
+              "date": "2026-05-27",
+              "direction": "debit",
+              "amount": 37.72,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "Umbrella Corp",
+              "balance_after": -13932.81
+            },
+            {
+              "transaction_id": "TXN-59591050",
+              "date": "2026-05-29",
+              "direction": "debit",
+              "amount": 108.04,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Trattoria Roma",
+              "balance_after": -14040.85
+            },
+            {
+              "transaction_id": "TXN-51712693",
+              "date": "2026-06-03",
+              "direction": "debit",
+              "amount": 372.44,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": -14413.29
+            },
+            {
+              "transaction_id": "TXN-68250031",
+              "date": "2026-06-04",
+              "direction": "debit",
+              "amount": 191.72,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Transfer to Savings",
+              "balance_after": -14605.01
+            },
+            {
+              "transaction_id": "TXN-34953017",
+              "date": "2026-06-08",
+              "direction": "debit",
+              "amount": 412.74,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": -15017.75
+            },
+            {
+              "transaction_id": "TXN-32461308",
+              "date": "2026-06-12",
+              "direction": "debit",
+              "amount": 350.55,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Deutsche Bahn",
+              "balance_after": -15368.3
+            },
+            {
+              "transaction_id": "TXN-65337204",
+              "date": "2026-06-15",
+              "direction": "debit",
+              "amount": 923.04,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Deutsche Bahn",
+              "balance_after": -16291.34
+            },
+            {
+              "transaction_id": "TXN-23053660",
+              "date": "2026-06-17",
+              "direction": "debit",
+              "amount": 260.65,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "eBuy",
+              "balance_after": -16551.99
+            },
+            {
+              "transaction_id": "TXN-56090160",
+              "date": "2026-06-22",
+              "direction": "debit",
+              "amount": 62.01,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Cafe Central",
+              "balance_after": -16614.0
+            },
+            {
+              "transaction_id": "TXN-71059381",
+              "date": "2026-06-24",
+              "direction": "debit",
+              "amount": 517.96,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Booking Nest",
+              "balance_after": -17131.96
+            }
+          ]
+        },
+        {
+          "account_id": "ACC-100026",
+          "product_code": "WEALTHDEPOT",
+          "product_name": "Wealth Depot",
+          "category": "securities",
+          "iban": null,
+          "card_number": null,
+          "currency": "EUR",
+          "transactions": []
+        },
+        {
+          "account_id": "ACC-100027",
+          "product_code": "GOLDCARD",
+          "product_name": "GoldCard",
+          "category": "credit_card",
+          "iban": null,
+          "card_number": "4539 0102 7003 0811",
+          "currency": "EUR",
+          "transactions": [
+            {
+              "transaction_id": "TXN-92326588",
+              "date": "2026-04-16",
+              "direction": "debit",
+              "amount": 261.48,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": 2974.06
+            },
+            {
+              "transaction_id": "TXN-13783539",
+              "date": "2026-04-19",
+              "direction": "debit",
+              "amount": 438.73,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "RentACar EU",
+              "balance_after": 2535.33
+            },
+            {
+              "transaction_id": "TXN-32769710",
+              "date": "2026-04-21",
+              "direction": "debit",
+              "amount": 476.21,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": 2059.12
+            },
+            {
+              "transaction_id": "TXN-21478628",
+              "date": "2026-04-24",
+              "direction": "debit",
+              "amount": 47.53,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "Umbrella Corp",
+              "balance_after": 2011.59
+            },
+            {
+              "transaction_id": "TXN-61481082",
+              "date": "2026-04-28",
+              "direction": "debit",
+              "amount": 97.56,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "HomeStyle Online",
+              "balance_after": 1914.03
+            },
+            {
+              "transaction_id": "TXN-45493335",
+              "date": "2026-04-30",
+              "direction": "debit",
+              "amount": 62.87,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Trattoria Roma",
+              "balance_after": 1851.16
+            },
+            {
+              "transaction_id": "TXN-85811160",
+              "date": "2026-05-01",
+              "direction": "debit",
+              "amount": 35.74,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Trattoria Roma",
+              "balance_after": 1815.42
+            },
+            {
+              "transaction_id": "TXN-69318553",
+              "date": "2026-05-02",
+              "direction": "debit",
+              "amount": 173.31,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "Umbrella Corp",
+              "balance_after": 1642.11
+            },
+            {
+              "transaction_id": "TXN-51770525",
+              "date": "2026-05-05",
+              "direction": "debit",
+              "amount": 367.15,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": 1274.96
+            },
+            {
+              "transaction_id": "TXN-56587442",
+              "date": "2026-05-09",
+              "direction": "debit",
+              "amount": 210.92,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "eBuy",
+              "balance_after": 1064.04
+            },
+            {
+              "transaction_id": "TXN-70927205",
+              "date": "2026-05-14",
+              "direction": "debit",
+              "amount": 22.05,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Carrefour",
+              "balance_after": 1041.99
+            },
+            {
+              "transaction_id": "TXN-92556933",
+              "date": "2026-05-20",
+              "direction": "debit",
+              "amount": 49.49,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Carrefour",
+              "balance_after": 992.5
+            },
+            {
+              "transaction_id": "TXN-41723942",
+              "date": "2026-05-21",
+              "direction": "debit",
+              "amount": 32.67,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "HomeStyle Online",
+              "balance_after": 959.83
+            },
+            {
+              "transaction_id": "TXN-11670644",
+              "date": "2026-05-22",
+              "direction": "debit",
+              "amount": 138.34,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "REWE",
+              "balance_after": 821.49
+            },
+            {
+              "transaction_id": "TXN-65377085",
+              "date": "2026-05-23",
+              "direction": "debit",
+              "amount": 108.37,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Carrefour",
+              "balance_after": 713.12
+            },
+            {
+              "transaction_id": "TXN-74701650",
+              "date": "2026-05-29",
+              "direction": "debit",
+              "amount": 70.99,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Sushi Bar Ken",
+              "balance_after": 642.13
+            },
+            {
+              "transaction_id": "TXN-76289807",
+              "date": "2026-06-04",
+              "direction": "debit",
+              "amount": 63.97,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "EDEKA",
+              "balance_after": 578.16
+            },
+            {
+              "transaction_id": "TXN-92058198",
+              "date": "2026-06-06",
+              "direction": "debit",
+              "amount": 225.59,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": 352.57
+            },
+            {
+              "transaction_id": "TXN-74768912",
+              "date": "2026-06-09",
+              "direction": "debit",
+              "amount": 59.97,
+              "currency": "EUR",
+              "category": "dining",
+              "merchant": "Sushi Bar Ken",
+              "balance_after": 292.6
+            },
+            {
+              "transaction_id": "TXN-62650731",
+              "date": "2026-06-15",
+              "direction": "debit",
+              "amount": 79.21,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Rent Payment",
+              "balance_after": 213.39
+            },
+            {
+              "transaction_id": "TXN-12284639",
+              "date": "2026-06-19",
+              "direction": "debit",
+              "amount": 125.5,
+              "currency": "EUR",
+              "category": "utilities",
+              "merchant": "Vattenfall",
+              "balance_after": 87.89
+            },
+            {
+              "transaction_id": "TXN-62032353",
+              "date": "2026-06-20",
+              "direction": "debit",
+              "amount": 16.55,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Lidl",
+              "balance_after": 71.34
+            },
+            {
+              "transaction_id": "TXN-66341217",
+              "date": "2026-06-21",
+              "direction": "debit",
+              "amount": 165.44,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Transfer to Savings",
+              "balance_after": -94.1
+            },
+            {
+              "transaction_id": "TXN-34254067",
+              "date": "2026-06-26",
+              "direction": "debit",
+              "amount": 182.17,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "Staples Direct",
+              "balance_after": -276.27
             }
           ]
         }
@@ -5248,11 +5064,11 @@
         },
         {
           "account_id": "ACC-100030",
-          "product_code": "CLASSICCARD",
-          "product_name": "ClassicCard",
-          "category": "credit_card",
-          "iban": null,
-          "card_number": "4539 0103 0003 0906",
+          "product_code": "FLEXSAVE",
+          "product_name": "FlexSave",
+          "category": "savings",
+          "iban": "DE44 3730 0000 1030 2030 00",
+          "card_number": null,
           "currency": "EUR",
           "transactions": [
             {
@@ -5263,7 +5079,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "FlixExpress",
-              "balance_after": 1800.29
+              "balance_after": 28121.48
             },
             {
               "transaction_id": "TXN-77459162",
@@ -5273,17 +5089,17 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "EDEKA",
-              "balance_after": 1714.46
+              "balance_after": 28035.65
             },
             {
               "transaction_id": "TXN-17501083",
               "date": "2026-04-21",
               "direction": "debit",
-              "amount": 29.45,
+              "amount": 1136.02,
               "currency": "EUR",
               "category": "transfer",
               "merchant": "Rent Payment",
-              "balance_after": 1685.01
+              "balance_after": 26899.63
             },
             {
               "transaction_id": "TXN-34576863",
@@ -5293,7 +5109,7 @@
               "currency": "EUR",
               "category": "utilities",
               "merchant": "Vattenfall",
-              "balance_after": 1517.55
+              "balance_after": 26732.17
             },
             {
               "transaction_id": "TXN-89650247",
@@ -5303,7 +5119,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "RentACar EU",
-              "balance_after": 1191.04
+              "balance_after": 26405.66
             },
             {
               "transaction_id": "TXN-81020476",
@@ -5313,7 +5129,7 @@
               "currency": "EUR",
               "category": "utilities",
               "merchant": "Vodafone",
-              "balance_after": 985.32
+              "balance_after": 26199.94
             },
             {
               "transaction_id": "TXN-70009526",
@@ -5323,7 +5139,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Trattoria Roma",
-              "balance_after": 906.05
+              "balance_after": 26120.67
             },
             {
               "transaction_id": "TXN-46534080",
@@ -5333,7 +5149,7 @@
               "currency": "EUR",
               "category": "utilities",
               "merchant": "AquaCity",
-              "balance_after": 878.23
+              "balance_after": 26092.85
             },
             {
               "transaction_id": "TXN-86190613",
@@ -5343,7 +5159,7 @@
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "TechNest",
-              "balance_after": 724.08
+              "balance_after": 25938.7
             },
             {
               "transaction_id": "TXN-49004477",
@@ -5353,7 +5169,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Cafe Central",
-              "balance_after": 631.9
+              "balance_after": 25846.52
             },
             {
               "transaction_id": "TXN-96518198",
@@ -5363,7 +5179,7 @@
               "currency": "EUR",
               "category": "utilities",
               "merchant": "Stadtwerke",
-              "balance_after": 483.6
+              "balance_after": 25698.22
             },
             {
               "transaction_id": "TXN-74261692",
@@ -5373,7 +5189,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Cafe Central",
-              "balance_after": 380.74
+              "balance_after": 25595.36
             },
             {
               "transaction_id": "TXN-38000108",
@@ -5383,7 +5199,7 @@
               "currency": "EUR",
               "category": "supplies",
               "merchant": "DeskMart",
-              "balance_after": 176.97
+              "balance_after": 25391.59
             },
             {
               "transaction_id": "TXN-65487863",
@@ -5393,7 +5209,7 @@
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "Amazonia",
-              "balance_after": -88.26
+              "balance_after": 25126.36
             },
             {
               "transaction_id": "TXN-37759250",
@@ -5403,7 +5219,7 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "EDEKA",
-              "balance_after": -201.85
+              "balance_after": 25012.77
             },
             {
               "transaction_id": "TXN-76917958",
@@ -5413,7 +5229,7 @@
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "eBuy",
-              "balance_after": -499.22
+              "balance_after": 24715.4
             },
             {
               "transaction_id": "TXN-65868744",
@@ -5423,7 +5239,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Green Bowl",
-              "balance_after": -521.26
+              "balance_after": 24693.36
             },
             {
               "transaction_id": "TXN-19740392",
@@ -5433,7 +5249,7 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "Lidl",
-              "balance_after": -651.32
+              "balance_after": 24563.3
             },
             {
               "transaction_id": "TXN-99216436",
@@ -5443,7 +5259,7 @@
               "currency": "EUR",
               "category": "groceries",
               "merchant": "Aldi Nord",
-              "balance_after": -676.08
+              "balance_after": 24538.54
             },
             {
               "transaction_id": "TXN-77173078",
@@ -5453,7 +5269,7 @@
               "currency": "EUR",
               "category": "travel",
               "merchant": "Booking Nest",
-              "balance_after": -974.49
+              "balance_after": 24240.13
             },
             {
               "transaction_id": "TXN-92298091",
@@ -5463,7 +5279,7 @@
               "currency": "EUR",
               "category": "dining",
               "merchant": "Burger Loft",
-              "balance_after": -997.83
+              "balance_after": 24216.79
             },
             {
               "transaction_id": "TXN-69027613",
@@ -5473,7 +5289,7 @@
               "currency": "EUR",
               "category": "online_shopping",
               "merchant": "Zalarno",
-              "balance_after": -1116.94
+              "balance_after": 24097.68
             }
           ]
         }
@@ -6147,154 +5963,13 @@
         },
         {
           "account_id": "ACC-100035",
-          "product_code": "FLEXSAVE",
-          "product_name": "FlexSave",
-          "category": "savings",
-          "iban": "DE44 3735 0000 1035 2035 00",
+          "product_code": "SECURITIESDEPOT",
+          "product_name": "Securities Depot",
+          "category": "securities",
+          "iban": null,
           "card_number": null,
           "currency": "EUR",
-          "transactions": [
-            {
-              "transaction_id": "TXN-81383647",
-              "date": "2026-05-31",
-              "direction": "debit",
-              "amount": 312.8,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Lufthansa",
-              "balance_after": 42912.77
-            },
-            {
-              "transaction_id": "TXN-56320430",
-              "date": "2026-06-04",
-              "direction": "debit",
-              "amount": 503.91,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Booking Nest",
-              "balance_after": 42408.86
-            },
-            {
-              "transaction_id": "TXN-89599189",
-              "date": "2026-06-09",
-              "direction": "debit",
-              "amount": 34.56,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Aldi Nord",
-              "balance_after": 42374.3
-            },
-            {
-              "transaction_id": "TXN-30848403",
-              "date": "2026-06-11",
-              "direction": "debit",
-              "amount": 117.63,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Burger Loft",
-              "balance_after": 42256.67
-            },
-            {
-              "transaction_id": "TXN-35196704",
-              "date": "2026-06-12",
-              "direction": "debit",
-              "amount": 66.95,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "REWE",
-              "balance_after": 42189.72
-            },
-            {
-              "transaction_id": "TXN-36760230",
-              "date": "2026-06-14",
-              "direction": "debit",
-              "amount": 58.47,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "REWE",
-              "balance_after": 42131.25
-            },
-            {
-              "transaction_id": "TXN-91769232",
-              "date": "2026-06-15",
-              "direction": "debit",
-              "amount": 45.27,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "AquaCity",
-              "balance_after": 42085.98
-            },
-            {
-              "transaction_id": "TXN-94489432",
-              "date": "2026-06-17",
-              "direction": "credit",
-              "amount": 3460.89,
-              "currency": "EUR",
-              "category": "salary",
-              "merchant": "ACME Payroll",
-              "balance_after": 45546.87
-            },
-            {
-              "transaction_id": "TXN-41471134",
-              "date": "2026-06-18",
-              "direction": "debit",
-              "amount": 149.16,
-              "currency": "EUR",
-              "category": "utilities",
-              "merchant": "Vodafone",
-              "balance_after": 45397.71
-            },
-            {
-              "transaction_id": "TXN-37278901",
-              "date": "2026-06-20",
-              "direction": "debit",
-              "amount": 470.73,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "eBuy",
-              "balance_after": 44926.98
-            },
-            {
-              "transaction_id": "TXN-75441379",
-              "date": "2026-06-22",
-              "direction": "debit",
-              "amount": 351.35,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "Amazonia",
-              "balance_after": 44575.63
-            },
-            {
-              "transaction_id": "TXN-16759642",
-              "date": "2026-06-24",
-              "direction": "debit",
-              "amount": 690.84,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "Booking Nest",
-              "balance_after": 43884.79
-            },
-            {
-              "transaction_id": "TXN-81383918",
-              "date": "2026-06-25",
-              "direction": "debit",
-              "amount": 110.41,
-              "currency": "EUR",
-              "category": "dining",
-              "merchant": "Burger Loft",
-              "balance_after": 43774.38
-            },
-            {
-              "transaction_id": "TXN-14784054",
-              "date": "2026-06-26",
-              "direction": "debit",
-              "amount": 23.41,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "TonerHub",
-              "balance_after": 43750.97
-            }
-          ]
+          "transactions": []
         }
       ]
     },
@@ -6305,92 +5980,282 @@
       "products": [
         {
           "account_id": "ACC-100036",
-          "product_code": "PLATINUMCARD",
-          "product_name": "PlatinumCard",
+          "product_code": "GOLDCARD",
+          "product_name": "GoldCard",
           "category": "credit_card",
           "iban": null,
           "card_number": "4539 0103 6003 1083",
           "currency": "EUR",
           "transactions": [
             {
+              "transaction_id": "TXN-31303896",
+              "date": "2026-03-25",
+              "direction": "debit",
+              "amount": 112.3,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Lidl",
+              "balance_after": -518.67
+            },
+            {
+              "transaction_id": "TXN-50268090",
+              "date": "2026-03-28",
+              "direction": "debit",
+              "amount": 224.41,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": -743.08
+            },
+            {
+              "transaction_id": "TXN-80556194",
+              "date": "2026-03-30",
+              "direction": "debit",
+              "amount": 294.83,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "TechNest",
+              "balance_after": -1037.91
+            },
+            {
+              "transaction_id": "TXN-45322405",
+              "date": "2026-04-03",
+              "direction": "debit",
+              "amount": 123.4,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "Umbrella Corp",
+              "balance_after": -1161.31
+            },
+            {
+              "transaction_id": "TXN-30674876",
+              "date": "2026-04-04",
+              "direction": "debit",
+              "amount": 168.38,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": -1329.69
+            },
+            {
+              "transaction_id": "TXN-84556522",
+              "date": "2026-04-06",
+              "direction": "debit",
+              "amount": 67.55,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Rent Payment",
+              "balance_after": -1397.24
+            },
+            {
+              "transaction_id": "TXN-75613510",
+              "date": "2026-04-09",
+              "direction": "debit",
+              "amount": 154.97,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "REWE",
+              "balance_after": -1552.21
+            },
+            {
+              "transaction_id": "TXN-41756404",
+              "date": "2026-04-14",
+              "direction": "debit",
+              "amount": 398.93,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Amazonia",
+              "balance_after": -1951.14
+            },
+            {
+              "transaction_id": "TXN-69116377",
+              "date": "2026-04-18",
+              "direction": "debit",
+              "amount": 278.89,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "Zalarno",
+              "balance_after": -2230.03
+            },
+            {
+              "transaction_id": "TXN-64673266",
+              "date": "2026-04-24",
+              "direction": "debit",
+              "amount": 12.57,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "REWE",
+              "balance_after": -2242.6
+            },
+            {
+              "transaction_id": "TXN-17542864",
+              "date": "2026-04-30",
+              "direction": "debit",
+              "amount": 91.76,
+              "currency": "EUR",
+              "category": "utilities",
+              "merchant": "Stadtwerke",
+              "balance_after": -2334.36
+            },
+            {
+              "transaction_id": "TXN-45636356",
+              "date": "2026-05-06",
+              "direction": "debit",
+              "amount": 201.78,
+              "currency": "EUR",
+              "category": "utilities",
+              "merchant": "Stadtwerke",
+              "balance_after": -2536.14
+            },
+            {
+              "transaction_id": "TXN-84164054",
+              "date": "2026-05-07",
+              "direction": "debit",
+              "amount": 162.68,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Standing Order",
+              "balance_after": -2698.82
+            },
+            {
+              "transaction_id": "TXN-14893901",
+              "date": "2026-05-11",
+              "direction": "debit",
+              "amount": 112.3,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "P2P Transfer",
+              "balance_after": -2811.12
+            },
+            {
+              "transaction_id": "TXN-15009943",
+              "date": "2026-05-17",
+              "direction": "debit",
+              "amount": 155.52,
+              "currency": "EUR",
+              "category": "utilities",
+              "merchant": "Stadtwerke",
+              "balance_after": -2966.64
+            },
+            {
+              "transaction_id": "TXN-65935480",
+              "date": "2026-05-22",
+              "direction": "debit",
+              "amount": 66.82,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Airbnb Stays",
+              "balance_after": -3033.46
+            },
+            {
+              "transaction_id": "TXN-22479789",
+              "date": "2026-05-25",
+              "direction": "debit",
+              "amount": 153.77,
+              "currency": "EUR",
+              "category": "transfer",
+              "merchant": "Transfer to Savings",
+              "balance_after": -3187.23
+            },
+            {
+              "transaction_id": "TXN-42365420",
+              "date": "2026-05-29",
+              "direction": "debit",
+              "amount": 892.12,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "FlixExpress",
+              "balance_after": -4079.35
+            },
+            {
               "transaction_id": "TXN-31626649",
-              "date": "2026-05-27",
+              "date": "2026-05-31",
               "direction": "debit",
               "amount": 156.76,
               "currency": "EUR",
               "category": "utilities",
               "merchant": "Vattenfall",
-              "balance_after": -16383.54
+              "balance_after": -4236.11
             },
             {
               "transaction_id": "TXN-14338498",
-              "date": "2026-05-30",
-              "direction": "debit",
-              "amount": 35.19,
-              "currency": "EUR",
-              "category": "supplies",
-              "merchant": "Staples Direct",
-              "balance_after": -16418.73
-            },
-            {
-              "transaction_id": "TXN-81820605",
               "date": "2026-06-03",
               "direction": "debit",
-              "amount": 859.8,
+              "amount": 45.63,
               "currency": "EUR",
-              "category": "travel",
-              "merchant": "Deutsche Bahn",
-              "balance_after": -17278.53
+              "category": "utilities",
+              "merchant": "Telekom",
+              "balance_after": -4281.74
             },
             {
-              "transaction_id": "TXN-84271599",
-              "date": "2026-06-06",
+              "transaction_id": "TXN-16498618",
+              "date": "2026-06-05",
               "direction": "debit",
-              "amount": 84.34,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Lidl",
-              "balance_after": -17362.87
-            },
-            {
-              "transaction_id": "TXN-90543121",
-              "date": "2026-06-09",
-              "direction": "debit",
-              "amount": 211.15,
-              "currency": "EUR",
-              "category": "travel",
-              "merchant": "RentACar EU",
-              "balance_after": -17574.02
-            },
-            {
-              "transaction_id": "TXN-31739933",
-              "date": "2026-06-13",
-              "direction": "debit",
-              "amount": 94.15,
-              "currency": "EUR",
-              "category": "online_shopping",
-              "merchant": "Zalarno",
-              "balance_after": -17668.17
-            },
-            {
-              "transaction_id": "TXN-79784072",
-              "date": "2026-06-19",
-              "direction": "debit",
-              "amount": 82.68,
-              "currency": "EUR",
-              "category": "groceries",
-              "merchant": "Lidl",
-              "balance_after": -17750.85
-            },
-            {
-              "transaction_id": "TXN-22619675",
-              "date": "2026-06-24",
-              "direction": "debit",
-              "amount": 52.33,
+              "amount": 68.4,
               "currency": "EUR",
               "category": "dining",
-              "merchant": "Trattoria Roma",
-              "balance_after": -17803.18
+              "merchant": "Burger Loft",
+              "balance_after": -4350.14
+            },
+            {
+              "transaction_id": "TXN-45562918",
+              "date": "2026-06-08",
+              "direction": "debit",
+              "amount": 22.32,
+              "currency": "EUR",
+              "category": "supplies",
+              "merchant": "DeskMart",
+              "balance_after": -4372.46
+            },
+            {
+              "transaction_id": "TXN-54817760",
+              "date": "2026-06-13",
+              "direction": "debit",
+              "amount": 478.42,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "HomeStyle Online",
+              "balance_after": -4850.88
+            },
+            {
+              "transaction_id": "TXN-11614912",
+              "date": "2026-06-18",
+              "direction": "debit",
+              "amount": 199.74,
+              "currency": "EUR",
+              "category": "online_shopping",
+              "merchant": "eBuy",
+              "balance_after": -5050.62
+            },
+            {
+              "transaction_id": "TXN-88376361",
+              "date": "2026-06-21",
+              "direction": "debit",
+              "amount": 113.32,
+              "currency": "EUR",
+              "category": "groceries",
+              "merchant": "Carrefour",
+              "balance_after": -5163.94
+            },
+            {
+              "transaction_id": "TXN-59497116",
+              "date": "2026-06-24",
+              "direction": "debit",
+              "amount": 584.35,
+              "currency": "EUR",
+              "category": "travel",
+              "merchant": "Lufthansa",
+              "balance_after": -5748.29
+            },
+            {
+              "transaction_id": "TXN-33098996",
+              "date": "2026-06-26",
+              "direction": "debit",
+              "amount": 130.62,
+              "currency": "EUR",
+              "category": "salary",
+              "merchant": "Globex GmbH",
+              "balance_after": -5878.91
             }
           ]
         }
