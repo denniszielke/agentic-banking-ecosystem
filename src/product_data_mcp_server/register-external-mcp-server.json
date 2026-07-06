@@ -18,12 +18,28 @@
       "description": "List the product holdings a customer currently has."
     },
     {
+      "name": "detect_opportunities",
+      "description": "Detect proactive optimisation opportunities for a customer: idle cash on low-interest holdings (with estimated annual interest gain) and a credit-card candidate when none is held."
+    },
+    {
       "name": "order_product",
       "description": "Order a new product for a customer (write — human-in-the-loop)."
     },
     {
       "name": "update_holding",
       "description": "Update an existing product holding (write — human-in-the-loop)."
+    },
+    {
+      "name": "list_orders",
+      "description": "List product-order cases (the Vorgangs-Log), newest first, optionally filtered by customer and/or status."
+    },
+    {
+      "name": "get_order",
+      "description": "Get a single product-order case by id, including its status history."
+    },
+    {
+      "name": "update_order_status",
+      "description": "Advance a product order's status along its lifecycle (requested -> approved | rejected; approved -> shipped | delivered) (write — human-in-the-loop)."
     }
   ],
   "remoteScopes": null,

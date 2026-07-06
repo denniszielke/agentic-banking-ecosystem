@@ -67,31 +67,31 @@ Transaction count: 28
 | TXN-39249822 | 2026-06-22 | debit | 710.69 | travel | Hotel Meridian | 42463.65 |
 | TXN-36177272 | 2026-06-27 | debit | 351.67 | travel | RentACar EU | 42111.98 |
 
-## ACC-100030 — ClassicCard (4539 0103 0003 0906)
+## ACC-100030 — FlexSave (DE44 3730 0000 1030 2030 00)
 
 Transaction count: 22
 
 | transaction_id | date | direction | amount (EUR) | category | merchant | balance_after |
 |----------------|------|-----------|--------------|----------|----------|---------------|
-| TXN-98564335 | 2026-04-13 | debit | 227.62 | travel | FlixExpress | 1800.29 |
-| TXN-77459162 | 2026-04-16 | debit | 85.83 | groceries | EDEKA | 1714.46 |
-| TXN-17501083 | 2026-04-21 | debit | 29.45 | transfer | Rent Payment | 1685.01 |
-| TXN-34576863 | 2026-04-22 | debit | 167.46 | utilities | Vattenfall | 1517.55 |
-| TXN-89650247 | 2026-04-28 | debit | 326.51 | travel | RentACar EU | 1191.04 |
-| TXN-81020476 | 2026-05-01 | debit | 205.72 | utilities | Vodafone | 985.32 |
-| TXN-70009526 | 2026-05-03 | debit | 79.27 | dining | Trattoria Roma | 906.05 |
-| TXN-46534080 | 2026-05-04 | debit | 27.82 | utilities | AquaCity | 878.23 |
-| TXN-86190613 | 2026-05-07 | debit | 154.15 | online_shopping | TechNest | 724.08 |
-| TXN-49004477 | 2026-05-10 | debit | 92.18 | dining | Cafe Central | 631.90 |
-| TXN-96518198 | 2026-05-16 | debit | 148.30 | utilities | Stadtwerke | 483.60 |
-| TXN-74261692 | 2026-05-19 | debit | 102.86 | dining | Cafe Central | 380.74 |
-| TXN-38000108 | 2026-05-25 | debit | 203.77 | supplies | DeskMart | 176.97 |
-| TXN-65487863 | 2026-05-30 | debit | 265.23 | online_shopping | Amazonia | -88.26 |
-| TXN-37759250 | 2026-06-04 | debit | 113.59 | groceries | EDEKA | -201.85 |
-| TXN-76917958 | 2026-06-06 | debit | 297.37 | online_shopping | eBuy | -499.22 |
-| TXN-65868744 | 2026-06-08 | debit | 22.04 | dining | Green Bowl | -521.26 |
-| TXN-19740392 | 2026-06-10 | debit | 130.06 | groceries | Lidl | -651.32 |
-| TXN-99216436 | 2026-06-14 | debit | 24.76 | groceries | Aldi Nord | -676.08 |
-| TXN-77173078 | 2026-06-20 | debit | 298.41 | travel | Booking Nest | -974.49 |
-| TXN-92298091 | 2026-06-23 | debit | 23.34 | dining | Burger Loft | -997.83 |
-| TXN-69027613 | 2026-06-28 | debit | 119.11 | online_shopping | Zalarno | -1116.94 |
+| TXN-98564335 | 2026-04-13 | debit | 227.62 | travel | FlixExpress | 28121.48 |
+| TXN-77459162 | 2026-04-16 | debit | 85.83 | groceries | EDEKA | 28035.65 |
+| TXN-17501083 | 2026-04-21 | debit | 1136.02 | transfer | Rent Payment | 26899.63 |
+| TXN-34576863 | 2026-04-22 | debit | 167.46 | utilities | Vattenfall | 26732.17 |
+| TXN-89650247 | 2026-04-28 | debit | 326.51 | travel | RentACar EU | 26405.66 |
+| TXN-81020476 | 2026-05-01 | debit | 205.72 | utilities | Vodafone | 26199.94 |
+| TXN-70009526 | 2026-05-03 | debit | 79.27 | dining | Trattoria Roma | 26120.67 |
+| TXN-46534080 | 2026-05-04 | debit | 27.82 | utilities | AquaCity | 26092.85 |
+| TXN-86190613 | 2026-05-07 | debit | 154.15 | online_shopping | TechNest | 25938.70 |
+| TXN-49004477 | 2026-05-10 | debit | 92.18 | dining | Cafe Central | 25846.52 |
+| TXN-96518198 | 2026-05-16 | debit | 148.30 | utilities | Stadtwerke | 25698.22 |
+| TXN-74261692 | 2026-05-19 | debit | 102.86 | dining | Cafe Central | 25595.36 |
+| TXN-38000108 | 2026-05-25 | debit | 203.77 | supplies | DeskMart | 25391.59 |
+| TXN-65487863 | 2026-05-30 | debit | 265.23 | online_shopping | Amazonia | 25126.36 |
+| TXN-37759250 | 2026-06-04 | debit | 113.59 | groceries | EDEKA | 25012.77 |
+| TXN-76917958 | 2026-06-06 | debit | 297.37 | online_shopping | eBuy | 24715.40 |
+| TXN-65868744 | 2026-06-08 | debit | 22.04 | dining | Green Bowl | 24693.36 |
+| TXN-19740392 | 2026-06-10 | debit | 130.06 | groceries | Lidl | 24563.30 |
+| TXN-99216436 | 2026-06-14 | debit | 24.76 | groceries | Aldi Nord | 24538.54 |
+| TXN-77173078 | 2026-06-20 | debit | 298.41 | travel | Booking Nest | 24240.13 |
+| TXN-92298091 | 2026-06-23 | debit | 23.34 | dining | Burger Loft | 24216.79 |
+| TXN-69027613 | 2026-06-28 | debit | 119.11 | online_shopping | Zalarno | 24097.68 |

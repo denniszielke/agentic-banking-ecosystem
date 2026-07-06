@@ -5,7 +5,8 @@ optionally embeds the text with Azure OpenAI, and uploads them:
 
   * **Financial products** (``banking-products``) — every product section of
     ``data/knowledge/savings-products.md``,
-    ``data/knowledge/childrens-savings-products.md`` and
+    ``data/knowledge/childrens-savings-products.md``,
+    ``data/knowledge/securities-products.md`` and
     ``data/knowledge/credit-card-products.md``, plus the catalogue rows in
     ``data/products.md``.
 
@@ -55,6 +56,7 @@ COMPLIANCE_INDEX_NAME = os.getenv("AZURE_SEARCH_COMPLIANCE_INDEX_NAME", "banking
 _PRODUCT_FILES = {
     "savings-products.md": "savings",
     "childrens-savings-products.md": "childrens_savings",
+    "securities-products.md": "securities",
     "credit-card-products.md": "credit_card",
 }
 

@@ -49,23 +49,6 @@ Transaction count: 27
 | TXN-55680285 | 2026-06-20 | debit | 100.21 | groceries | EDEKA | 40421.20 |
 | TXN-58180084 | 2026-06-26 | debit | 220.49 | travel | RentACar EU | 40200.71 |
 
-## ACC-100035 — FlexSave (DE44 3735 0000 1035 2035 00)
+## ACC-100035 — Securities Depot (—)
 
-Transaction count: 14
-
-| transaction_id | date | direction | amount (EUR) | category | merchant | balance_after |
-|----------------|------|-----------|--------------|----------|----------|---------------|
-| TXN-81383647 | 2026-05-31 | debit | 312.80 | travel | Lufthansa | 42912.77 |
-| TXN-56320430 | 2026-06-04 | debit | 503.91 | travel | Booking Nest | 42408.86 |
-| TXN-89599189 | 2026-06-09 | debit | 34.56 | groceries | Aldi Nord | 42374.30 |
-| TXN-30848403 | 2026-06-11 | debit | 117.63 | dining | Burger Loft | 42256.67 |
-| TXN-35196704 | 2026-06-12 | debit | 66.95 | groceries | REWE | 42189.72 |
-| TXN-36760230 | 2026-06-14 | debit | 58.47 | groceries | REWE | 42131.25 |
-| TXN-91769232 | 2026-06-15 | debit | 45.27 | utilities | AquaCity | 42085.98 |
-| TXN-94489432 | 2026-06-17 | credit | 3460.89 | salary | ACME Payroll | 45546.87 |
-| TXN-41471134 | 2026-06-18 | debit | 149.16 | utilities | Vodafone | 45397.71 |
-| TXN-37278901 | 2026-06-20 | debit | 470.73 | online_shopping | eBuy | 44926.98 |
-| TXN-75441379 | 2026-06-22 | debit | 351.35 | online_shopping | Amazonia | 44575.63 |
-| TXN-16759642 | 2026-06-24 | debit | 690.84 | travel | Booking Nest | 43884.79 |
-| TXN-81383918 | 2026-06-25 | debit | 110.41 | dining | Burger Loft | 43774.38 |
-| TXN-14784054 | 2026-06-26 | debit | 23.41 | supplies | TonerHub | 43750.97 |
+Securities depot — market value €116856.38. No transaction ledger in this demo.

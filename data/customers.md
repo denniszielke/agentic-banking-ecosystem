@@ -79,7 +79,7 @@ Transactions: [`data/transactions/CUST-1002_transactions.md`](transactions/CUST-
 
 | account_id | product | category | iban / card | balance (EUR) | credit_limit |
 |------------|---------|----------|-------------|---------------|--------------|
-| ACC-100005 | ClassicCard | credit_card | 4539 0100 5003 0155 | -801.51 | 5000 |
+| ACC-100005 | Securities Depot | securities | — | 48600.81 | — |
 
 Transactions: [`data/transactions/CUST-1003_transactions.md`](transactions/CUST-1003_transactions.md)
 
@@ -242,9 +242,9 @@ Transactions: [`data/transactions/CUST-1008_transactions.md`](transactions/CUST-
 
 | account_id | product | category | iban / card | balance (EUR) | credit_limit |
 |------------|---------|----------|-------------|---------------|--------------|
-| ACC-100012 | GrowthSaver | savings | DE89 3712 0000 1012 2012 00 | 4835.31 | — |
-| ACC-100013 | ClassicCard | credit_card | 4539 0101 3003 0399 | -719.06 | 5000 |
-| ACC-100014 | GoldCard | credit_card | 4539 0101 4003 0421 | -4544.67 | 15000 |
+| ACC-100012 | GrowthSaver | savings | DE89 3712 0000 1012 2012 00 | 43623.52 | — |
+| ACC-100013 | Securities Depot | securities | — | 83048.38 | — |
+| ACC-100014 | Current Account Plus | current_account | DE89 3714 0000 1014 2014 00 | 29521.18 | — |
 
 Transactions: [`data/transactions/CUST-1009_transactions.md`](transactions/CUST-1009_transactions.md)
 
@@ -298,9 +298,9 @@ Transactions: [`data/transactions/CUST-1010_transactions.md`](transactions/CUST-
 
 | account_id | product | category | iban / card | balance (EUR) | credit_limit |
 |------------|---------|----------|-------------|---------------|--------------|
-| ACC-100016 | ClassicCard | credit_card | 4539 0101 6003 0483 | -1698.69 | 5000 |
+| ACC-100016 | Securities Depot | securities | — | 102049.47 | — |
 | ACC-100017 | GoldCard | credit_card | 4539 0101 7003 0515 | -2051.07 | 15000 |
-| ACC-100018 | FlexSave | savings | DE44 3718 0000 1018 2018 00 | 18148.84 | — |
+| ACC-100018 | ClassicCard | credit_card | 4539 0101 8003 0547 | -865.61 | 5000 |
 
 Transactions: [`data/transactions/CUST-1011_transactions.md`](transactions/CUST-1011_transactions.md)
 
@@ -437,9 +437,9 @@ Transactions: [`data/transactions/CUST-1015_transactions.md`](transactions/CUST-
 
 | account_id | product | category | iban / card | balance (EUR) | credit_limit |
 |------------|---------|----------|-------------|---------------|--------------|
-| ACC-100025 | PlatinumCard | credit_card | 4539 0102 5003 0757 | -2243.05 | 50000 |
-| ACC-100026 | GoldCard | credit_card | 4539 0102 6003 0789 | -2488.57 | 15000 |
-| ACC-100027 | FixedDeposit Plus | savings | DE44 3727 0000 1027 2027 00 | 30898.25 | — |
+| ACC-100025 | PlatinumCard | credit_card | 4539 0102 5003 0757 | -17131.96 | 50000 |
+| ACC-100026 | Wealth Depot | securities | — | 76525.96 | — |
+| ACC-100027 | GoldCard | credit_card | 4539 0102 7003 0811 | -276.27 | 15000 |
 
 Transactions: [`data/transactions/CUST-1016_transactions.md`](transactions/CUST-1016_transactions.md)
 
@@ -468,7 +468,7 @@ Transactions: [`data/transactions/CUST-1016_transactions.md`](transactions/CUST-
 |------------|---------|----------|-------------|---------------|--------------|
 | ACC-100028 | GrowthSaver | savings | DE44 3728 0000 1028 2028 00 | 42139.76 | — |
 | ACC-100029 | Current Account Plus | current_account | DE44 3729 0000 1029 2029 00 | 42111.98 | — |
-| ACC-100030 | ClassicCard | credit_card | 4539 0103 0003 0906 | -1116.94 | 5000 |
+| ACC-100030 | FlexSave | savings | DE44 3730 0000 1030 2030 00 | 24097.68 | — |
 
 Transactions: [`data/transactions/CUST-1017_transactions.md`](transactions/CUST-1017_transactions.md)
 
@@ -525,7 +525,7 @@ Transactions: [`data/transactions/CUST-1018_transactions.md`](transactions/CUST-
 |------------|---------|----------|-------------|---------------|--------------|
 | ACC-100033 | GrowthSaver | savings | DE44 3733 0000 1033 2033 00 | 36277.47 | — |
 | ACC-100034 | Current Account Plus | current_account | DE44 3734 0000 1034 2034 00 | 40200.71 | — |
-| ACC-100035 | FlexSave | savings | DE44 3735 0000 1035 2035 00 | 43750.97 | — |
+| ACC-100035 | Securities Depot | securities | — | 116856.38 | — |
 
 Transactions: [`data/transactions/CUST-1019_transactions.md`](transactions/CUST-1019_transactions.md)
 
@@ -552,7 +552,7 @@ Transactions: [`data/transactions/CUST-1019_transactions.md`](transactions/CUST-
 
 | account_id | product | category | iban / card | balance (EUR) | credit_limit |
 |------------|---------|----------|-------------|---------------|--------------|
-| ACC-100036 | PlatinumCard | credit_card | 4539 0103 6003 1083 | -17803.18 | 50000 |
+| ACC-100036 | GoldCard | credit_card | 4539 0103 6003 1083 | -5878.91 | 15000 |
 
 Transactions: [`data/transactions/CUST-1020_transactions.md`](transactions/CUST-1020_transactions.md)
 
