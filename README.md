@@ -1,4 +1,115 @@
+# 🏦 Agentic Banking Ecosystem
 
+> A multi-organisation **agentic banking demo**: two independent banks — **Bank North**
+> and **Bank South** — each run their own Microsoft Foundry agents, MCP servers and data
+> in their own Azure subscription, and collaborate across organisational boundaries over
+> **A2A**. Every hop is authenticated with **Microsoft Entra ID** and emits
+> **OpenTelemetry** to Application Insights.
+
+![Azure](https://img.shields.io/badge/Azure-0078D4?style=flat&logo=microsoft-azure&logoColor=white)
+![Microsoft Foundry](https://img.shields.io/badge/Microsoft%20Foundry-412991?style=flat&logo=microsoft&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.13+-3776AB?style=flat&logo=python&logoColor=white)
+![Protocols](https://img.shields.io/badge/MCP%20%2B%20A2A-0b6b46?style=flat)
+![IaC](https://img.shields.io/badge/azd%20%2B%20Bicep-00A36C?style=flat)
+
+The two **cross-organisation** edges are the heart of the story: Bank South's agents
+consume Bank North's **compliance agent** as an A2A service across subscription and tenant
+boundaries.
+
+## Contents
+
+- [Architecture at a glance](#architecture-at-a-glance)
+- [Repository layout](#repository-layout)
+- [Prerequisites](#prerequisites)
+- [Quickstart](#quickstart)
+- [Components](#components) — [Agents](#agents) · [MCP servers](#mcp-servers) · [Container apps & search indexes](#container-apps--search-indexes)
+- [Deployment (full walkthrough)](#documentation)
+- [Cleaning up](#cleaning-up)
+
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+    U([Customer]) --> WEB[customer_app - web]
+    E([Employee]) --> TEAMS[employee_app - Teams]
+
+    subgraph South["Bank South subscription"]
+        WEB --> CSA[customer_support_agent]
+        TEAMS --> EAA[employee_advisory_agent]
+        CSA --> CCA[credit_card_agent]
+        CSA --> CDATA[(customer_data MCP)]
+        CSA --> PDATA[(product_data MCP)]
+    end
+
+    subgraph North["Bank North subscription"]
+        COMP[compliance_agent]
+    end
+
+    CSA -. A2A cross-org .-> COMP
+    CCA -. A2A cross-org .-> COMP
+    CSA --> SEARCH[[Azure AI Search]]
+    EAA --> SEARCH
+    COMP --> SEARCH
+
+    style South fill:#0078D41F,stroke:#004e8c
+    style North fill:#4129911F,stroke:#2a1a5e
+```
+
+→ Full architecture — **component**, **data-flow** and **application-flow** views plus the
+communication-paths table — lives in **[narrative.md](narrative.md#architecture)**.
+
+## Repository layout
+
+| Path | Contents |
+|------|----------|
+| `src/` | Agents (`*_agent`, each with a `skills/` folder) and MCP servers (`*_mcp_server`) |
+| `scripts/` | azd hooks + deploy / build / index / cleanup scripts — run as `python -m scripts.<name>` from the repo root |
+| `data/` | Canonical data model (`products.md`), seeded demo data (`customers.json`, `transactions.json`) and grounding docs (`knowledge/*.md`) |
+| `infra/` | Bicep: Microsoft Foundry project, Azure AI Search, Container Apps environment, ACR, managed identity |
+| `narrative.md` | The story + the full architecture (four Mermaid views) |
+| `.github/skills/ops/SKILL.md` | End-to-end operations runbook (provision → deploy → clean up) |
+
+## Prerequisites
+
+| Tool | Version | Install |
+|------|---------|---------|
+| Azure Developer CLI (`azd`) | latest | https://aka.ms/azd |
+| Azure CLI (`az`) | ≥ 2.60 | https://aka.ms/azcli |
+| Python | 3.13+ | https://python.org |
+
+```bash
+# install all service + script dependencies
+pip install -r requirements.txt
+pip install -r scripts/requirements-agents.txt
+```
+
+You also need an Azure subscription with permission to create resources and Entra app
+registrations, and `az login` completed.
+
+## Quickstart
+
+Provision the infrastructure, then deploy the servers, indexes and agents **in order**.
+Each step links to its detailed section below.
+
+```bash
+azd env set AZURE_LOCATION swedencentral
+azd env set AZURE_PRINCIPAL_ID $(az ad signed-in-user show --query id -o tsv)
+azd env set AZURE_PRINCIPAL_TYPE User
+azd up
+```
+
+Then run the deployment steps in this order (all from the repo root):
+
+1. **Generate demo data** — `python -m scripts.generate_data`
+2. **Build the MCP images** — [see below](#building-the-mcp-server-containers)
+3. **Deploy the MCP servers** (+ register toolboxes) — [see below](#deploying-the-mcp-servers)
+4. **Create & ingest the search indexes** — [see below](#creating-and-populating-the-search-indexes)
+5. **Register the Foundry toolboxes** (incl. WorkIQ) — [see below](#registering-the-foundry-toolboxes)
+6. **Deploy the agents** — [see below](#deploying-agents)
+7. **Grant Agent 365 observability permissions** — [see below](#granting-agent-365-observability-permissions)
+
+> New here? Start with the [full deployment walkthrough](#documentation), or use the
+> [ops runbook skill](.github/skills/ops/SKILL.md) for the complete lifecycle.
 
 ## Components
 
