@@ -144,7 +144,7 @@ def _resolve_appinsights_connection_string() -> str:
         return ""
     try:
         out = subprocess.run(
-            ["az", "monitor", "app-insights", "component", "show",
+            ["az", "monitor", "app-insights", "component", "list",
              "-g", rg, "--query", "[0].connectionString", "-o", "tsv"],
             check=True, capture_output=True, text=True,
         ).stdout.strip()

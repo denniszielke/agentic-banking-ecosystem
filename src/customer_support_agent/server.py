@@ -24,12 +24,24 @@ and ``PORT`` (default 0.0.0.0:8090).
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Allow `python -m src.customer_support_agent.server` and uvicorn module loading.
+_src_root = Path(__file__).resolve().parents[2]
+if str(_src_root) not in sys.path:
+    sys.path.insert(0, str(_src_root))
+
+# Configure the Microsoft OTel distro BEFORE importing any instrumented library
+# (agent_framework, azure-sdk, etc.): the distro may use import-time hooks, so it
+# must run first or model-call / MCP-tool / HITL spans may never be exported.
+from src.customer_support_agent._observability import setup_observability  # noqa: E402
+setup_observability()
+
 import asyncio
 import logging
 import os
-import sys
 from contextlib import AsyncExitStack, asynccontextmanager
-from pathlib import Path
 from typing import AsyncIterator, List, Optional
 
 import uvicorn
@@ -41,11 +53,6 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-# Allow `python -m src.customer_support_agent.server` and uvicorn module loading.
-_src_root = Path(__file__).resolve().parents[2]
-if str(_src_root) not in sys.path:
-    sys.path.insert(0, str(_src_root))
-
 from src.customer_support_agent.customer_support_agent import (  # noqa: E402
     _CUSTOMER_SUPPORT_AGENT_ID,
     _MODEL,
@@ -53,17 +60,11 @@ from src.customer_support_agent.customer_support_agent import (  # noqa: E402
     SYSTEM_PROMPT,
     make_mcp_tools,
     make_providers,
-    setup_observability,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logging.getLogger("azure").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
-
-# Configure telemetry BEFORE building the agent so the Agent Framework GenAI
-# instrumentation is installed and model / MCP-tool / human-confirmation spans
-# are exported to Application Insights. No-op when no connection string is set.
-setup_observability()
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
