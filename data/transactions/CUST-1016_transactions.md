@@ -4,55 +4,67 @@
 
 ## ACC-100025 — PlatinumCard (4539 0102 5003 0757)
 
-Transaction count: 13
+Transaction count: 25
 
 | transaction_id | date | direction | amount (EUR) | category | merchant | balance_after |
 |----------------|------|-----------|--------------|----------|----------|---------------|
-| TXN-84209489 | 2026-05-14 | debit | 111.17 | transfer | Transfer to Savings | -466.80 |
-| TXN-69873600 | 2026-05-15 | debit | 22.67 | supplies | DeskMart | -489.47 |
-| TXN-36440740 | 2026-05-17 | debit | 66.31 | transfer | Standing Order | -555.78 |
-| TXN-31956180 | 2026-05-23 | debit | 432.83 | online_shopping | Amazonia | -988.61 |
-| TXN-66277345 | 2026-05-29 | debit | 37.72 | salary | Umbrella Corp | -1026.33 |
-| TXN-59591050 | 2026-05-31 | debit | 108.04 | dining | Trattoria Roma | -1134.37 |
-| TXN-51712693 | 2026-06-05 | debit | 372.44 | online_shopping | Amazonia | -1506.81 |
-| TXN-68250031 | 2026-06-06 | debit | 16.46 | online_shopping | TechNest | -1523.27 |
-| TXN-73612282 | 2026-06-11 | debit | 32.18 | online_shopping | eBuy | -1555.45 |
-| TXN-55803538 | 2026-06-13 | debit | 402.16 | travel | Deutsche Bahn | -1957.61 |
-| TXN-59596453 | 2026-06-17 | debit | 66.54 | transfer | Rent Payment | -2024.15 |
-| TXN-39394563 | 2026-06-22 | debit | 176.25 | transfer | Rent Payment | -2200.40 |
-| TXN-20038529 | 2026-06-26 | debit | 42.65 | groceries | Aldi Nord | -2243.05 |
+| TXN-45363992 | 2026-04-02 | debit | 170.46 | online_shopping | eBuy | -11803.33 |
+| TXN-19771217 | 2026-04-08 | debit | 46.10 | online_shopping | Amazonia | -11849.43 |
+| TXN-87587967 | 2026-04-14 | debit | 65.19 | online_shopping | TechNest | -11914.62 |
+| TXN-23083288 | 2026-04-17 | debit | 103.23 | salary | Umbrella Corp | -12017.85 |
+| TXN-20854804 | 2026-04-19 | debit | 459.04 | travel | FlixExpress | -12476.89 |
+| TXN-61699682 | 2026-04-22 | debit | 73.42 | supplies | TonerHub | -12550.31 |
+| TXN-65867147 | 2026-04-23 | debit | 160.91 | transfer | P2P Transfer | -12711.22 |
+| TXN-61709146 | 2026-04-29 | debit | 11.24 | groceries | REWE | -12722.46 |
+| TXN-81943198 | 2026-04-30 | debit | 350.91 | online_shopping | Amazonia | -13073.37 |
+| TXN-55092401 | 2026-05-05 | debit | 71.80 | dining | Green Bowl | -13145.17 |
+| TXN-87401676 | 2026-05-10 | debit | 116.94 | utilities | AquaCity | -13262.11 |
+| TXN-84209489 | 2026-05-12 | debit | 111.17 | transfer | Transfer to Savings | -13373.28 |
+| TXN-69873600 | 2026-05-13 | debit | 22.67 | supplies | DeskMart | -13395.95 |
+| TXN-36440740 | 2026-05-15 | debit | 66.31 | transfer | Standing Order | -13462.26 |
+| TXN-31956180 | 2026-05-21 | debit | 432.83 | online_shopping | Amazonia | -13895.09 |
+| TXN-66277345 | 2026-05-27 | debit | 37.72 | salary | Umbrella Corp | -13932.81 |
+| TXN-59591050 | 2026-05-29 | debit | 108.04 | dining | Trattoria Roma | -14040.85 |
+| TXN-51712693 | 2026-06-03 | debit | 372.44 | online_shopping | Amazonia | -14413.29 |
+| TXN-68250031 | 2026-06-04 | debit | 191.72 | transfer | Transfer to Savings | -14605.01 |
+| TXN-34953017 | 2026-06-08 | debit | 412.74 | online_shopping | TechNest | -15017.75 |
+| TXN-32461308 | 2026-06-12 | debit | 350.55 | travel | Deutsche Bahn | -15368.30 |
+| TXN-65337204 | 2026-06-15 | debit | 923.04 | travel | Deutsche Bahn | -16291.34 |
+| TXN-23053660 | 2026-06-17 | debit | 260.65 | online_shopping | eBuy | -16551.99 |
+| TXN-56090160 | 2026-06-22 | debit | 62.01 | dining | Cafe Central | -16614.00 |
+| TXN-71059381 | 2026-06-24 | debit | 517.96 | travel | Booking Nest | -17131.96 |
 
-## ACC-100026 — GoldCard (4539 0102 6003 0789)
+## ACC-100026 — Wealth Depot (—)
 
-Transaction count: 8
+Securities depot — market value €76525.96. No transaction ledger in this demo.
+
+## ACC-100027 — GoldCard (4539 0102 7003 0811)
+
+Transaction count: 24
 
 | transaction_id | date | direction | amount (EUR) | category | merchant | balance_after |
 |----------------|------|-----------|--------------|----------|----------|---------------|
-| TXN-23083288 | 2026-06-04 | debit | 103.23 | salary | Umbrella Corp | -1271.18 |
-| TXN-20854804 | 2026-06-06 | debit | 459.04 | travel | FlixExpress | -1730.22 |
-| TXN-61699682 | 2026-06-09 | debit | 73.42 | supplies | TonerHub | -1803.64 |
-| TXN-65867147 | 2026-06-10 | debit | 160.91 | transfer | P2P Transfer | -1964.55 |
-| TXN-61709146 | 2026-06-16 | debit | 11.24 | groceries | REWE | -1975.79 |
-| TXN-81943198 | 2026-06-17 | debit | 158.64 | utilities | Vattenfall | -2134.43 |
-| TXN-82799226 | 2026-06-20 | debit | 196.81 | utilities | AquaCity | -2331.24 |
-| TXN-99072330 | 2026-06-25 | debit | 157.33 | groceries | Carrefour | -2488.57 |
-
-## ACC-100027 — FixedDeposit Plus (DE44 3727 0000 1027 2027 00)
-
-Transaction count: 13
-
-| transaction_id | date | direction | amount (EUR) | category | merchant | balance_after |
-|----------------|------|-----------|--------------|----------|----------|---------------|
-| TXN-65377085 | 2026-05-06 | debit | 108.37 | groceries | Carrefour | 31804.79 |
-| TXN-74701650 | 2026-05-12 | debit | 70.99 | dining | Sushi Bar Ken | 31733.80 |
-| TXN-76289807 | 2026-05-18 | debit | 63.97 | groceries | EDEKA | 31669.83 |
-| TXN-92058198 | 2026-05-20 | debit | 225.59 | online_shopping | TechNest | 31444.24 |
-| TXN-74768912 | 2026-05-23 | debit | 59.97 | dining | Sushi Bar Ken | 31384.27 |
-| TXN-62650731 | 2026-05-29 | credit | 841.24 | transfer | Rent Payment | 32225.51 |
-| TXN-12284639 | 2026-06-02 | debit | 125.50 | utilities | Vattenfall | 32100.01 |
-| TXN-62032353 | 2026-06-03 | debit | 23.70 | supplies | PaperPlus | 32076.31 |
-| TXN-72194337 | 2026-06-07 | debit | 158.57 | groceries | REWE | 31917.74 |
-| TXN-29798425 | 2026-06-09 | debit | 768.48 | travel | Airbnb Stays | 31149.26 |
-| TXN-45363992 | 2026-06-15 | debit | 170.46 | online_shopping | eBuy | 30978.80 |
-| TXN-19771217 | 2026-06-21 | debit | 46.10 | online_shopping | Amazonia | 30932.70 |
-| TXN-87587967 | 2026-06-27 | debit | 34.45 | supplies | TonerHub | 30898.25 |
+| TXN-92326588 | 2026-04-16 | debit | 261.48 | online_shopping | Amazonia | 2974.06 |
+| TXN-13783539 | 2026-04-19 | debit | 438.73 | travel | RentACar EU | 2535.33 |
+| TXN-32769710 | 2026-04-21 | debit | 476.21 | online_shopping | Amazonia | 2059.12 |
+| TXN-21478628 | 2026-04-24 | debit | 47.53 | salary | Umbrella Corp | 2011.59 |
+| TXN-61481082 | 2026-04-28 | debit | 97.56 | online_shopping | HomeStyle Online | 1914.03 |
+| TXN-45493335 | 2026-04-30 | debit | 62.87 | dining | Trattoria Roma | 1851.16 |
+| TXN-85811160 | 2026-05-01 | debit | 35.74 | dining | Trattoria Roma | 1815.42 |
+| TXN-69318553 | 2026-05-02 | debit | 173.31 | salary | Umbrella Corp | 1642.11 |
+| TXN-51770525 | 2026-05-05 | debit | 367.15 | online_shopping | Amazonia | 1274.96 |
+| TXN-56587442 | 2026-05-09 | debit | 210.92 | online_shopping | eBuy | 1064.04 |
+| TXN-70927205 | 2026-05-14 | debit | 22.05 | groceries | Carrefour | 1041.99 |
+| TXN-92556933 | 2026-05-20 | debit | 49.49 | groceries | Carrefour | 992.50 |
+| TXN-41723942 | 2026-05-21 | debit | 32.67 | online_shopping | HomeStyle Online | 959.83 |
+| TXN-11670644 | 2026-05-22 | debit | 138.34 | groceries | REWE | 821.49 |
+| TXN-65377085 | 2026-05-23 | debit | 108.37 | groceries | Carrefour | 713.12 |
+| TXN-74701650 | 2026-05-29 | debit | 70.99 | dining | Sushi Bar Ken | 642.13 |
+| TXN-76289807 | 2026-06-04 | debit | 63.97 | groceries | EDEKA | 578.16 |
+| TXN-92058198 | 2026-06-06 | debit | 225.59 | online_shopping | TechNest | 352.57 |
+| TXN-74768912 | 2026-06-09 | debit | 59.97 | dining | Sushi Bar Ken | 292.60 |
+| TXN-62650731 | 2026-06-15 | debit | 79.21 | transfer | Rent Payment | 213.39 |
+| TXN-12284639 | 2026-06-19 | debit | 125.50 | utilities | Vattenfall | 87.89 |
+| TXN-62032353 | 2026-06-20 | debit | 16.55 | groceries | Lidl | 71.34 |
+| TXN-66341217 | 2026-06-21 | debit | 165.44 | transfer | Transfer to Savings | -94.10 |
+| TXN-34254067 | 2026-06-26 | debit | 182.17 | supplies | Staples Direct | -276.27 |

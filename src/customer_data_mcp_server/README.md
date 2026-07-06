@@ -23,6 +23,8 @@ surface are defined in [`data/products.md`](../../data/products.md).
 | `get_account` | A single holding by account id | read |
 | `list_transactions` | Transactions for an account or a whole customer | read |
 | `get_balance` | Balance + currency of a holding | read |
+| `summarize_spending` | Spending total + breakdown by category / top merchants + largest transaction | read |
+| `get_net_worth` | Total net worth + balance breakdown by product type | read |
 | `update_customer` | Update contact details | write (HITL) |
 
 The `update_customer` write tool is **human-in-the-loop**: call it first with

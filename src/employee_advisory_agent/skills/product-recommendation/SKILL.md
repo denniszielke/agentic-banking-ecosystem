@@ -17,6 +17,12 @@ in front of them, grounded in product conditions and the customer's context.
 1. **Customer context** — use the customer data tools to read the customer's
    segment (retail / youth / premium), existing holdings and recent activity.
    Read-only; never modify customer data.
+   - Use `get_net_worth` for the customer's balance picture across all accounts
+     (e.g. spotting a large sum sitting on a low/zero-interest current account
+     that could be moved to a savings product).
+   - Use `summarize_spending` to ground the recommendation in the customer's
+     actual spending behaviour (top categories and merchants) — e.g. a frequent
+     traveller or high card-spend profile that suits a particular card.
 2. **Product conditions** — use `search_financial_products` and the product
    data tools to pull interest rates, fees, minimum deposits, notice periods and
    eligibility for the candidate products.

@@ -30,6 +30,14 @@
       "description": "Get the current balance and currency of a single product holding."
     },
     {
+      "name": "summarize_spending",
+      "description": "Summarise a customer's spending over a period — total plus breakdown by category and top merchants, and the single largest transaction."
+    },
+    {
+      "name": "get_net_worth",
+      "description": "Get a customer's total net worth and a breakdown of balances by product type across all holdings."
+    },
+    {
       "name": "update_customer",
       "description": "Update a customer's contact details (write — human-in-the-loop)."
     }

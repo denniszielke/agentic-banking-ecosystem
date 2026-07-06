@@ -41,7 +41,7 @@ the knowledge base (`data/knowledge/*.md`).
 |-------|------|-------------|
 | `product_code` | string | Primary key (e.g. `FLEXSAVE`, `GOLDCARD`). |
 | `product_name` | string | Display name (e.g. `FlexSave`, `GoldCard`). |
-| `category` | enum | `current_account` \| `savings` \| `childrens_savings` \| `credit_card`. |
+| `category` | enum | `current_account` \| `savings` \| `childrens_savings` \| `securities` \| `credit_card`. |
 | `currency` | string | ISO 4217 (default `EUR`). |
 | `interest_rate` | number | Annual rate in percent (`null` if not applicable). |
 | `annual_fee` | number | Annual fee in EUR (`0` if free). |
@@ -60,6 +60,8 @@ the knowledge base (`data/knowledge/*.md`).
 | KIDSSAVE | KidsSave | childrens_savings | 2.25 | 0 | data/knowledge/childrens-savings-products.md |
 | TEENSAVER | TeenSaver | childrens_savings | 2.75 | 0 | data/knowledge/childrens-savings-products.md |
 | FUTUREBUILDER | FutureBuilder | childrens_savings | 3.25 | 0 | data/knowledge/childrens-savings-products.md |
+| SECURITIESDEPOT | Securities Depot | securities | null | 0 | data/knowledge/securities-products.md |
+| WEALTHDEPOT | Wealth Depot | securities | null | 48 | data/knowledge/securities-products.md |
 | CLASSICCARD | ClassicCard | credit_card | null | 29 | data/knowledge/credit-card-products.md |
 | GOLDCARD | GoldCard | credit_card | null | 89 | data/knowledge/credit-card-products.md |
 | PLATINUMCARD | PlatinumCard | credit_card | null | 199 | data/knowledge/credit-card-products.md |
@@ -67,7 +69,9 @@ the knowledge base (`data/knowledge/*.md`).
 ### 1.3 ProductHolding (a.k.a. Account)
 
 Represents an instance of a product held by a customer. Savings and current accounts have
-an `iban`; credit cards have a `card_number`. Transactions are attached to a holding.
+an `iban`; credit cards have a `card_number`. A securities depot has neither — its
+`balance` is the current **market value** of the portfolio and it carries no transaction
+ledger in this demo. Transactions are attached to a holding.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -102,6 +106,29 @@ Represents a single money movement on a `ProductHolding`.
 
 ---
 
+### 1.5 Order (product application)
+
+Represents a product application and its lifecycle — the "Vorgangs-Log" tracked
+by the product data server. Created when a customer confirms `order_product`;
+held in-memory for the life of the server process (not persisted in this demo).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `order_id` | string | Primary key, format `ORD-<6 digits>`. |
+| `customer_id` | string | Foreign key → `Customer.customer_id`. |
+| `product_code` | string | Foreign key → `Product.product_code`. |
+| `account_id` | string | Foreign key → the `ProductHolding` opened for the order. |
+| `status` | enum | `requested` \| `approved` \| `rejected` \| `shipped` \| `delivered`. |
+| `created_at` / `updated_at` | datetime | ISO-8601 timestamps. |
+| `delivery` | object \| null | For cards: `{ estimated_business_days, shipping_address }`. |
+| `history` | array | Append-only status changes `{ status, at, note }`. |
+
+Lifecycle: `requested` → `approved` \| `rejected`; `approved` → `shipped` \|
+`delivered`; `shipped` → `delivered`. Approving an order activates the linked
+holding; rejecting it marks the holding `rejected`.
+
+---
+
 ## 2. Relationships
 
 ```mermaid
@@ -110,11 +137,14 @@ erDiagram
     PRODUCT  ||--o{ PRODUCTHOLDING : "instantiated as"
     PRODUCTHOLDING ||--o{ TRANSACTION : records
     CUSTOMER ||--o{ TRANSACTION : "attributed to"
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|| PRODUCTHOLDING : opens
 ```
 
 - A `Customer` owns **1–3** `ProductHolding` records.
 - Each `ProductHolding` references one `Product` from the catalogue.
-- Each `ProductHolding` has **4–30** `Transaction` records.
+- Each non-securities `ProductHolding` has **4–30** `Transaction` records; securities depots have none.
+- A `Customer` may place `Order` records; each opens one `ProductHolding`.
 
 ---
 
@@ -130,6 +160,8 @@ erDiagram
 | `get_account` | `account_id` | `ProductHolding` | read |
 | `list_transactions` | `account_id` \| `customer_id`, `from?`, `to?` | `Transaction[]` | read |
 | `get_balance` | `account_id` | `{ balance, currency }` | read |
+| `summarize_spending` | `customer_id`, `from?`, `to?`, `account_id?`, `category?`, `top_merchants?` | `{ total_spending, total_income, net, by_category[], top_merchants[], largest_transaction }` | read |
+| `get_net_worth` | `customer_id` | `{ total_net_worth, by_category[], accounts[] }` | read |
 | `update_customer` | `customer_id`, `fields` | `Customer` | write (HITL) |
 
 ### 3.2 `product_data_mcp_server`
@@ -139,8 +171,12 @@ erDiagram
 | `list_products` | `category?` | `Product[]` | read |
 | `get_product` | `product_code` | `Product` | read |
 | `list_holdings` | `customer_id` | `ProductHolding[]` | read |
-| `order_product` | `customer_id`, `product_code` | `ProductHolding` | write (HITL) |
+| `detect_opportunities` | `customer_id`, `liquidity_buffer?`, `min_idle_balance?`, `min_annual_gain?` | `{ opportunities[], count }` | read |
+| `list_orders` | `customer_id?`, `status?` | `Order[]` | read |
+| `get_order` | `order_id` | `Order` | read |
+| `order_product` | `customer_id`, `product_code` | `{ order, holding }` | write (HITL) |
 | `update_holding` | `account_id`, `fields` | `ProductHolding` | write (HITL) |
+| `update_order_status` | `order_id`, `status`, `note?` | `Order` | write (HITL) |
 
 > **Human-in-the-loop:** All `write` tools (ordering products, updating customers/holdings)
 > require explicit human approval before the change is committed, per the flows in
