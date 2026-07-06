@@ -159,7 +159,10 @@ mcp = FastMCP(
     instructions=(
         "Bank customer master data. Use these tools to look up customers, their "
         "accounts and credit cards (product holdings), balances and "
-        "transactions. All monetary values are in EUR. Customer data is "
+        "transactions. Use 'summarize_spending' to answer spending questions "
+        "(total, breakdown by category and top merchants, largest single "
+        "transaction) and 'get_net_worth' for a balance overview across all of a "
+        "customer's holdings. All monetary values are in EUR. Customer data is "
         "confidential — only surface details for the customer in context and "
         "never expose one customer's data to another. The 'update_customer' tool "
         "is a write operation and requires explicit human approval "
@@ -297,6 +300,167 @@ def get_balance(account_id: str) -> dict[str, Any]:
         "account_id": holding["account_id"],
         "balance": holding["balance"],
         "currency": holding.get("currency", "EUR"),
+    }
+
+
+def _round2(value: float) -> float:
+    """Round a monetary amount to 2 decimal places."""
+    return round(float(value), 2)
+
+
+@mcp.tool()
+def summarize_spending(customer_id: str,
+                       date_from: Optional[str] = None,
+                       date_to: Optional[str] = None,
+                       account_id: Optional[str] = None,
+                       category: Optional[str] = None,
+                       top_merchants: int = 5) -> dict[str, Any]:
+    """Summarise a customer's spending over a period (categories + top posts).
+
+    Aggregates the customer's transactions so the agent can answer questions
+    like "what did I spend on leisure last month?" with a concrete total plus a
+    breakdown by category and by the largest merchants — and can name the single
+    biggest transaction. Spending means ``debit`` movements; incoming ``credit``
+    movements (salary, transfers in) are reported separately as income.
+
+    Args:
+        customer_id: The customer id, format ``CUST-1001``.
+        date_from: Optional inclusive lower bound date ``YYYY-MM-DD``.
+        date_to: Optional inclusive upper bound date ``YYYY-MM-DD``.
+        account_id: Optional — restrict to a single holding, format
+            ``ACC-100001``. Omit to summarise across all of the customer's
+            holdings.
+        category: Optional — restrict spending to one category (e.g. ``dining``,
+            ``travel``, ``groceries``, ``online_shopping``, ``utilities``).
+            Matched case-insensitively.
+        top_merchants: How many of the biggest-spend merchants to return
+            (default 5).
+
+    Returns a dict with the resolved ``period``, ``total_spending``,
+    ``total_income``, ``net`` (income − spending), ``transaction_count``, a
+    ``by_category`` breakdown (total + count per category, largest first), the
+    ``top_merchants`` by total spend, and the single ``largest_transaction``
+    (biggest debit). If the customer does not exist an ``error`` is returned.
+    """
+    if _find_customer(customer_id) is None:
+        return {"error": f"No customer matched '{customer_id}'."}
+
+    if account_id:
+        txns = _account_transactions(account_id)
+    else:
+        txns = _customer_transactions(customer_id)
+    txns = [t for t in txns if _within_range(t, date_from, date_to)]
+
+    needle = category.strip().lower() if category else None
+
+    total_spending = 0.0
+    total_income = 0.0
+    by_category: dict[str, dict[str, Any]] = {}
+    by_merchant: dict[str, dict[str, Any]] = {}
+    largest: Optional[dict[str, Any]] = None
+    counted = 0
+
+    for txn in txns:
+        amount = float(txn.get("amount", 0.0))
+        direction = txn.get("direction", "debit")
+        if direction == "credit":
+            total_income += amount
+            continue
+        # debit (spending)
+        cat = (txn.get("category") or "uncategorised").lower()
+        if needle and cat != needle:
+            continue
+        counted += 1
+        total_spending += amount
+
+        cat_entry = by_category.setdefault(cat, {"category": cat, "total": 0.0, "count": 0})
+        cat_entry["total"] += amount
+        cat_entry["count"] += 1
+
+        merchant = txn.get("merchant") or "unknown"
+        m_entry = by_merchant.setdefault(merchant, {"merchant": merchant, "total": 0.0, "count": 0})
+        m_entry["total"] += amount
+        m_entry["count"] += 1
+
+        if largest is None or amount > float(largest.get("amount", 0.0)):
+            largest = txn
+
+    by_category_list = sorted(
+        ({**e, "total": _round2(e["total"])} for e in by_category.values()),
+        key=lambda e: e["total"], reverse=True,
+    )
+    top_merchant_list = sorted(
+        ({**e, "total": _round2(e["total"])} for e in by_merchant.values()),
+        key=lambda e: e["total"], reverse=True,
+    )[: max(0, top_merchants)]
+
+    return {
+        "customer_id": customer_id.strip().upper(),
+        "period": {"from": date_from, "to": date_to},
+        "account_id": account_id,
+        "category_filter": needle,
+        "total_spending": _round2(total_spending),
+        "total_income": _round2(total_income),
+        "net": _round2(total_income - total_spending),
+        "transaction_count": counted,
+        "by_category": by_category_list,
+        "top_merchants": top_merchant_list,
+        "largest_transaction": largest,
+        "currency": "EUR",
+    }
+
+
+@mcp.tool()
+def get_net_worth(customer_id: str) -> dict[str, Any]:
+    """Get a customer's total net worth and a breakdown by product type.
+
+    Sums the balances of every holding the customer has so the agent can give a
+    "balance overview across all accounts" answer — current accounts, savings
+    (e.g. instant-access / notice), children's savings and credit cards — plus
+    the overall total. Credit-card balances are typically negative (amount
+    owed), so they reduce the total. Annual interest rates are documented in the
+    product catalogue (product data server) — combine with those to show rates.
+
+    Args:
+        customer_id: The customer id, format ``CUST-1001``.
+
+    Returns ``total_net_worth``, a ``by_category`` breakdown (total balance +
+    holding count per product category) and the per-holding ``accounts`` list.
+    If the customer does not exist an ``error`` is returned.
+    """
+    customer = _find_customer(customer_id)
+    if customer is None:
+        return {"error": f"No customer matched '{customer_id}'."}
+
+    total = 0.0
+    by_category: dict[str, dict[str, Any]] = {}
+    accounts: list[dict[str, Any]] = []
+    for holding in customer.get("products", []):
+        balance = float(holding.get("balance", 0.0))
+        total += balance
+        cat = holding.get("category", "uncategorised")
+        entry = by_category.setdefault(cat, {"category": cat, "total": 0.0, "count": 0})
+        entry["total"] += balance
+        entry["count"] += 1
+        accounts.append({
+            "account_id": holding["account_id"],
+            "product_code": holding.get("product_code"),
+            "product_name": holding.get("product_name"),
+            "category": cat,
+            "balance": _round2(balance),
+            "currency": holding.get("currency", "EUR"),
+        })
+
+    by_category_list = sorted(
+        ({**e, "total": _round2(e["total"])} for e in by_category.values()),
+        key=lambda e: e["total"], reverse=True,
+    )
+    return {
+        "customer_id": customer["customer_id"],
+        "total_net_worth": _round2(total),
+        "by_category": by_category_list,
+        "accounts": accounts,
+        "currency": "EUR",
     }
 
 

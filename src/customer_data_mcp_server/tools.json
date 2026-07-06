@@ -111,6 +111,57 @@
       }
     },
     {
+      "name": "summarize_spending",
+      "description": "Summarise a customer's spending over a period — total plus breakdown by category and top merchants, and the single largest transaction.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          },
+          "date_from": {
+            "type": "string",
+            "description": "Optional inclusive lower bound date 'YYYY-MM-DD'."
+          },
+          "date_to": {
+            "type": "string",
+            "description": "Optional inclusive upper bound date 'YYYY-MM-DD'."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "Optional account id to restrict to one holding, format 'ACC-100001'."
+          },
+          "category": {
+            "type": "string",
+            "description": "Optional category filter (e.g. 'dining', 'travel', 'groceries')."
+          },
+          "top_merchants": {
+            "type": "integer",
+            "default": 5,
+            "description": "How many of the biggest-spend merchants to return."
+          }
+        },
+        "required": ["customer_id"]
+      }
+    },
+    {
+      "name": "get_net_worth",
+      "description": "Get a customer's total net worth and a breakdown of balances by product type across all holdings.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          }
+        },
+        "required": ["customer_id"]
+      }
+    },
+    {
       "name": "update_customer",
       "description": "Update a customer's contact details (write — human-in-the-loop).",
       "access": "write",
