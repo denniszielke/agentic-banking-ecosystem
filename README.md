@@ -535,7 +535,7 @@ Assignments can take 2–5 minutes to propagate. See
 The customer support agent runs as a Container App (not a Foundry hosted agent),
 so it is instrumented in-process: on startup it configures the **Microsoft
 OpenTelemetry distro** (`setup_observability()` in
-`src/customer_support_agent/customer_support_agent.py`), exporting GenAI
+`src/customer_support_agent/_observability.py`), exporting GenAI
 telemetry — model calls, **MCP tool calls** and **human confirmations** for write
 operations (`order_product` / `update_customer`) — to Application Insights via
 `APPLICATIONINSIGHTS_CONNECTION_STRING`. Telemetry is a no-op locally when that

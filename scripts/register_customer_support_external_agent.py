@@ -2,7 +2,7 @@
 
 The customer support agent runs outside Foundry (as an Azure Container App) and
 emits OpenTelemetry GenAI spans to Application Insights (see
-``setup_observability`` in ``src/customer_support_agent/customer_support_agent.py``).
+``setup_observability`` in ``src/customer_support_agent/_observability.py``).
 Registering it as an external agent wires the runtime's emitted
 ``gen_ai.agent.id`` to a Foundry agent so the spans light up in the project's
 trace view (Portal → Project → Agents → customer-support-agent → Traces).
