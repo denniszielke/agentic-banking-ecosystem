@@ -22,6 +22,8 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from scripts._cli import normalize
+
 from azure.ai.projects import AIProjectClient
 # Only the agent-card types are imported at module load so the lightweight
 # helpers (get_client, resolve_registry, get_container_app_fqdn) can be consumed
@@ -103,21 +105,23 @@ def load_agent_card(path: str | Path) -> AgentCard:
 
 
 def _discover_registry(resource_group: str) -> str:
-    """Find the first ACR login server in the resource group (empty if none)."""
+    """Find the first ACR login server in the resource group (empty if none).
+
+    Uses ``az acr list`` (provider API), which reflects a freshly created
+    registry immediately, unlike the generic ``az resource list``.
+    """
     result = subprocess.run(
-        [
-            "az", "resource", "list",
+        normalize([
+            "az", "acr", "list",
             "-g", resource_group,
-            "--resource-type", "Microsoft.ContainerRegistry/registries",
-            "--query", "[0].name",
+            "--query", "[0].loginServer",
             "-o", "tsv",
-        ],
+        ]),
         check=False,
         capture_output=True,
         text=True,
     )
-    name = result.stdout.strip()
-    return f"{name}.azurecr.io" if name else ""
+    return result.stdout.strip()
 
 
 def resolve_registry() -> str:
@@ -140,13 +144,13 @@ def resolve_registry() -> str:
 def get_container_app_fqdn(resource_group: str, app_name: str) -> str:
     """Return the ingress FQDN of a deployed Container App (empty if none)."""
     result = subprocess.run(
-        [
+        normalize([
             "az", "containerapp", "show",
             "--resource-group", resource_group,
             "--name", app_name,
             "--query", "properties.configuration.ingress.fqdn",
             "--output", "tsv",
-        ],
+        ]),
         check=False,
         capture_output=True,
         text=True,
@@ -178,7 +182,7 @@ def _build_image(registry: str, image_name: str, context_path: Path,
     except ValueError:
         rel = dockerfile_path
     cmd += ["--file", str(rel), str(context_path)]
-    subprocess.run(cmd, check=True)
+    subprocess.run(normalize(cmd), check=True)
     print(f"==> Built {image_tag} (also tagged :latest)")
     return image_tag
 
