@@ -131,7 +131,9 @@ canonical data model under `data/products.md`, and deploy scripts under `scripts
 
 - **Customer support agent** → `customer_data_mcp_server`, `product_data_mcp_server`;
   Financial products + Compliance rules search indexes; grounding docs
-  `data/knowledge/bank-south.md` and the product knowledge files.
+  `data/knowledge/bank-south.md` and the product knowledge files. When
+  `COMPLIANCE_A2A_ENABLED=true`, it also consumes Bank North's compliance agent
+  **over A2A** (an `ask_compliance` tool) for cross-org regulatory decisions.
 - **Employee advisory agent** → `product_data_mcp_server`, `customer_data_mcp_server`,
   WorkIQ toolbox; Financial products index; grounding docs
   `data/knowledge/*-products.md` and the relevant branch directory.
