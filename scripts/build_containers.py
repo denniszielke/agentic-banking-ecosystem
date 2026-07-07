@@ -32,6 +32,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from scripts._cli import normalize
+
 load_dotenv(override=True)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -48,7 +50,7 @@ IMAGES: dict[str, str] = {
 
 def _run(cmd: list[str], capture: bool = False) -> str:
     """Run a command, optionally capturing stdout; raise on failure."""
-    result = subprocess.run(cmd, check=True, text=True,
+    result = subprocess.run(normalize(cmd), check=True, text=True,
                             capture_output=capture)
     return (result.stdout or "").strip() if capture else ""
 
@@ -64,11 +66,25 @@ def _subscription_id() -> str:
 
 
 def _registry_name(resource_group: str) -> str:
+    """Resolve the ACR resource name for the resource group.
+
+    Prefers ``AZURE_REGISTRY`` / ``AZURE_CONTAINER_REGISTRY_ENDPOINT`` from
+    ``./.env`` (written by ``azd``); otherwise discovers it with the provider
+    ``az acr list`` API. ``az acr list`` reflects a freshly created registry
+    immediately, unlike the generic ``az resource list`` which can lag for a
+    brand-new resource group.
+    """
+    login_server = (
+        os.getenv("AZURE_REGISTRY")
+        or os.getenv("AZURE_CONTAINER_REGISTRY_ENDPOINT")
+        or ""
+    ).strip()
+    if login_server:
+        return login_server.removesuffix(".azurecr.io")
     return _run(
         [
-            "az", "resource", "list",
+            "az", "acr", "list",
             "-g", resource_group,
-            "--resource-type", "Microsoft.ContainerRegistry/registries",
             "--query", "[0].name",
             "-o", "tsv",
         ],

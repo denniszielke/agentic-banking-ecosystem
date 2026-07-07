@@ -28,6 +28,8 @@ import os
 import subprocess
 import sys
 
+from scripts._cli import normalize
+
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -44,8 +46,9 @@ MCP_APP_NAMES = [CUSTOMER_MCP_APP, PRODUCT_MCP_APP]
 
 
 def run(cmd: list[str]) -> None:
-    print(f"$ {' '.join(cmd)}")
-    subprocess.run(cmd, check=False)
+    normalized = normalize(cmd)
+    print(f"$ {' '.join(normalized)}")
+    subprocess.run(normalized, check=False)
 
 
 def delete_all(purge_auth: bool = False) -> None:

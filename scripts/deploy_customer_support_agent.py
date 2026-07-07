@@ -49,6 +49,8 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+
+from scripts._cli import normalize
 from pathlib import Path
 
 from scripts.auth_helpers import (
@@ -86,8 +88,8 @@ def _identity_principal_and_client() -> tuple[str, str]:
     rg = get_env("AZURE_RESOURCE_GROUP")
     name = get_env("AZURE_IDENTITY_NAME")
     out = subprocess.run(
-        ["az", "identity", "show", "-g", rg, "-n", name,
-         "--query", "[principalId, clientId]", "-o", "tsv"],
+        normalize(["az", "identity", "show", "-g", rg, "-n", name,
+         "--query", "[principalId, clientId]", "-o", "tsv"]),
         check=True, capture_output=True, text=True,
     ).stdout.split()
     return out[0], out[1]
@@ -96,10 +98,10 @@ def _identity_principal_and_client() -> tuple[str, str]:
 def _grant_role(principal_id: str, role_id: str, scope: str) -> None:
     try:
         subprocess.run(
-            ["az", "role", "assignment", "create",
+            normalize(["az", "role", "assignment", "create",
              "--assignee-object-id", principal_id,
              "--assignee-principal-type", "ServicePrincipal",
-             "--role", role_id, "--scope", scope],
+             "--role", role_id, "--scope", scope]),
             check=True, capture_output=True, text=True,
         )
         print(f"  granted {role_id} on {scope}")
@@ -113,7 +115,7 @@ def _grant_role(principal_id: str, role_id: str, scope: str) -> None:
 def assign_identity_roles(principal_id: str) -> None:
     rg = get_env("AZURE_RESOURCE_GROUP")
     rg_scope = subprocess.run(
-        ["az", "group", "show", "-n", rg, "--query", "id", "-o", "tsv"],
+        normalize(["az", "group", "show", "-n", rg, "--query", "id", "-o", "tsv"]),
         check=True, capture_output=True, text=True,
     ).stdout.strip()
     print("==> Assigning managed identity roles")
