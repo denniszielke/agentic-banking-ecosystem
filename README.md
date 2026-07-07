@@ -2,8 +2,11 @@
 
 > A multi-organisation **agentic banking demo**: two independent banks — **Bank North**
 > and **Bank South** — each run their own Microsoft Foundry agents, MCP servers and data
-> in their own Azure subscription, and collaborate across organisational boundaries over
-> **A2A**. Every hop is authenticated with **Microsoft Entra ID** and emits
+> in their **own Azure subscription and Microsoft Entra tenant**, and collaborate across
+> organisational boundaries over **A2A**. A third **Microsoft 365 tenant** brings in
+> **Microsoft 365 Copilot** as the employee surface, and the **MCP servers are openly
+> consumable over MCP** — the very same servers are reached by the bank agents *and* by
+> M365 Copilot. Every hop is authenticated with **Microsoft Entra ID** and emits
 > **OpenTelemetry** to Application Insights.
 
 ![Azure](https://img.shields.io/badge/Azure-0078D4?style=flat&logo=microsoft-azure&logoColor=white)
@@ -31,28 +34,53 @@ boundaries.
 ```mermaid
 flowchart LR
     U([Customer]) --> WEB[customer_app - web]
-    E([Employee]) --> TEAMS[employee_app - Teams]
+    E([Employee]) --> COP[Microsoft 365 Copilot]
 
-    subgraph South["Bank South subscription"]
+    subgraph TA["🏦 Bank South — own Entra tenant + subscription"]
         WEB --> CSA[customer_support_agent]
-        TEAMS --> EAA[employee_advisory_agent]
         CSA --> CCA[credit_card_agent]
-        CSA --> CDATA[(customer_data MCP)]
-        CSA --> PDATA[(product_data MCP)]
+        EAA[employee_advisory_agent]
     end
 
-    subgraph North["Bank North subscription"]
+    subgraph TB["🏦 Bank North — own Entra tenant + subscription"]
         COMP[compliance_agent]
     end
 
-    CSA -. A2A cross-org .-> COMP
-    CCA -. A2A cross-org .-> COMP
+    subgraph TM["☁️ Microsoft 365 — separate Entra tenant"]
+        COP
+    end
+
+    subgraph SHARED["🔓 Shared MCP servers"]
+        CDATA[(customer_data MCP)]
+        PDATA[(product_data MCP)]
+    end
+
+    %% Employee surface is Microsoft 365 Copilot, reaching the bank's advisory agent
+    COP -. A2A / Responses .-> EAA
+
+    %% Bank agents consume the shared MCP servers
+    CSA --> CDATA
+    CSA --> PDATA
+    EAA --> CDATA
+    EAA --> PDATA
+    %% ...and so does Microsoft 365 Copilot — the servers are open, not bank-private
+    COP -. MCP .-> CDATA
+    COP -. MCP .-> PDATA
+
+    %% Cross-organisation A2A (Bank South → Bank North), across tenant boundaries
+    CSA -. A2A cross-tenant .-> COMP
+    CCA -. A2A cross-tenant .-> COMP
+
     CSA --> SEARCH[[Azure AI Search]]
     EAA --> SEARCH
     COMP --> SEARCH
 
-    style South fill:#0078D41F,stroke:#004e8c
-    style North fill:#4129911F,stroke:#2a1a5e
+    style TA fill:#0078D41F,stroke:#004e8c
+    style TB fill:#4129911F,stroke:#2a1a5e
+    style TM fill:#D83B011F,stroke:#8a2600
+    style SHARED fill:#0b6b461F,stroke:#0b6b46,stroke-dasharray: 5 4
+    style CDATA fill:#0b6b4626,stroke:#0b6b46,color:#083b27
+    style PDATA fill:#0b6b4626,stroke:#0b6b46,color:#083b27
 ```
 
 → Full architecture — **component**, **data-flow** and **application-flow** views plus the
