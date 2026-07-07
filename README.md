@@ -2,9 +2,11 @@
 
 > A multi-organisation **agentic banking demo**: two independent banks — **Bank North**
 > and **Bank South** — each run their own Microsoft Foundry agents, MCP servers and data
-> in their own Azure subscription, and collaborate across organisational boundaries over
-> **A2A**. Every hop is authenticated with **Microsoft Entra ID** and emits
-> **OpenTelemetry** to Application Insights.
+> in their own **Azure subscription and Microsoft Entra tenant**, and collaborate across
+> organisational boundaries over **A2A**. A third **Microsoft 365 tenant** adds **Microsoft
+> 365 Copilot** as the employee surface, and the **MCP servers are shared** — reached by the
+> bank agents *and* by M365 Copilot alike. Every hop is authenticated with **Microsoft
+> Entra ID** and emits **OpenTelemetry** to Application Insights.
 
 ![Azure](https://img.shields.io/badge/Azure-0078D4?style=flat&logo=microsoft-azure&logoColor=white)
 ![Microsoft Foundry](https://img.shields.io/badge/Microsoft%20Foundry-412991?style=flat&logo=microsoft&logoColor=white)
@@ -32,14 +34,14 @@ boundaries.
 flowchart LR
     U([Customer]) --> WEB[customer_app - web]
 
+    subgraph M365["Microsoft 365 Tenant"]
+        E([Employee]) --> COP[Microsoft 365 Copilot - in Teams]
+    end
+
     subgraph South["Bank South Tenant"]
-        E([Employee]) --> TEAMS[employee_app - Teams]
         WEB -->|AG-UI| CSA[customer_support_agent]
-        TEAMS --> EAA[employee_advisory_agent]
         CSA --> CCA[credit_card_agent]
-        CSA -->|MCP| GW{{MCP Gateway}}
-        GW -->|MCP| CDATA[(customer_data MCP)]
-        GW -->|MCP| PDATA[(product_data MCP)]
+        EAA[employee_advisory_agent]
         SEARCH_S[[Azure AI Search]]
     end
 
@@ -48,14 +50,32 @@ flowchart LR
         SEARCH_N[[Azure AI Search]]
     end
 
+    subgraph SHARED["🔓 Shared MCP servers"]
+        GW{{MCP Gateway}}
+        CDATA[(customer_data MCP)]
+        PDATA[(product_data MCP)]
+    end
+
+    COP -. A2A / Responses .-> EAA
+    COP -. MCP .-> GW
+    CSA -->|MCP| GW
+    EAA -->|MCP| GW
+    GW -->|MCP| CDATA
+    GW -->|MCP| PDATA
+
     CSA -. A2A cross-org .-> COMP
     CCA -. A2A cross-org .-> COMP
     CSA --> SEARCH_S
     EAA --> SEARCH_S
     COMP --> SEARCH_N
 
+    style M365 fill:#D83B011F,stroke:#8a2600
     style South fill:#0078D41F,stroke:#004e8c
     style North fill:#4129911F,stroke:#2a1a5e
+    style SHARED fill:#0b6b461F,stroke:#0b6b46,stroke-dasharray: 5 4
+    style CDATA fill:#0b6b4626,stroke:#0b6b46,color:#083b27
+    style PDATA fill:#0b6b4626,stroke:#0b6b46,color:#083b27
+    style GW fill:#0b6b4626,stroke:#0b6b46,color:#083b27
 ```
 
 → Full architecture — **component**, **data-flow** and **application-flow** views plus the
