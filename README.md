@@ -65,21 +65,21 @@ communication-paths table — lives in **[narrative.md](narrative.md#architectur
 ## Inside a bank subscription
 
 Zooming into a single bank — **Bank South** — shows how one organisation's own
-**Entra tenant + Azure subscription** (`rg-banking`) is wired: the **Foundry**
-project hosts the `employee_advisory_agent`, model deployments and toolboxes; the
-**Container Apps** environment runs the `customer_support_agent` and the two MCP
-servers (pulled from the **Container Registry**); a **managed identity** gives
-every component its Entra token; **Azure AI Search** and **Storage** back the
+**Entra ID tenant + Azure subscription** (resource group `rg-banking`) is wired:
+the **Foundry** project hosts the `employee_advisory_agent`, model deployments and
+toolboxes; the **Container Apps** environment runs the `customer_support_agent` and
+the two MCP servers (pulled from the **Container Registry**); a **managed identity**
+gives every component its Entra token; **Azure AI Search** and **Storage** back the
 grounding and agent state; and all compute exports **OpenTelemetry** to
-**Application Insights → Log Analytics**. The only edges that leave the
+**Application Insights → Log Analytics**. The only outbound edges leaving the
 subscription are **A2A cross-tenant** to Bank North's compliance agent and the
 **Agent 365** identity/telemetry plane.
 
 ```mermaid
 flowchart TB
-    COP([M365 Copilot - separate tenant]) -. A2A / MCP .-> CSA
+    COP([Microsoft 365 Copilot - separate tenant]) -. A2A / MCP .-> CSA
 
-    subgraph SUB["Bank South - own Entra tenant + Azure subscription (rg-banking)"]
+    subgraph SUB["Bank South - own Entra ID tenant + Azure subscription (resource group rg-banking)"]
       direction TB
 
       subgraph FOUNDRY["Microsoft Foundry"]
