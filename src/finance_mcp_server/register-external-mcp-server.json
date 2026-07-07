@@ -2,16 +2,16 @@
   "serverName": "ext_finance",
   "serverUrl": "",
   "authType": "EntraID",
-  "description": "Finance calculation MCP server — compound interest and present-value discounting tools.",
+  "description": "Finance MCP server: compound-interest and present-value discounting tools.",
   "publisherName": "Bank North / Bank South",
   "tools": [
     {
       "name": "calculate_compound_interest",
-      "description": "Calculate compound interest and the future value of an investment given principal, annual rate, duration and compounding frequency."
+      "description": "Compute future value from principal, annual rate, duration and compounding frequency."
     },
     {
       "name": "discount_cashflow",
-      "description": "Discount a future cash flow to its present value given the future amount, annual discount rate, duration and compounding frequency."
+      "description": "Discount a future amount to present value using rate, duration and compounding frequency."
     }
   ],
   "remoteScopes": null,
