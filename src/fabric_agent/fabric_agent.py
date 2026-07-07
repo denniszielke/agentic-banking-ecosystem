@@ -259,11 +259,14 @@ def make_fabric_tools(credential: DefaultAzureCredential) -> list:
 
     Uses ``FoundryChatClient.get_fabric_tool()`` to create Microsoft Fabric
     data agent tool configurations backed by Foundry project connections.
+    ``allow_preview=True`` is required so the underlying AIProjectClient
+    sends the ``Foundry-Features`` header that unlocks preview tool types.
     """
     chat_client = FoundryChatClient(
         project_endpoint=_PROJECT_ENDPOINT,
         model=_MODEL,
         credential=credential,
+        allow_preview=True,
     )
     return [
         chat_client.get_fabric_tool(connection_id=_CUSTOMER_FABRIC_CONNECTION_ID),

@@ -147,6 +147,7 @@ _agent = Agent(
         project_endpoint=_PROJECT_ENDPOINT,
         model=_MODEL,
         credential=_credential,
+        allow_preview=True,
     ),
     name="FabricCustomerSupportAgent",
     instructions=SYSTEM_PROMPT,
