@@ -4,7 +4,7 @@ Hosts the `agent-framework` customer support agent behind the AG-UI protocol
 (Server-Sent Events) and serves a streaming single-page banking web UI from the
 same container. This is the ``customer_app`` front end from ``narrative.md``:
 the customer talks to the agent, and the agent mediates all data access through
-the customer/product MCP servers — the web app never calls MCP directly.
+the Fabric data agents — the web app never calls them directly.
 
 The agent keeps three live sidebar panels in sync via AG-UI *shared state*:
 
@@ -148,7 +148,7 @@ _agent = Agent(
         model=_MODEL,
         credential=_credential,
     ),
-    name="CustomerSupportAgent",
+    name="FabricCustomerSupportAgent",
     instructions=SYSTEM_PROMPT,
     tools=[update_overview, *_fabric_tools, *_extra_tools],
     context_providers=[_product_provider],
