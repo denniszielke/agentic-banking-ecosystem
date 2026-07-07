@@ -40,6 +40,8 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
+
+from scripts._cli import normalize
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -59,7 +61,7 @@ WORKIQ_SCOPE = os.getenv("WORKIQ_SCOPE", "McpServers.Calendar.All").strip()
 def _az(*args: str, check: bool = True) -> str:
     """Run an ``az`` command and return trimmed stdout."""
     result = subprocess.run(
-        ["az", *args], check=False, capture_output=True, text=True
+        normalize(["az", *args]), check=False, capture_output=True, text=True
     )
     if check and result.returncode != 0:
         raise RuntimeError(

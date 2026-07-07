@@ -63,11 +63,13 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(dotenv_path=_REPO_ROOT / ".env", override=True)
 load_dotenv(override=False)
 
+from scripts._cli import normalize  # noqa: E402
+
 
 def _az(*args: str, check: bool = True) -> str:
     """Run an ``az`` command and return trimmed stdout."""
     result = subprocess.run(
-        ["az", *args], check=False, capture_output=True, text=True
+        normalize(["az", *args]), check=False, capture_output=True, text=True
     )
     if check and result.returncode != 0:
         raise RuntimeError(

@@ -54,9 +54,12 @@ Environment variables:
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+from scripts._cli import normalize
 
 from dotenv import load_dotenv
 
@@ -77,12 +80,12 @@ CONNECTION_NAME = os.getenv("WORKIQ_CONNECTION_NAME", "workiq-connection").strip
 
 
 def _azd(*args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["azd", *args], check=False, capture_output=True, text=True)
+    return subprocess.run(normalize(["azd", *args]), check=False, capture_output=True, text=True)
 
 
 def _ensure_azd() -> bool:
     """Verify the azd CLI and the Foundry extension (``azd ai``) are available."""
-    if subprocess.run(["which", "azd"], check=False, capture_output=True).returncode != 0:
+    if shutil.which("azd") is None:
         print(
             "ERROR: the Azure Developer CLI (azd) is not installed. Install it, then "
             "run 'azd ext install microsoft.foundry'.",
