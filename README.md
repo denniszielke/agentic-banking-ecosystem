@@ -31,25 +31,27 @@ boundaries.
 ```mermaid
 flowchart LR
     U([Customer]) --> WEB[customer_app - web]
-    E([Employee]) --> TEAMS[employee_app - Teams]
 
-    subgraph South["Bank South subscription"]
-        WEB --> CSA[customer_support_agent]
+    subgraph South["Bank South Tenant"]
+        E([Employee]) --> TEAMS[employee_app - Teams]
+        WEB -->|AG-UI| CSA[customer_support_agent]
         TEAMS --> EAA[employee_advisory_agent]
         CSA --> CCA[credit_card_agent]
-        CSA --> CDATA[(customer_data MCP)]
-        CSA --> PDATA[(product_data MCP)]
+        CSA -->|MCP| CDATA[(customer_data MCP)]
+        CSA -->|MCP| PDATA[(product_data MCP)]
+        SEARCH_S[[Azure AI Search]]
     end
 
-    subgraph North["Bank North subscription"]
+    subgraph North["Bank North Tenant"]
         COMP[compliance_agent]
+        SEARCH_N[[Azure AI Search]]
     end
 
     CSA -. A2A cross-org .-> COMP
     CCA -. A2A cross-org .-> COMP
-    CSA --> SEARCH[[Azure AI Search]]
-    EAA --> SEARCH
-    COMP --> SEARCH
+    CSA --> SEARCH_S
+    EAA --> SEARCH_S
+    COMP --> SEARCH_N
 
     style South fill:#0078D41F,stroke:#004e8c
     style North fill:#4129911F,stroke:#2a1a5e
