@@ -84,7 +84,6 @@ _EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME", "").strip
 # Customer and product data are accessed via Microsoft Fabric data agents
 # through Foundry project connections.
 _CUSTOMER_FABRIC_CONNECTION_ID = os.environ["CUSTOMER_FABRIC_CONNECTION_ID"]
-_PRODUCT_FABRIC_CONNECTION_ID = os.environ["PRODUCT_FABRIC_CONNECTION_ID"]
 
 # Cross-organisation A2A: Bank South's customer support agent can consume Bank
 # North's Compliance agent as an A2A service (narrative edge 4). This is the
@@ -268,9 +267,16 @@ def make_fabric_tools(credential: DefaultAzureCredential) -> list:
         credential=credential,
         allow_preview=True,
     )
+    # ``get_fabric_tool`` returns an azure.ai.projects ``MicrosoftFabricPreviewTool``
+    # model. Serialise each to its plain wire dict with ``as_dict()`` before handing
+    # it to the agent: when the Foundry client builds the Responses API payload it
+    # only *shallow*-copies hosted-tool mappings, so the nested
+    # ``FabricDataAgentToolParameters`` model would otherwise reach json.dumps and
+    # raise "Object of type FabricDataAgentToolParameters is not JSON serializable".
+    # as_dict() serialises recursively, yielding a fully JSON-safe payload.
     return [
-        chat_client.get_fabric_tool(connection_id=_CUSTOMER_FABRIC_CONNECTION_ID),
-        chat_client.get_fabric_tool(connection_id=_PRODUCT_FABRIC_CONNECTION_ID),
+        chat_client.get_fabric_tool(connection_id=_CUSTOMER_FABRIC_CONNECTION_ID).as_dict(),
+        # chat_client.get_fabric_tool(connection_id=_PRODUCT_FABRIC_CONNECTION_ID).as_dict(),
     ]
 
 

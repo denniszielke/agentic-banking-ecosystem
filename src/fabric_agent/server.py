@@ -59,6 +59,20 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logging.getLogger("azure").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+# agent-framework's OpenTelemetry instrumentation is ENABLED by default and,
+# when building agent-invocation span attributes, eagerly json.dumps() every
+# tool definition. The Foundry Microsoft Fabric preview tool carries a
+# ``FabricDataAgentToolParameters`` object that is not JSON-serialisable, so the
+# tracer crashes the /agent SSE stream with "Object of type
+# FabricDataAgentToolParameters is not JSON serializable". No OTel exporter is
+# wired in this process, so the instrumentation only builds spans that go
+# nowhere but still crash. Disable framework instrumentation for this app until
+# the upstream fix lands; set ENABLE_INSTRUMENTATION=true to opt back in.
+if os.getenv("ENABLE_INSTRUMENTATION", "").strip().lower() not in {"1", "true", "yes", "on"}:
+    from agent_framework.observability import disable_instrumentation
+
+    disable_instrumentation()
+
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
@@ -151,7 +165,7 @@ _agent = Agent(
     ),
     name="FabricCustomerSupportAgent",
     instructions=SYSTEM_PROMPT,
-    tools=[update_overview, *_fabric_tools, *_extra_tools],
+    tools=[*_fabric_tools],
     context_providers=[_product_provider],
 )
 
