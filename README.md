@@ -4,8 +4,8 @@
 > and **Bank South** — each run their own Microsoft Foundry agents, MCP servers and data
 > in their **own Azure subscription and Microsoft Entra tenant**, and collaborate across
 > organisational boundaries over **A2A**. A third **Microsoft 365 tenant** brings in
-> **Microsoft 365 Copilot** as the employee surface, and the **MCP servers are openly
-> consumable over MCP** — the very same servers are reached by the bank agents *and* by
+> **Microsoft 365 Copilot** as the employee surface. The **MCP servers are accessible
+> via MCP** — the very same servers are reached by the bank agents *and* by
 > M365 Copilot. Every hop is authenticated with **Microsoft Entra ID** and emits
 > **OpenTelemetry** to Application Insights.
 
