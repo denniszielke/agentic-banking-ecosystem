@@ -37,8 +37,9 @@ flowchart LR
         WEB -->|AG-UI| CSA[customer_support_agent]
         TEAMS --> EAA[employee_advisory_agent]
         CSA --> CCA[credit_card_agent]
-        CSA -->|MCP| CDATA[(customer_data MCP)]
-        CSA -->|MCP| PDATA[(product_data MCP)]
+        CSA -->|MCP| GW{{MCP Gateway}}
+        GW -->|MCP| CDATA[(customer_data MCP)]
+        GW -->|MCP| PDATA[(product_data MCP)]
         SEARCH_S[[Azure AI Search]]
     end
 
