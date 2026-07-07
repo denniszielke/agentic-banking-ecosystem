@@ -1,19 +1,67 @@
-"""Finance MCP server providing financial tools."""
+"""Finance MCP server providing financial calculation tools."""
 
 from __future__ import annotations
 
 import json
 import logging
 import os
-from typing import Literal, cast, get_args
+from typing import Any
 
 from fastmcp import FastMCP
-
-from finance_mcp.auth import trust_platform_auth
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("Finance MCP Server")
+_HOST = os.getenv("FINANCE_MCP_HOST", "127.0.0.1")
+_PORT = int(os.getenv("FINANCE_MCP_PORT", "8093"))
+
+
+def _build_auth():
+    """Build the FastMCP Microsoft Entra ID JWT auth provider, or ``None``.
+
+    Enabled when ``ENTRA_AUTH_ENABLED`` is truthy and both ``MCP_AUTH_CLIENT_ID``
+    and ``AZURE_TENANT_ID`` are set. Returns ``None`` to run anonymously (local
+    development, or auth toggled off).
+    """
+    enabled = os.getenv("ENTRA_AUTH_ENABLED", "false").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+    client_id = os.getenv("MCP_AUTH_CLIENT_ID", "").strip()
+    tenant_id = os.getenv("AZURE_TENANT_ID", "").strip()
+    if not (enabled and client_id and tenant_id):
+        return None
+    from fastmcp.server.auth import RemoteAuthProvider
+    from fastmcp.server.auth.providers.azure import AzureJWTVerifier
+    from pydantic import AnyHttpUrl
+
+    base_url = os.getenv("MCP_PUBLIC_BASE_URL", "").strip() or f"http://{_HOST}:{_PORT}"
+    verifier = AzureJWTVerifier(client_id=client_id, tenant_id=tenant_id)
+    return RemoteAuthProvider(
+        token_verifier=verifier,
+        authorization_servers=[
+            AnyHttpUrl(f"https://login.microsoftonline.com/{tenant_id}/v2.0")
+        ],
+        base_url=base_url,
+    )
+
+
+mcp = FastMCP(
+    name="finance",
+    instructions=(
+        "Financial calculation tools. Use these tools to compute compound interest, "
+        "discount future cash flows to present value, and perform other time-value-of-money "
+        "calculations. All rates are expressed as annual percentages (e.g. 5 means 5%). "
+        "Results are returned as JSON with rounded monetary values."
+    ),
+    auth=_build_auth(),
+)
+
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(_: Request) -> JSONResponse:
+    """Readiness probe endpoint — returns 200 OK when the server is up."""
+    return JSONResponse({"status": "ok"})
 
 
 @mcp.tool()
@@ -104,51 +152,15 @@ def discount_cashflow(
     )
 
 
-# ---------------------------------------------------------------------------
-# Server entrypoint
-# ---------------------------------------------------------------------------
-
-Transport = Literal["stdio", "http", "streamable-http"]
-_NETWORK_TRANSPORTS = {"http", "streamable-http"}
-
-
 def main() -> None:
-    """Run the MCP server.
-
-    Transport, host, and port are read from the environment so the same
-    entrypoint works locally (stdio) and in containers (HTTP):
-
-        MCP_TRANSPORT: stdio | http | streamable-http (default: stdio)
-        MCP_HOST:      bind address for network transports (default: 0.0.0.0)
-        MCP_PORT / PORT: port for network transports (default: 8000)
-
-    For network transports authentication is mandatory: the server refuses to
-    start unless the deployment platform's own auth gate is trusted
-    (MCP_TRUST_PLATFORM_AUTH=1 -- Cloud Run IAM, Databricks OAuth, Azure Easy
-    Auth). See finance_mcp.auth.
-    """
+    """Entry point — serve the finance tools over streamable-HTTP MCP."""
     logging.basicConfig(level=os.environ.get("MCP_LOG_LEVEL", "INFO"))
-
-    transport = os.environ.get("MCP_TRANSPORT", "stdio")
-    if transport not in get_args(Transport):
-        raise SystemExit(f"Invalid MCP_TRANSPORT '{transport}'. Expected one of: {', '.join(get_args(Transport))}.")
-    transport = cast(Transport, transport)
-
-    if transport in _NETWORK_TRANSPORTS and not trust_platform_auth():
-        raise SystemExit(
-            f"Refusing to start: transport '{transport}' is network-exposed but the "
-            "platform auth gate is not trusted. Deploy behind Cloud Run IAM, "
-            "Databricks OAuth, or Azure Easy Auth and set MCP_TRUST_PLATFORM_AUTH=1. "
-            "See the Authentication section of the README."
-        )
-
-    if transport == "stdio":
-        mcp.run(transport=transport)
-        return
-
-    port = int(os.environ.get("MCP_PORT") or os.environ.get("PORT") or os.environ.get("DATABRICKS_APP_PORT") or "8000")
-    host = os.environ.get("MCP_HOST", "0.0.0.0")
-    mcp.run(transport=transport, host=host, port=port)
+    mcp.run(
+        transport="http",
+        host=_HOST,
+        port=_PORT,
+        host_origin_protection=False,
+    )
 
 
 if __name__ == "__main__":
