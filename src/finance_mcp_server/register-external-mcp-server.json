@@ -1,7 +1,7 @@
 {
-  "serverName": "ext_finance",
-  "serverUrl": "",
-  "authType": "EntraID",
+  "serverName": "ext_finance_mcp",
+  "serverUrl": ".azurecontainerapps.io/mcp",
+  "authType": "NoAuth",
   "description": "Finance MCP server: compound-interest and present-value discounting tools.",
   "publisherName": "Bank North / Bank South",
   "tools": [
