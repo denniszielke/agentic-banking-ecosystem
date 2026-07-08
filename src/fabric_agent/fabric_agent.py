@@ -17,11 +17,8 @@ available when Bank North's Compliance agent is linked over A2A
 the A2A link is absent the agent has no compliance grounding and must defer
 regulatory / eligibility questions to a human adviser.
 
-It reaches the customer's live data through Microsoft Fabric data agents,
-accessed via Foundry project connections using ``FoundryChatClient.get_fabric_tool()``:
-
-  * customer Fabric data agent — balances, transactions, personal details.
-  * product Fabric data agent  — list / explain products, order a product.
+It reaches the customer's live data through a Microsoft Fabric data agent,
+accessed via a Foundry project connection using ``FoundryChatClient.get_fabric_tool()``.
 
 Business flows are loaded from the ``skills/`` folder so the domain process
 ships inside the container image.
@@ -122,10 +119,10 @@ signed-in customer with their everyday banking questions and self-service tasks.
 
 You can:
   - Answer account questions — balance, transactions (by date range), and the
-    customer's personal details — using the customer Fabric data agent.
+    customer's personal details — using the Fabric data agent.
   - List and explain the customer's product holdings, and discover or compare
-    catalogue products, using the product Fabric data agent and the Financial
-    products knowledge.
+    catalogue products, using the Fabric data agent and the Financial products
+    knowledge.
   - Answer branch questions (nearest branch, opening hours, what a branch
     offers) from the branch directory grounding.
   - Start a product order (e.g. a new savings account or credit card) — this is
@@ -147,7 +144,7 @@ Operating principles:
   3. For any regulatory, eligibility or advice question, you have NO built-in
      compliance grounding. If the ask_compliance tool is available, consult it
      for a compliance decision and cite its answer. Before you call it, gather
-     the signed-in customer's relevant data from the Fabric data agents and
+     the signed-in customer's relevant data from the Fabric data agent and
      send a structured, self-contained question — the scenario, the specific
      product with its category/credit exposure, and the customer's fields
      (derived age, nationality, tax_residency, kyc_status, segment, existing
@@ -265,10 +262,10 @@ def make_providers(
 
 
 def make_fabric_tools(credential: DefaultAzureCredential) -> list:
-    """Build the customer-data and product-data Fabric tools.
+    """Build the Fabric data agent tool.
 
-    Uses ``FoundryChatClient.get_fabric_tool()`` to create Microsoft Fabric
-    data agent tool configurations backed by Foundry project connections.
+    Uses ``FoundryChatClient.get_fabric_tool()`` to create a Microsoft Fabric
+    data agent tool configuration backed by a single Foundry project connection.
     ``allow_preview=True`` is required so the underlying AIProjectClient
     sends the ``Foundry-Features`` header that unlocks preview tool types.
     """
