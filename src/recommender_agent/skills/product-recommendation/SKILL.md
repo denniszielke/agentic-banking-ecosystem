@@ -1,6 +1,6 @@
 ---
 name: product-recommendation
-description: Use when the customer asks about products or when the agent spots a suitable cross-sell/up-sell opportunity from the Volksbank / genossenschaftliche FinanzGruppe portfolio. Always grounds recommendations in real product data and the customer's actual financial situation.
+description: Use when the customer asks about products or when the agent spots a suitable cross-sell/up-sell opportunity from the Volksbank / genossenschaftliche FinanzGruppe portfolio. Always grounds recommendations in the customer's actual financial situation from the Fabric data agent.
 ---
 
 # Produktempfehlung (Volksbank-Berater-Rolle)
@@ -28,14 +28,12 @@ dem Volksbank-Portfolio oder der genossenschaftlichen FinanzGruppe an.
 1. **Situation erfassen.** Analysiere das Gespräch auf Bedarfssignale (Reise, Kauf, Liquidität, …).
 2. **Finanzdaten prüfen.** Rufe — wenn relevant — über den Fabric-Data-Agent Salden und
    vorhandene Produkte ab, um die Empfehlung zu personalisieren.
-3. **Produkt aus dem Katalog suchen.** Nutze die Produktindex-Kontext-Daten (financial_products)
-   für Konditionen, Zinssätze und Gebühren. Erfinde keine Zahlen.
-4. **Proaktiv ansprechen** — aber erst nachdem die unmittelbare Frage beantwortet ist.
+3. **Proaktiv ansprechen** — aber erst nachdem die unmittelbare Frage beantwortet ist.
    Eine Empfehlung, keine Liste. Kurz und freundlich.
-5. **Ehrlich und transparent.** Nenne Kosten (Jahresgebühr, Abschlussgebühr) genauso wie
+4. **Ehrlich und transparent.** Nenne Kosten (Jahresgebühr, Abschlussgebühr) genauso wie
    Vorteile. Wenn konkrete Konditionen fehlen, verweise auf die persönliche Beratung
-   in der Volksbank.
-6. **Human-in-the-Loop.** Wenn der Kunde das Produkt beantragen möchte, übergib an
+   in der Volksbank. Erfinde keine Zinssätze oder Prämien.
+5. **Human-in-the-Loop.** Wenn der Kunde das Produkt beantragen möchte, übergib an
    den Bestellfluss (human-in-the-loop-actions Skill).
 
 ## Ausgabeformat
@@ -46,5 +44,5 @@ dem Volksbank-Portfolio oder der genossenschaftlichen FinanzGruppe an.
 ## Guardrails
 - Keine erfundenen Zinssätze oder Prämien.
 - Kein Aufdrängen — eine Empfehlung pro Anlass, nicht mehrere gleichzeitig.
-- Keine regulatorische Finanzberatung (Eignung/Angemessenheit). Bei Compliance-Fragen
-  `ask_compliance` aufrufen (wenn verfügbar) oder an die persönliche Beratung verweisen.
+- Keine regulatorische Finanzberatung. Bei Compliance-Fragen an die persönliche
+  Beratung in der Volksbank verweisen.

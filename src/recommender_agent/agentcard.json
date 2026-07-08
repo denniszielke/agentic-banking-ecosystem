@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "description": "Volksbank personal banking assistant. Answers account questions, explains and recommends products from the Volksbank / genossenschaftliche FinanzGruppe portfolio, and supports customers with human-in-the-loop actions.",
+  "description": "Volksbank personal banking assistant. Answers account questions, runs financial calculations and proactively recommends products from the Volksbank / genossenschaftliche FinanzGruppe portfolio. Supports human-in-the-loop write operations.",
   "skills": [
     {
       "id": "account-enquiry",
