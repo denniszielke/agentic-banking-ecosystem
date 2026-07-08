@@ -35,8 +35,7 @@ Environment variables:
   AZURE_AI_MODEL_DEPLOYMENT_NAME          — fallback model name
   AZURE_OPENAI_ENDPOINT                   — Azure OpenAI endpoint for embeddings
   AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME  — embedding model for hybrid search
-  CUSTOMER_FABRIC_CONNECTION_ID           — Foundry project connection ID for the customer Fabric data agent (required)
-  PRODUCT_FABRIC_CONNECTION_ID            — Foundry project connection ID for the product Fabric data agent (required)
+  FABRIC_CONNECTION_ID                    — Foundry project connection ID shared by both Fabric data agents (required)
 """
 
 from __future__ import annotations
@@ -83,9 +82,8 @@ _AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", "").strip()
 _EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME", "").strip()
 
 # Customer and product data are accessed via Microsoft Fabric data agents
-# through Foundry project connections.
-_CUSTOMER_FABRIC_CONNECTION_ID = os.environ["CUSTOMER_FABRIC_CONNECTION_ID"]
-_PRODUCT_FABRIC_CONNECTION_ID = os.environ["PRODUCT_FABRIC_CONNECTION_ID"]
+# through a shared Foundry project connection.
+_FABRIC_CONNECTION_ID = os.environ["FABRIC_CONNECTION_ID"]
 
 # Cross-organisation A2A: Bank South's customer support agent can consume Bank
 # North's Compliance agent as an A2A service (narrative edge 4). This is the
@@ -284,8 +282,7 @@ def make_fabric_tools(credential: DefaultAzureCredential) -> list:
     # hosted-tool mappings, so the nested FabricDataAgentToolParameters model would
     # otherwise reach json.dumps and raise "not JSON serializable".
     return [
-        chat_client.get_fabric_tool(connection_id=_CUSTOMER_FABRIC_CONNECTION_ID).as_dict(),
-        chat_client.get_fabric_tool(connection_id=_PRODUCT_FABRIC_CONNECTION_ID).as_dict(),
+        chat_client.get_fabric_tool(connection_id=_FABRIC_CONNECTION_ID).as_dict(),
     ]
 
 

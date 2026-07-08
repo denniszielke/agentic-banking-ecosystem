@@ -22,10 +22,8 @@ Environment variables (populated from ``.env`` by ``azd up``):
   AZURE_IDENTITY_NAME                    user-assigned managed identity (required)
   AZURE_AI_PROJECT_ENDPOINT              Foundry project endpoint (required)
   AZURE_SEARCH_ENDPOINT                  search endpoint (required)
-  CUSTOMER_FABRIC_CONNECTION_ID          Foundry project connection ID for the
-                                         customer Fabric data agent (required)
-  PRODUCT_FABRIC_CONNECTION_ID           Foundry project connection ID for the
-                                         product Fabric data agent (required)
+  FABRIC_CONNECTION_ID                   Foundry project connection ID shared by
+                                         both Fabric data agents (required)
   APPLICATIONINSIGHTS_CONNECTION_STRING  telemetry sink (optional)
   FABRIC_AGENT_APP_NAME                  Container App name (default: fabric-agent)
   FABRIC_AGENT_PORT                      container port (default: 8090)
@@ -146,8 +144,7 @@ def deploy(tag: str | None = None) -> None:
         "AZURE_SEARCH_ADMIN_KEY": os.getenv("AZURE_SEARCH_ADMIN_KEY", ""),
         "AZURE_SEARCH_PRODUCT_INDEX_NAME": os.getenv("AZURE_SEARCH_PRODUCT_INDEX_NAME", "banking-products"),
         # Foundry project connection IDs for the Fabric data agents.
-        "CUSTOMER_FABRIC_CONNECTION_ID": get_env("CUSTOMER_FABRIC_CONNECTION_ID"),
-        "PRODUCT_FABRIC_CONNECTION_ID": get_env("PRODUCT_FABRIC_CONNECTION_ID"),
+        "FABRIC_CONNECTION_ID": get_env("FABRIC_CONNECTION_ID"),
         # Cross-org A2A: consume Bank North's Compliance hosted agent over A2A.
         "COMPLIANCE_A2A_ENABLED": os.getenv("COMPLIANCE_A2A_ENABLED", "false"),
         "AZURE_AI_COMPLIANCE_AGENT_NAME": os.getenv("AZURE_AI_COMPLIANCE_AGENT_NAME", "compliance-agent"),
