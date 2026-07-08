@@ -106,6 +106,13 @@ _CUSTOMER_TOOLBOX_ENDPOINT = os.getenv("CUSTOMER_TOOLBOX_MCP_ENDPOINT") or (
 )
 _DIRECT_CUSTOMER_MCP_URL = os.getenv("CUSTOMER_MCP_URL", "").strip()
 
+_FINBOT_SQL_ENABLED = os.getenv("EMPLOYEE_FINBOT_SQL_ENABLED", "true").strip().lower() == "true"
+_FINBOT_SQL_TOOLBOX_NAME = os.getenv("FINBOT_SQL_TOOLBOX_NAME", "finbot-sql-tools")
+_FINBOT_SQL_TOOLBOX_ENDPOINT = os.getenv("FINBOT_SQL_TOOLBOX_MCP_ENDPOINT") or (
+    f"{_PROJECT_ENDPOINT.rstrip('/')}/toolboxes/{_FINBOT_SQL_TOOLBOX_NAME}/mcp?api-version=v1"
+)
+_DIRECT_FINBOT_SQL_MCP_URL = os.getenv("FINBOT_SQL_MCP_URL", "").strip()
+
 _WORKIQ_ENABLED = os.getenv("EMPLOYEE_WORKIQ_ENABLED", "true").strip().lower() == "true"
 _WORKIQ_TOOLBOX_NAME = os.getenv("WORKIQ_TOOLBOX_NAME", "workiq-tools")
 _WORKIQ_TOOLBOX_ENDPOINT = os.getenv("WORKIQ_TOOLBOX_MCP_ENDPOINT") or (
@@ -294,6 +301,12 @@ _tools: list = [
 ]
 if _WORKIQ_ENABLED:
     _tools.append(_build_mcp_tool("workiq", _WORKIQ_TOOLBOX_ENDPOINT, _DIRECT_WORKIQ_MCP_URL))
+if _FINBOT_SQL_ENABLED:
+    _tools.append(
+        _build_mcp_tool(
+            "finbot-sql", _FINBOT_SQL_TOOLBOX_ENDPOINT, _DIRECT_FINBOT_SQL_MCP_URL
+        )
+    )
 
 _chat_client = FoundryChatClient(
     project_endpoint=_PROJECT_ENDPOINT,

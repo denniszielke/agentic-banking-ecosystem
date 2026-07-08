@@ -206,6 +206,27 @@ Wire the consumers:
   agentic-identity --audience api://<appId>`. Without the connection the toolbox
   registration warns and tool calls return 401. Publishing an agent creates a
   new identity — re-run for it.
+
+  > **IMPORTANT — agent identity rotation + Conditional Access (read this when
+  > agentic-identity MCP calls fail).** Every agent **republish/redeploy can
+  > rotate the hosted agent's Entra Agent Identity** (new service-principal
+  > object id). After each deploy you MUST, for the *new* identity:
+  > 1. **Re-grant `Mcp.Invoke`** on every MCP app registration —
+  >    `python -m scripts.grant_agent_identity_mcp_role` (auto-discovers the
+  >    current identity; covers customer/product/finbot).
+  > 2. **Re-add the new identity object id to the Conditional Access policy
+  >    `High Risk Agents` (id `974ed75d-23d4-4f1f-af57-c1daf9998505`)
+  >    `excludeAgentIdServicePrincipals`.** That policy `blocks` **all** agent
+  >    identities (`includeAgentIdServicePrincipals=["All"]`); an identity that
+  >    is not excluded cannot mint a token and every agentic-identity MCP tool
+  >    call fails with **`Failed to fetch agentic identity access token
+  >    (status 400)`** / the A2A task stalls at `auth-required`. Patch it via
+  >    Graph beta `PATCH /identity/conditionalAccess/policies/974ed75d…`
+  >    (`conditions.clientApplications.excludeAgentIdServicePrincipals`). Changes
+  >    take a few minutes to propagate.
+  >
+  > Symptom decoder: MCP tool calls succeed with a **user** token but fail from
+  > the **agent** → identity not excluded from `High Risk Agents` (step 2).
 - **Direct path (customer support agent).** `deploy_customer_support_agent`
   resolves the MCP audiences, grants the agent's managed identity the
   `Mcp.Invoke` role, and injects `CUSTOMER_MCP_AUDIENCE` / `PRODUCT_MCP_AUDIENCE`
@@ -216,6 +237,62 @@ Apps readiness probes stay green regardless of auth. Turn auth off by setting
 `ENTRA_AUTH_ENABLED=false` and re-deploying the MCP servers — the app then runs
 anonymously. Requires `az login` with rights to create app registrations and
 app-role assignments.
+
+---
+## 5c. Finbot SQL MCP server (live Fabric SQL)
+
+An extra MCP server, **`finbot-sql-mcp-server`**, exposes the finbot banking
+data held in the **Fabric SQL Database `finbot-data-2`** (customers `Kunden`,
+accounts `Konten`, transactions `Transaktionen`, products, monthly reports and
+chat conversations). Unlike the customer/product servers it **bundles no data**:
+it queries the Fabric SQL DB **live** via the container's user-assigned managed
+identity (`id-banking`) using `pyodbc` + ODBC Driver 18. The banking data is
+confidential and must **never** be committed to the repo or copied into the
+image.
+
+Files: `src/finbot_sql_mcp_server/{server.py,Dockerfile,requirements.txt}`,
+`scripts/deploy_finbot_sql_mcp_server.py`, `scripts/register_finbot_sql_toolbox.py`.
+Read tools (`list_mandanten`, `get_kunde`, `list_konten`, `get_konto`,
+`list_transaktionen`, `list_produkte`, `list_kunde_produkte`,
+`list_monatsberichte`, `list_chat_konversationen`, `run_read_query`) plus
+human-in-the-loop write tools (`update_konto`, `insert_chat_konversation`).
+
+```bash
+# build the image in ACR, deploy the Container App, register the Foundry toolbox
+python -m scripts.deploy_finbot_sql_mcp_server --build --register
+```
+
+Key overrides: `FINBOT_SQL_SERVER` / `FINBOT_SQL_DATABASE` (default to the
+`finbot-data-2` endpoint), `FINBOT_SQL_MI_CLIENT_ID` (auto-resolved from
+`AZURE_IDENTITY_NAME`), `FINBOT_SQL_MCP_APP_NAME` (default
+`finbot-sql-mcp-server`), `FINBOT_SQL_MCP_PORT` (8094),
+`FINBOT_SQL_TOOLBOX_NAME` (default `finbot-sql-tools`). Auth (Entra JWT) and the
+toolbox agent-identity connection work exactly like the other MCP servers —
+`create_mcp_agent_identity_connections` / `grant_agent_identity_mcp_role` accept
+the `finbot` label; set `FINBOT_SQL_MCP_CONNECTION_ID` and re-register with
+`python -m scripts.register_finbot_sql_toolbox`. The employee advisory agent
+consumes it via the `finbot-sql-tools` toolbox (toggle
+`EMPLOYEE_FINBOT_SQL_ENABLED`, default true).
+
+**Fabric prerequisites (do this once).** The managed identity used by the
+container (`id-banking`, and any consumer such as the Logic App `finbot-app`)
+needs **both** of the following on `finbot-data-2`, or the connection fails:
+- a **Fabric workspace role** (Contributor) on the "Banking" workspace — grant
+  via Fabric REST `POST /v1/workspaces/<ws>/roleAssignments`; without it a query
+  fails with `Login failed … Verify the user has the Read item permission`;
+- the T-SQL roles `db_datareader` / `db_datawriter` — grant with
+  `ALTER ROLE db_datareader ADD MEMBER [<identity-name>]` (Fabric SQL DBs also
+  support `CREATE USER … FROM EXTERNAL PROVIDER`; the read-only lakehouse
+  endpoint does **not**).
+
+> **GOTCHA — error `42131 'This SQL database has been disabled'`.** This is
+> **not** an MCP/auth bug: the backing **Fabric capacity `fabricbanking` (F32,
+> rg-banking)** is **paused/Inactive**. All its SQL DBs go offline until it is
+> resumed. Check `az rest GET
+> …/providers/Microsoft.Fabric/capacities/fabricbanking?api-version=2023-11-01`
+> (or the Fabric `/v1/capacities` API) and resume the capacity before debugging
+> anything else. (`az resource list --resource-type Microsoft.Fabric/capacities`
+> can wrongly return `[]` — use `az rest` against the ARM provider instead.)
 
 ---
 ## 6. Create & Populate the Search Indexes
