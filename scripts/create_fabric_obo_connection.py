@@ -67,10 +67,19 @@ def _project_endpoint() -> str:
 
 def create_obo_connection(
     connection_name: str,
-    audience: str,
+    workspace_id: str,
+    artifact_id: str,
 ) -> None:
-    """Create (or update) a fabric_dataagent_preview connection with AAD/OBO auth
-    via the ARM management-plane API."""
+    """Create (or update) a fabric_dataagent_preview CustomKeys connection.
+
+    The ``MicrosoftFabricPreviewTool`` resolves its connection as a **CustomKeys**
+    connection that must physically carry the Fabric ``workspace-id`` and
+    ``artifact-id`` (the published data agent GUIDs) as credential keys. With
+    ``authType='AAD'`` and an empty credential bag the Foundry model service fails
+    at tool-execution time with ``No CustomKeys connection found for AzureFabric``.
+    Query execution still runs on-behalf-of the signed-in user (identity
+    passthrough); the keys only tell the tool which workspace/data agent to target.
+    """
 
     sub = "e7fbef45-eecb-4fb0-8af5-a70aa3f30715"
     rg = os.getenv("AZURE_RESOURCE_GROUP", "rg-banking")
@@ -85,22 +94,30 @@ def create_obo_connection(
 
     body = {
         "properties": {
-            "authType": "AAD",
+            "authType": "CustomKeys",
             "category": "CustomKeys",
+            "group": "AzureAI",
+            "target": "-",
+            "isDefault": False,
+            "isSharedToAll": True,
+            "credentials": {
+                "keys": {
+                    "workspace-id": workspace_id,
+                    "artifact-id": artifact_id,
+                }
+            },
             "metadata": {
                 "type": "fabric_dataagent_preview",
             },
-            "target": "-",
-            "isDefault": False,
-            "group": "AzureAI",
             "useWorkspaceManagedIdentity": False,
         }
     }
 
-    print(f"==> Creating OBO connection '{connection_name}' via ARM API")
-    print(f"    authType  : AAD (user on-behalf-of)")
-    print(f"    audience  : {audience}")
-    print(f"    URI       : {uri}")
+    print(f"==> Creating Fabric CustomKeys connection '{connection_name}' via ARM API")
+    print(f"    authType    : CustomKeys (identity passthrough at query time)")
+    print(f"    workspace-id: {workspace_id}")
+    print(f"    artifact-id : {artifact_id}")
+    print(f"    URI         : {uri}")
 
     result = _az(
         "rest",
@@ -116,7 +133,7 @@ def create_obo_connection(
         props = resp.get("properties", {})
         print(f"\nConnection created successfully.")
         print(f"  Name     : {resp.get('name', connection_name)}")
-        print(f"  authType : {props.get('authType', 'AAD')}")
+        print(f"  authType : {props.get('authType', 'CustomKeys')}")
         print(f"  ID       : {resp.get('id', 'n/a')}")
         print(
             f"\nSet FABRIC_CONNECTION_ID=\"{connection_name}\" in ./.env and "
@@ -156,11 +173,18 @@ def _derive_project_name() -> str:
 
 def main() -> None:
     connection_name = os.getenv("FABRIC_OBO_CONNECTION_NAME", "fabric_dataagent_obo")
-    audience = os.getenv(
-        "FABRIC_OBO_AUDIENCE",
-        "https://analysis.windows.net/powerbi/api",
+    workspace_id = os.getenv("FABRIC_WORKSPACE_ID", "").strip()
+    artifact_id = os.getenv("FABRIC_ARTIFACT_ID", "").strip()
+    if not workspace_id or not artifact_id:
+        raise RuntimeError(
+            "FABRIC_WORKSPACE_ID and FABRIC_ARTIFACT_ID are required. Copy them from "
+            "the published data agent URL: .../groups/<workspace_id>/aiskills/<artifact_id>..."
+        )
+    create_obo_connection(
+        connection_name=connection_name,
+        workspace_id=workspace_id,
+        artifact_id=artifact_id,
     )
-    create_obo_connection(connection_name=connection_name, audience=audience)
 
 
 if __name__ == "__main__":

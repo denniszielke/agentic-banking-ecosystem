@@ -26,6 +26,11 @@ from agent_framework import Agent, Content, MCPStreamableHTTPTool, tool
 from agent_framework.foundry import FoundryChatClient
 from agent_framework_ag_ui import state_update
 from azure.ai.projects import AIProjectClient
+from azure.ai.projects.models import (
+    FabricDataAgentToolParameters,
+    MicrosoftFabricPreviewTool,
+    ToolProjectConnection,
+)
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from pydantic import BaseModel, Field
 
@@ -224,16 +229,18 @@ class _ToolboxAuth(httpx.Auth):
 # ---------------------------------------------------------------------------
 
 def make_fabric_tool(credential: DefaultAzureCredential) -> "tuple[dict, FoundryChatClient]":
-    """Resolve the Fabric OBO connection and return (fabric_tool_dict, FoundryChatClient).
+    """Resolve the Fabric OBO connection and return (MicrosoftFabricPreviewTool, FoundryChatClient).
 
-    ``allow_preview=True`` is required for ``get_fabric_tool()`` to work. The
-    returned dict must be passed explicitly to the Agent tools list.
+    Directly instantiates MicrosoftFabricPreviewTool from azure.ai.projects.models
+    instead of going through get_fabric_tool().as_dict(). This avoids the
+    'Duplicate tool argument name: azure_fabric' 400 error caused by the framework
+    re-serialising the dict and the server also injecting from allow_preview=True.
     """
     project_client = AIProjectClient(endpoint=_PROJECT_ENDPOINT, credential=credential)
     try:
         conn = project_client.connections.get(_FABRIC_CONNECTION_ID)
         connection_id = conn.id
-        logger.info("Fabric connection '%s' ready (authType: %s).", conn.name, getattr(conn, 'auth_type', 'AAD'))
+        logger.info("Fabric connection '%s' resolved (id: ...%s).", _FABRIC_CONNECTION_ID, connection_id[-20:])
     except Exception as exc:
         logger.warning(
             "Could not resolve Fabric connection '%s': %s — using name directly.",
@@ -245,10 +252,13 @@ def make_fabric_tool(credential: DefaultAzureCredential) -> "tuple[dict, Foundry
         project_endpoint=_PROJECT_ENDPOINT,
         model=_MODEL,
         credential=credential,
-        allow_preview=True,
     )
-    fabric_tool = foundry_client.get_fabric_tool(connection_id=connection_id).as_dict()
-    logger.info("Fabric tool configured: connection_id=%s", connection_id)
+    fabric_tool = MicrosoftFabricPreviewTool(
+        fabric_dataagent_preview=FabricDataAgentToolParameters(
+            project_connections=[ToolProjectConnection(project_connection_id=connection_id)],
+        )
+    ).as_dict()
+    logger.info("Fabric tool ready (connection_id=%s).", connection_id)
     return fabric_tool, foundry_client
 
 
@@ -258,19 +268,72 @@ def make_finance_mcp_tool(credential: DefaultAzureCredential) -> MCPStreamableHT
     return MCPStreamableHTTPTool(name="finance", url=_FINANCE_MCP_URL, load_prompts=False)
 
 
+def _tool_to_dict(tool) -> dict:
+    """Best-effort convert any tool (SDK model / AF tool / dict / callable) to a dict."""
+    if isinstance(tool, dict):
+        return tool
+    for attr in ("as_dict", "model_dump", "to_dict"):
+        fn = getattr(tool, attr, None)
+        if callable(fn):
+            try:
+                return fn()
+            except Exception:  # noqa: BLE001
+                pass
+    # AF function tools expose a name; fall back to a shallow description.
+    return {
+        "type": type(tool).__name__,
+        "name": getattr(tool, "name", getattr(tool, "__name__", repr(tool))),
+    }
+
+
+def _tool_name(d: dict, tool) -> str:
+    """Extract the tool name the Responses API will see (the duplicate key)."""
+    # Foundry hosted tools use 'type' (e.g. 'fabric_dataagent' -> injected as 'azure_fabric').
+    # Function tools use 'name'. MCP tools use 'server_label' / 'name'.
+    return (
+        d.get("name")
+        or d.get("server_label")
+        or d.get("type")
+        or getattr(tool, "name", getattr(tool, "__name__", type(tool).__name__))
+    )
+
+
+def _dump_tools(tools: list) -> None:
+    """Log every tool as a dict and flag duplicate names so collisions are visible."""
+    import json
+    from collections import Counter
+
+    logger.info("=" * 70)
+    logger.info("TOOL DUMP — %d tool(s) passed to agent", len(tools))
+    names: list[str] = []
+    for i, tool in enumerate(tools):
+        d = _tool_to_dict(tool)
+        name = _tool_name(d, tool)
+        names.append(name)
+        try:
+            payload = json.dumps(d, ensure_ascii=False, default=str, indent=2)
+        except Exception as exc:  # noqa: BLE001
+            payload = f"<unserializable: {exc}>"
+        logger.info("[tool %d] name=%r type=%s\n%s", i, name, type(tool).__name__, payload)
+
+    dupes = {n: c for n, c in Counter(names).items() if c > 1}
+    if dupes:
+        logger.warning("DUPLICATE TOOL NAMES DETECTED: %s", dupes)
+    else:
+        logger.info("No duplicate tool names. Names: %s", names)
+    logger.info("=" * 70)
+
+
 def make_agent(
     foundry_client: "FoundryChatClient",
     fabric_tool: dict,
     finance_tool: MCPStreamableHTTPTool,
-) -> Agent:
-    """Assemble and return the recommender agent.
-
-    ``fabric_tool`` must be passed explicitly (from ``make_fabric_tool()``); Foundry
-    does not auto-inject unless ``allow_preview=True`` + ``get_fabric_tool()`` is used.
-    """
-    return Agent(
-        client=foundry_client,
+) -> "Agent":
+    """Assemble and return the recommender agent."""
+    tools = [fabric_tool, update_overview, finance_tool, submit_product_recommendation]
+    _dump_tools(tools)
+    return foundry_client.as_agent(
         name="WebRecommenderAgent",
         instructions=SYSTEM_PROMPT,
-        tools=[fabric_tool, update_overview, finance_tool, submit_product_recommendation],
+        tools=tools,
     )
