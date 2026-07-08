@@ -205,6 +205,8 @@
           if (result) {
             currentAccount = result.account;
             accessToken = result.accessToken;
+            // The user just returned from a successful "Anmelden" redirect.
+            notifyLoginSuccess(currentAccount);
           }
           if (!currentAccount) {
             const accounts = msalInstance.getAllAccounts();
@@ -273,6 +275,16 @@
         el("logoutBtn").style.display = loggedIn ? "" : "none";
         el("userBadge").style.display = loggedIn ? "flex" : "none";
         if (currentAccount) el("userName").textContent = currentAccount.name || currentAccount.username || "Angemeldet";
+      }
+
+      function notifyLoginSuccess(account) {
+        const who = account && (account.name || account.username);
+        setStatus("ready", "Angemeldet");
+        addBubble(
+          "system",
+          "✅ Anmeldung erfolgreich" + (who ? " — willkommen, " + who + "!" : "!"),
+          false,
+        );
       }
 
       // ---------------------------------------------------------------------------
