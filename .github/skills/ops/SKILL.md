@@ -213,7 +213,7 @@ Wire the consumers:
   > object id). After each deploy you MUST, for the *new* identity:
   > 1. **Re-grant `Mcp.Invoke`** on every MCP app registration —
   >    `python -m scripts.grant_agent_identity_mcp_role` (auto-discovers the
-  >    current identity; covers customer/product/finbot).
+  >    current identity; covers customer/product/finbot/finance).
   > 2. **Re-add the new identity object id to the Conditional Access policy
   >    `High Risk Agents` (id `974ed75d-23d4-4f1f-af57-c1daf9998505`)
   >    `excludeAgentIdServicePrincipals`.** That policy `blocks` **all** agent
@@ -270,7 +270,9 @@ Key overrides: `FINBOT_SQL_SERVER` / `FINBOT_SQL_DATABASE` (default to the
 toolbox agent-identity connection work exactly like the other MCP servers —
 `create_mcp_agent_identity_connections` / `grant_agent_identity_mcp_role` accept
 the `finbot` label; set `FINBOT_SQL_MCP_CONNECTION_ID` and re-register with
-`python -m scripts.register_finbot_sql_toolbox`. The employee advisory agent
+`python -m scripts.register_finbot_sql_toolbox`. The finance MCP server works the
+same way under the `finance` label; set `FINANCE_MCP_CONNECTION_ID` and
+re-register with `python -m scripts.register_finance_toolbox`. The employee advisory agent
 consumes it via the `finbot-sql-tools` toolbox (toggle
 `EMPLOYEE_FINBOT_SQL_ENABLED`, default true).
 

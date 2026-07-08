@@ -145,6 +145,7 @@ def _resolve_mcp_apps() -> list[tuple[str, str]]:
         ("customer", "CUSTOMER_MCP_APP_NAME", "customer-data-mcp-server"),
         ("product", "PRODUCT_MCP_APP_NAME", "product-data-mcp-server"),
         ("finbot", "FINBOT_SQL_MCP_APP_NAME", "finbot-sql-mcp-server"),
+        ("finance", "FINANCE_MCP_APP_NAME", "finance-mcp-server"),
     ):
         app_name = os.getenv(env_var, default)
         audience = resolve_mcp_audience(app_name)

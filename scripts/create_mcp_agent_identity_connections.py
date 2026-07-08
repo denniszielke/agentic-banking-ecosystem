@@ -77,6 +77,10 @@ _SERVERS = {
         "FINBOT_SQL_MCP_URL", "FINBOT_SQL_MCP_APP_NAME", "finbot-sql-mcp-server",
         "FINBOT_SQL_MCP_CONNECTION_NAME", "finbot-sql-mcp-agentid",
     ),
+    "finance": (
+        "FINANCE_MCP_URL", "FINANCE_MCP_APP_NAME", "finance-mcp-server",
+        "FINANCE_MCP_CONNECTION_NAME", "finance-mcp-agentid",
+    ),
 }
 
 # label -> the ./.env variable the register scripts read for the connection id.
@@ -84,6 +88,7 @@ _CONN_ENV = {
     "customer": "CUSTOMER_MCP_CONNECTION_ID",
     "product": "PRODUCT_MCP_CONNECTION_ID",
     "finbot": "FINBOT_SQL_MCP_CONNECTION_ID",
+    "finance": "FINANCE_MCP_CONNECTION_ID",
 }
 
 
@@ -227,6 +232,7 @@ def main(argv: list[str] | None = None) -> int:
             "customer": "python -m scripts.register_customer_data_toolbox",
             "product": "python -m scripts.register_product_data_toolbox",
             "finbot": "python -m scripts.register_finbot_sql_toolbox",
+            "finance": "python -m scripts.register_finance_toolbox",
         }
         print("\nThen re-register the toolboxes:")
         for label, _ in created:

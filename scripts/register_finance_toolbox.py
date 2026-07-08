@@ -35,6 +35,11 @@ from azure.ai.projects.models import MCPToolboxTool
 from scripts.agent_deploy_helpers import get_client, get_container_app_fqdn, get_env
 from scripts.auth_helpers import entra_auth_enabled
 
+# Match scripts/deploy_finance_mcp_server.py: the finance MCP server runs without
+# Entra auth by default, so the toolbox is registered without an auth connection
+# unless ENTRA_AUTH_ENABLED=true is set explicitly.
+os.environ.setdefault("ENTRA_AUTH_ENABLED", "false")
+
 TOOLBOX_NAME = os.getenv("FINANCE_TOOLBOX_NAME", "finance-tools")
 
 

@@ -26,7 +26,7 @@ Environment variables (populated automatically from ``.env`` after ``azd up``):
   FINANCE_TOOLBOX_NAME                   Foundry toolbox name registered with
                                          --register (default: finance-tools)
   ENTRA_AUTH_ENABLED                     "true" to protect the Container App with
-                                         Entra ID JWT auth (default: true)
+                                         Entra ID JWT auth (default: false)
 """
 
 from __future__ import annotations
@@ -47,6 +47,11 @@ from scripts.deploy_helpers import (
     get_env,
     resolve_registry,
 )
+
+# The finance MCP server exposes stateless financial calculators (no customer or
+# account data), so it runs without Entra auth by default. Deployments that want
+# it protected can still opt in with ENTRA_AUTH_ENABLED=true.
+os.environ.setdefault("ENTRA_AUTH_ENABLED", "false")
 
 APP_NAME = os.getenv("FINANCE_MCP_APP_NAME", "finance-mcp-server")
 IMAGE_NAME = "finance-mcp-server"
