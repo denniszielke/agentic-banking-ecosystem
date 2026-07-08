@@ -4,8 +4,9 @@ Creates (or updates) the Foundry toolbox that agents consume at runtime, backed
 by the **remote** ``finbot_sql_mcp_server`` Container App deployed by
 ``scripts/deploy_finbot_sql_mcp_server.py``. This publishes the finbot banking
 SQL tools (list_mandanten, get_kunde, list_konten, get_konto,
-list_transaktionen, list_produkte, list_kunde_produkte, list_monatsberichte,
-list_chat_konversationen, run_read_query, update_konto, insert_chat_konversation)
+list_transaktionen, list_produkte, list_kunde_produkte, get_kunde_produkt,
+list_monatsberichte, list_chat_konversationen, run_read_query, update_konto,
+insert_chat_konversation, write_kunde_produkt, kuendige_produkt)
 so any agent in the project can discover them through the toolbox MCP endpoint
 ``{project}/toolboxes/{toolbox}/mcp?api-version=v1``.
 
@@ -73,7 +74,9 @@ def deploy() -> None:
             "Finbot banking data in a Fabric SQL database: customers (Kunden), "
             "accounts (Konten), transactions (Transaktionen), products, monthly "
             "reports and chat conversations. Read tools plus human-in-the-loop "
-            "update_konto / insert_chat_konversation write tools."
+            "write tools: update_konto, insert_chat_konversation, "
+            "write_kunde_produkt (order a product) and kuendige_produkt "
+            "(cancel a product)."
         ),
         "require_approval": "never",
     }

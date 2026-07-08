@@ -351,6 +351,33 @@ def list_kunde_produkte(id_mandant: str, id_kunde: str) -> list[dict[str, Any]]:
 
 
 @mcp.tool()
+def get_kunde_produkt(id_mandant: str, id_kunde: str, id_produkt: str) -> dict[str, Any]:
+    """Get a single customer-product assignment by its primary key.
+
+    Args:
+        id_mandant: Tenant id, e.g. ``M001``.
+        id_kunde: Customer id within the tenant, e.g. ``K000006``.
+        id_produkt: Product id, e.g. ``PRD001``.
+
+    Returns the record including status, contract date and monthly contribution,
+    or an ``error`` field if no record matches.
+    """
+    rows = _rows(
+        "SELECT * FROM dbo.finbot_kunde_produkte "
+        "WHERE id_mandant = ? AND id_kunde = ? AND id_produkt = ?",
+        (id_mandant, id_kunde, id_produkt),
+    )
+    if not rows:
+        return {
+            "error": (
+                f"No record matched (id_mandant={id_mandant}, "
+                f"id_kunde={id_kunde}, id_produkt={id_produkt})."
+            )
+        }
+    return rows[0]
+
+
+@mcp.tool()
 def list_monatsberichte(
     id_mandant: str, id_kunde: str, limit: int = 24
 ) -> list[dict[str, Any]]:
@@ -553,6 +580,169 @@ def insert_chat_konversation(
             )
         }
     return {"status": "committed", "rows_affected": affected, "record": record}
+
+
+_ALLOWED_PRODUKT_STATUS = {"aktiv", "gekuendigt", "ruhend"}
+_KUNDE_PRODUKTE_TABLE = "dbo.finbot_kunde_produkte"
+
+
+@mcp.tool()
+def write_kunde_produkt(
+    id_mandant: str,
+    id_kunde: str,
+    id_produkt: str,
+    bez_produkt: Optional[str] = None,
+    abschluss_datum: Optional[str] = None,
+    status: Optional[str] = None,
+    monatl_beitrag: Optional[float] = None,
+    confirm: bool = False,
+) -> dict[str, Any]:
+    """Order a product for a customer — insert a customer-product assignment
+    (write — human-in-the-loop).
+
+    Inserts a new record into ``finbot_kunde_produkte``. The primary key is
+    (id_mandant, id_kunde, id_produkt). If it already exists no insert is
+    performed. Requires explicit human approval: call with ``confirm=false``
+    to preview, then ``confirm=true`` to commit.
+
+    Args:
+        id_mandant: Tenant id, e.g. ``M001``.
+        id_kunde: Customer id within the tenant, e.g. ``K000006``.
+        id_produkt: Product id, e.g. ``PRD001``.
+        bez_produkt: Product name (optional), e.g. ``VR-MeinKonto``.
+        abschluss_datum: Contract start date ``YYYY-MM-DD`` (optional).
+        status: Contract status — ``aktiv``, ``gekuendigt`` or ``ruhend`` (optional).
+        monatl_beitrag: Monthly contribution in EUR (optional).
+        confirm: Set to ``true`` only after a human approved the preview.
+    """
+    for name, val in (
+        ("id_mandant", id_mandant), ("id_kunde", id_kunde), ("id_produkt", id_produkt)
+    ):
+        if not val or not str(val).strip():
+            return {"error": f"Required field '{name}' must not be empty."}
+
+    if status is not None and status not in _ALLOWED_PRODUKT_STATUS:
+        return {"error": f"Invalid status '{status}'. Allowed: {sorted(_ALLOWED_PRODUKT_STATUS)}."}
+
+    record: dict[str, Any] = {
+        "id_mandant": id_mandant,
+        "id_kunde": id_kunde,
+        "id_produkt": id_produkt,
+    }
+    if bez_produkt is not None:
+        record["bez_produkt"] = bez_produkt
+    if abschluss_datum is not None:
+        record["abschluss_datum"] = abschluss_datum
+    if status is not None:
+        record["status"] = status
+    if monatl_beitrag is not None:
+        record["monatl_beitrag"] = float(monatl_beitrag)
+
+    if not confirm:
+        return {
+            "status": "pending_approval",
+            "requires": "human approval (call again with confirm=true)",
+            "record": record,
+        }
+
+    existing = _rows(
+        f"SELECT 1 FROM {_KUNDE_PRODUKTE_TABLE} "
+        "WHERE id_mandant = ? AND id_kunde = ? AND id_produkt = ?",
+        (id_mandant, id_kunde, id_produkt),
+    )
+    if existing:
+        return {
+            "error": (
+                f"Record already exists: (id_mandant={id_mandant}, "
+                f"id_kunde={id_kunde}, id_produkt={id_produkt}). No insert performed."
+            )
+        }
+
+    cols = list(record.keys())
+    col_list = ", ".join(f"[{c}]" for c in cols)
+    placeholders = ", ".join("?" for _ in cols)
+    params = tuple(record[c] for c in cols)
+    try:
+        affected = _execute(
+            f"INSERT INTO {_KUNDE_PRODUKTE_TABLE} ({col_list}) VALUES ({placeholders})",
+            params,
+        )
+    except pyodbc.IntegrityError as exc:
+        return {"error": f"Insert failed (integrity): {exc}"}
+    return {"status": "committed", "rows_affected": affected, "record": record}
+
+
+@mcp.tool()
+def kuendige_produkt(
+    id_mandant: str,
+    id_kunde: str,
+    id_produkt: str,
+    confirm: bool = False,
+) -> dict[str, Any]:
+    """Cancel (kündigen) a customer-product assignment (write — human-in-the-loop).
+
+    Sets the status of an existing record in ``finbot_kunde_produkte`` to
+    ``gekuendigt``. Requires explicit human approval: call with ``confirm=false``
+    to preview, then ``confirm=true`` to commit.
+
+    If the record does not exist or is already ``gekuendigt`` an error is returned.
+
+    Args:
+        id_mandant: Tenant id, e.g. ``M001``.
+        id_kunde: Customer id within the tenant, e.g. ``K000006``.
+        id_produkt: Product id, e.g. ``PRD001``.
+        confirm: Set to ``true`` only after a human approved the preview.
+    """
+    for name, val in (
+        ("id_mandant", id_mandant), ("id_kunde", id_kunde), ("id_produkt", id_produkt)
+    ):
+        if not val or not str(val).strip():
+            return {"error": f"Required field '{name}' must not be empty."}
+
+    rows = _rows(
+        f"SELECT status FROM {_KUNDE_PRODUKTE_TABLE} "
+        "WHERE id_mandant = ? AND id_kunde = ? AND id_produkt = ?",
+        (id_mandant, id_kunde, id_produkt),
+    )
+    if not rows:
+        return {
+            "error": (
+                f"Record not found: (id_mandant={id_mandant}, "
+                f"id_kunde={id_kunde}, id_produkt={id_produkt})."
+            )
+        }
+    current_status = rows[0].get("status")
+    if current_status == "gekuendigt":
+        return {
+            "error": (
+                f"Record is already 'gekuendigt': (id_mandant={id_mandant}, "
+                f"id_kunde={id_kunde}, id_produkt={id_produkt})."
+            )
+        }
+
+    if not confirm:
+        return {
+            "status": "pending_approval",
+            "requires": "human approval (call again with confirm=true)",
+            "transition": {"from": current_status, "to": "gekuendigt"},
+            "id_mandant": id_mandant,
+            "id_kunde": id_kunde,
+            "id_produkt": id_produkt,
+        }
+
+    affected = _execute(
+        f"UPDATE {_KUNDE_PRODUKTE_TABLE} SET [status] = 'gekuendigt' "
+        "WHERE id_mandant = ? AND id_kunde = ? AND id_produkt = ?",
+        (id_mandant, id_kunde, id_produkt),
+    )
+    return {
+        "status": "committed",
+        "rows_affected": affected,
+        "id_mandant": id_mandant,
+        "id_kunde": id_kunde,
+        "id_produkt": id_produkt,
+        "new_status": "gekuendigt",
+    }
 
 
 def main() -> None:
