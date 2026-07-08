@@ -19,6 +19,7 @@ boundaries.
 ## Contents
 
 - [Architecture at a glance](#architecture-at-a-glance)
+- [Inside a bank subscription](#inside-a-bank-subscription)
 - [Repository layout](#repository-layout)
 - [Prerequisites](#prerequisites)
 - [Quickstart](#quickstart)
@@ -60,6 +61,79 @@ flowchart LR
 
 → Full architecture — **component**, **data-flow** and **application-flow** views plus the
 communication-paths table — lives in **[narrative.md](narrative.md#architecture)**.
+
+## Inside a bank subscription
+
+Zooming into a single bank — **Bank South** — shows how one organisation's own
+**Entra ID tenant + Azure subscription** (resource group `rg-banking`) is wired:
+the **Foundry** project hosts the `employee_advisory_agent`, model deployments and
+toolboxes; the **Container Apps** environment runs the `customer_support_agent` and
+the two MCP servers (pulled from the **Container Registry**); a **managed identity**
+gives every component its Entra token; **Azure AI Search** and **Storage** back the
+grounding and agent state; and all compute exports **OpenTelemetry** to
+**Application Insights → Log Analytics**. The only outbound edges leaving the
+subscription are **A2A cross-tenant** to Bank North's compliance agent and the
+**Agent 365** identity/telemetry plane.
+
+```mermaid
+flowchart TB
+    COP([Microsoft 365 Copilot - separate tenant]) -. A2A / MCP .-> CSA
+
+    subgraph SUB["Bank South - own Entra ID tenant + Azure subscription (resource group rg-banking)"]
+      direction TB
+
+      subgraph FOUNDRY["Microsoft Foundry"]
+        EAA[employee_advisory_agent - hosted]
+        MODELS[[model deployments]]
+        TBX[/toolboxes/]
+      end
+
+      subgraph ACAENV["Container Apps - cae-banking"]
+        CSA[customer_support_agent]
+        CDATA[(customer_data MCP)]
+        PDATA[(product_data MCP)]
+      end
+
+      subgraph SUPPORT["Registry, identity + data"]
+        ACR[(Container Registry)]
+        MI[/Managed identity/]
+        SEARCH[[Azure AI Search]]
+        STORAGE[(Storage)]
+      end
+
+      subgraph OBS["Observability"]
+        APPI[Application Insights]
+        LAW[Log Analytics]
+      end
+    end
+
+    A365{{Agent 365}}
+    NORTH[compliance_agent - Bank North tenant]
+
+    ACR -. images .-> ACAENV
+    MI -. Entra auth .-> FOUNDRY
+    MI -. Entra auth .-> ACAENV
+
+    CSA --> CDATA & PDATA & SEARCH
+    EAA --> TBX
+    TBX --> CDATA & PDATA
+    EAA --> SEARCH & MODELS
+    FOUNDRY -. state .-> STORAGE
+
+    FOUNDRY -. OTel .-> APPI
+    ACAENV -. OTel .-> APPI
+    APPI --> LAW
+    EAA -. identity + spans .-> A365
+    CSA -. A2A cross-tenant .-> NORTH
+
+    style SUB fill:#0078D410,stroke:#004e8c
+    style FOUNDRY fill:#41299118,stroke:#412991
+    style ACAENV fill:#0b6b4618,stroke:#0b6b46
+    style SUPPORT fill:#5a5a5a12,stroke:#555
+    style OBS fill:#D83B0116,stroke:#8a2600
+    style CDATA fill:#0b6b4626,stroke:#0b6b46,color:#083b27
+    style PDATA fill:#0b6b4626,stroke:#0b6b46,color:#083b27
+```
 
 ## Repository layout
 
