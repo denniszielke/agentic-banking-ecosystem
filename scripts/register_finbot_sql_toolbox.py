@@ -4,8 +4,9 @@ Creates (or updates) the Foundry toolbox that agents consume at runtime, backed
 by the **remote** ``finbot_sql_mcp_server`` Container App deployed by
 ``scripts/deploy_finbot_sql_mcp_server.py``. This publishes the finbot banking
 SQL tools (list_mandanten, get_kunde, list_konten, get_konto,
-list_transaktionen, list_produkte, list_kunde_produkte, list_monatsberichte,
-list_chat_konversationen, run_read_query, update_konto, insert_chat_konversation)
+list_transaktionen, list_produkte, list_kunde_produkte, get_kunde_produkt,
+list_monatsberichte, list_chat_konversationen, run_read_query, update_konto,
+insert_chat_konversation, write_kunde_produkt, kuendige_produkt)
 so any agent in the project can discover them through the toolbox MCP endpoint
 ``{project}/toolboxes/{toolbox}/mcp?api-version=v1``.
 
@@ -32,12 +33,39 @@ from __future__ import annotations
 
 import os
 
-from azure.ai.projects.models import MCPToolboxTool
+from azure.ai.projects.models import (
+    MCPToolboxTool,
+    MCPToolFilter,
+    MCPToolRequireApproval,
+)
 
 from scripts.agent_deploy_helpers import get_client, get_container_app_fqdn, get_env
 from scripts.auth_helpers import entra_auth_enabled
 
 TOOLBOX_NAME = os.getenv("FINBOT_SQL_TOOLBOX_NAME", "finbot-sql-tools")
+
+# Write tools mutate data and are gated behind human-in-the-loop approval:
+# Foundry pauses the run and a human must approve the specific tool call (with
+# its arguments) before it executes. Read tools run without approval.
+_WRITE_TOOLS = [
+    "update_konto",
+    "insert_chat_konversation",
+    "write_kunde_produkt",
+    "kuendige_produkt",
+]
+_READ_TOOLS = [
+    "list_mandanten",
+    "get_kunde",
+    "list_konten",
+    "get_konto",
+    "list_transaktionen",
+    "list_produkte",
+    "list_kunde_produkte",
+    "get_kunde_produkt",
+    "list_monatsberichte",
+    "list_chat_konversationen",
+    "run_read_query",
+]
 
 
 def _resolve_mcp_url() -> str:
@@ -73,9 +101,16 @@ def deploy() -> None:
             "Finbot banking data in a Fabric SQL database: customers (Kunden), "
             "accounts (Konten), transactions (Transaktionen), products, monthly "
             "reports and chat conversations. Read tools plus human-in-the-loop "
-            "update_konto / insert_chat_konversation write tools."
+            "write tools: update_konto, insert_chat_konversation, "
+            "write_kunde_produkt (order a product) and kuendige_produkt "
+            "(cancel a product)."
         ),
-        "require_approval": "never",
+        # Human-in-the-loop: writes require explicit human approval in Foundry
+        # before they execute; reads run without a prompt.
+        "require_approval": MCPToolRequireApproval(
+            always=MCPToolFilter(tool_names=_WRITE_TOOLS),
+            never=MCPToolFilter(tool_names=_READ_TOOLS),
+        ),
     }
 
     if entra_auth_enabled():
