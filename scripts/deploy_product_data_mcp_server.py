@@ -71,6 +71,10 @@ def deploy(tag: str | None = None) -> None:
         "APPLICATIONINSIGHTS_CONNECTION_STRING": os.getenv(
             "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
         ),
+        # OTel service.name -> App Insights cloud_RoleName, so this MCP server
+        # shows up under its own name. Telemetry itself is wired centrally by
+        # src/_shared/observability.py (auto-enabled from src/__init__.py).
+        "OTEL_SERVICE_NAME": APP_NAME,
     }
 
     env_vars.update(_auth_env_vars())

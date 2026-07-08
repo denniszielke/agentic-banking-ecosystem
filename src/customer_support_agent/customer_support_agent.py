@@ -85,6 +85,17 @@ _MODEL = (
 _AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", "").strip()
 _EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME", "").strip()
 
+# Observability: a stable agent id emitted as ``gen_ai.agent.id`` on every span.
+# It MUST match the ``otel_agent_id`` used when registering this agent as a
+# Foundry external agent (scripts/register_customer_support_external_agent.py),
+# otherwise the emitted traces won't line up with the registration in the portal.
+_CUSTOMER_SUPPORT_AGENT_ID = os.getenv("CUSTOMER_SUPPORT_AGENT_ID", "customer-support-agent")
+
+# setup_observability lives in _observability.py so it can be imported and
+# called in server.py BEFORE any instrumented library (agent_framework,
+# azure-sdk, …) is loaded. Re-exported here for backward compatibility.
+from src.customer_support_agent._observability import setup_observability  # noqa: E402, F401
+
 # MCP servers — Foundry toolbox by default, direct URL override for local dev.
 _CUSTOMER_TOOLBOX_NAME = os.getenv("CUSTOMER_TOOLBOX_NAME", "customer-data-tools")
 _CUSTOMER_TOOLBOX_ENDPOINT = os.getenv("CUSTOMER_TOOLBOX_MCP_ENDPOINT") or (

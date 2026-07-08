@@ -572,6 +572,71 @@ with `A365_OBSERVABILITY_AGENT_IDS` (comma-separated object ids) or `--agent-id`
 Assignments can take 2–5 minutes to propagate. See
 [the Foundry docs](https://aka.ms/foundry-grant-agent-365-permissions).
 
+### Customer support agent observability (external agent)
+
+The customer support agent runs as a Container App (not a Foundry hosted agent),
+so it is instrumented in-process: on startup it configures the **Microsoft
+OpenTelemetry distro** via the shared bootstrap (`setup_observability()` in
+`src/_shared/observability.py`, re-exported for backwards compatibility from
+`src/customer_support_agent/_observability.py`), exporting GenAI
+telemetry — model calls, **MCP tool calls** and **human confirmations** for write
+operations (`order_product` / `update_customer`) — to Application Insights via
+`APPLICATIONINSIGHTS_CONNECTION_STRING`. Telemetry is a no-op locally when that
+variable is unset.
+
+The deploy script (`scripts/deploy_customer_support_agent.py`) resolves the
+connection string (from `./.env` or the resource group), grants the agent's
+managed identity **Monitoring Metrics Publisher**, and sets a stable
+`CUSTOMER_SUPPORT_AGENT_ID` (the `gen_ai.agent.id` on every span).
+
+To make the spans light up in the portal, register the agent as a Foundry
+**external agent** (preview) — its `otel_agent_id` must match
+`CUSTOMER_SUPPORT_AGENT_ID`. Run once after the agent is deployed:
+
+```bash
+python -m scripts.register_customer_support_external_agent
+```
+
+The script uses `AIProjectClient(..., allow_preview=True)` (adds the
+`Foundry-Features: ExternalAgents=V1Preview` header), assigns the required RBAC
+(Monitoring Metrics Publisher for the managed identity; the project management
+role for the signed-in principal, best-effort), and registers the agent via
+`agents.create_version(ExternalAgentDefinition(otel_agent_id=…))`. Traces then
+appear under **Portal → Project → Agents → `customer-support-agent` → Traces**.
+See the [external-agent registration docs](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/register-external-agent?tabs=python).
+
+### Automatic telemetry for every service (agents + MCP servers)
+
+Observability is a **platform property** of the repo, not an opt-in each service
+has to remember: the design goal is that *all* agents **and** MCP servers publish
+OpenTelemetry to Application Insights. It is wired in one place and enabled
+automatically:
+
+- **One shared bootstrap** — `src/_shared/observability.py` holds the single
+  `setup_observability(service_name)`. It is idempotent, prefers the Microsoft
+  OpenTelemetry distro (adds the Agent Framework GenAI instrumentation for the
+  agents) and falls back to the plain Azure Monitor distro plus the Starlette
+  instrumentor for the FastMCP servers, so **incoming MCP requests are traced**.
+- **Auto-enabled** — `src/__init__.py` calls it on import. Because every service
+  starts as `python -m src.<service>.<module>`, `src` is imported (and telemetry
+  configured) *before* the service body imports `agent_framework` / `fastmcp` /
+  the Azure SDK — the import ordering the distro needs. A new agent or MCP server
+  is therefore instrumented with **zero per-service code**.
+- **Opt-in by connection string** — it is a no-op when
+  `APPLICATIONINSIGHTS_CONNECTION_STRING` is unset (local dev, CLI scripts), so
+  importing `src` for any purpose stays cheap and safe.
+- **Role name** — each deploy script sets `OTEL_SERVICE_NAME` (→ App Insights
+  `cloud_RoleName`) to the service name, so the MCP servers and agents each show
+  up under their own name. The MCP deploy scripts already pass the connection
+  string and `OTEL_SERVICE_NAME`; their images ship `azure-monitor-opentelemetry`
+  and `opentelemetry-instrumentation-starlette`.
+
+The **Foundry hosted agents** (compliance, employee advisory) are additionally
+traced by Foundry's project-level Application Insights integration, so they
+appear in the same resource without in-code export (and the bootstrap stays a
+no-op for them because their runtime does not set the connection string —
+avoiding duplicate telemetry).
+
 ### Cleaning up
 
 Delete the Foundry hosted agents (and optionally their toolboxes), the Container

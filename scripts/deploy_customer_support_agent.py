@@ -20,7 +20,15 @@ Environment variables (populated from ``.env`` by ``azd up``):
   AZURE_IDENTITY_NAME                    user-assigned managed identity (required)
   AZURE_AI_PROJECT_ENDPOINT              Foundry project endpoint (required)
   AZURE_SEARCH_ENDPOINT                  search endpoint (required)
-  APPLICATIONINSIGHTS_CONNECTION_STRING  telemetry sink (optional)
+  APPLICATIONINSIGHTS_CONNECTION_STRING  telemetry sink; auto-resolved from the
+                                         resource group when unset (observability)
+  CUSTOMER_SUPPORT_AGENT_ID              stable gen_ai.agent.id for traces; must
+                                         match the external-agent registration
+                                         (default: customer-support-agent)
+  OTEL_SERVICE_NAME                      OTel service.name → App Insights
+                                         cloud_RoleName (default: customer-support-agent)
+  OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT  capture message content on
+                                         GenAI spans (default: true)
   CUSTOMER_SUPPORT_APP_NAME              Container App name (default: customer-support-agent)
   CUSTOMER_SUPPORT_PORT                  container port (default: 8090)
   CUSTOMER_SUPPORT_EXTERNAL              "true" for public ingress (default: true)
@@ -130,6 +138,35 @@ def _resolve_mcp_url(env_var: str, app_env: str, default_app: str) -> str:
     return ""
 
 
+def _resolve_appinsights_connection_string() -> str:
+    """Resolve the Application Insights connection string.
+
+    Prefers the ``APPLICATIONINSIGHTS_CONNECTION_STRING`` env var (written by
+    ``azd up``). If it is not set, best-effort discovers a single Application
+    Insights component in the resource group via the Azure CLI so observability
+    still works without manual wiring. Returns an empty string if none is found.
+    """
+    conn = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "").strip()
+    if conn:
+        return conn
+    rg = os.getenv("AZURE_RESOURCE_GROUP", "").strip()
+    if not rg:
+        return ""
+    try:
+        out = subprocess.run(
+            ["az", "monitor", "app-insights", "component", "list",
+             "-g", rg, "--query", "[0].connectionString", "-o", "tsv"],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        if out:
+            print("==> Resolved Application Insights connection string from the resource group")
+        return out
+    except subprocess.CalledProcessError:
+        print("  WARN: no Application Insights component found in the resource group; "
+              "telemetry export will be disabled until APPLICATIONINSIGHTS_CONNECTION_STRING is set")
+        return ""
+
+
 def deploy(tag: str | None = None) -> None:
     project_endpoint = get_env("AZURE_AI_PROJECT_ENDPOINT")
     principal_id, client_id = _identity_principal_and_client()
@@ -199,7 +236,20 @@ def deploy(tag: str | None = None) -> None:
         "AZURE_AI_COMPLIANCE_AGENT_NAME": os.getenv("AZURE_AI_COMPLIANCE_AGENT_NAME", "compliance-agent"),
         "COMPLIANCE_AGENT_A2A_URL": os.getenv("COMPLIANCE_AGENT_A2A_URL", ""),
         "COMPLIANCE_AGENT_AUDIENCE": os.getenv("COMPLIANCE_AGENT_AUDIENCE", "https://ai.azure.com"),
-        "APPLICATIONINSIGHTS_CONNECTION_STRING": os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING", ""),
+        # Observability — export GenAI telemetry (model calls, MCP tool calls,
+        # human confirmations) to Application Insights. The connection string is
+        # resolved from env or the resource group. CUSTOMER_SUPPORT_AGENT_ID is
+        # the stable gen_ai.agent.id that must match the Foundry external-agent
+        # registration (scripts/register_customer_support_external_agent.py).
+        # Capture message content on GenAI spans (leave the azure-ai-projects
+        # Responses instrumentor OFF above — the Microsoft OpenTelemetry distro
+        # installs the Agent Framework instrumentation without breaking streaming).
+        "APPLICATIONINSIGHTS_CONNECTION_STRING": _resolve_appinsights_connection_string(),
+        "CUSTOMER_SUPPORT_AGENT_ID": os.getenv("CUSTOMER_SUPPORT_AGENT_ID", "customer-support-agent"),
+        "OTEL_SERVICE_NAME": os.getenv("OTEL_SERVICE_NAME", "customer-support-agent"),
+        "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": os.getenv(
+            "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true"
+        ),
     }
 
     fqdn = deploy_container_app(
