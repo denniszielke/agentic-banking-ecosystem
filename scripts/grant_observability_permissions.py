@@ -45,6 +45,7 @@ Environment variables:
                                   to grant (overrides auto-discovery).
   AZURE_AI_COMPLIANCE_AGENT_NAME  Hosted agent name (default: compliance-agent).
   AZURE_AI_EMPLOYEE_AGENT_NAME    Hosted agent name (default: employee-advisory-agent).
+  AZURE_AI_RECOMMENDER_AGENT_NAME Hosted agent name (default: recommender-agent).
 """
 
 from __future__ import annotations
@@ -157,6 +158,7 @@ def _resolve_agent_ids(cli_ids: list[str]) -> list[str]:
     agent_names = [
         os.getenv("AZURE_AI_COMPLIANCE_AGENT_NAME", "compliance-agent"),
         os.getenv("AZURE_AI_EMPLOYEE_AGENT_NAME", "employee-advisory-agent"),
+        os.getenv("AZURE_AI_RECOMMENDER_AGENT_NAME", "recommender-agent"),
     ]
     print(f"==> Auto-discovering Entra Agent Identities for: {', '.join(agent_names)}")
     discovered = _discover_agent_identities(agent_names)

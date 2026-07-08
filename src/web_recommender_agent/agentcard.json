@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "description": "Volksbank personal banking assistant. Answers account questions using live Fabric data, performs financial calculations, explains and recommends products from the Volksbank / genossenschaftliche FinanzGruppe portfolio.",
+  "skills": [
+    {
+      "id": "account-enquiry",
+      "name": "Account Enquiry",
+      "description": "Retrieve and explain account balances, transactions and personal details using live Fabric data (on-behalf-of the signed-in customer)."
+    },
+    {
+      "id": "product-recommendation",
+      "name": "Product Recommendation",
+      "description": "Proactively recommend suitable Volksbank and genossenschaftliche FinanzGruppe products based on the customer's financial situation and conversation context."
+    },
+    {
+      "id": "financial-calculation",
+      "name": "Financial Calculation",
+      "description": "Calculate compound interest, savings targets, and discounted cash flows using the finance MCP tools."
+    },
+    {
+      "id": "crm-recommendation",
+      "name": "CRM Product Recommendation",
+      "description": "Record a personalised product recommendation in the CRM so a human advisor can follow up — always with explicit customer confirmation."
+    }
+  ]
+}
