@@ -38,6 +38,7 @@ Environment variables:
   CUSTOMER_FABRIC_CONNECTION_ID           — Foundry project connection ID for the customer Fabric data agent (required)
   PRODUCT_FABRIC_CONNECTION_ID            — Foundry project connection ID for the product Fabric data agent (required)
 """
+
 from __future__ import annotations
 
 import logging
@@ -84,6 +85,7 @@ _EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME", "").strip
 # Customer and product data are accessed via Microsoft Fabric data agents
 # through Foundry project connections.
 _CUSTOMER_FABRIC_CONNECTION_ID = os.environ["CUSTOMER_FABRIC_CONNECTION_ID"]
+_PRODUCT_FABRIC_CONNECTION_ID = os.environ["PRODUCT_FABRIC_CONNECTION_ID"]
 
 # Cross-organisation A2A: Bank South's customer support agent can consume Bank
 # North's Compliance agent as an A2A service (narrative edge 4). This is the
@@ -93,8 +95,13 @@ _CUSTOMER_FABRIC_CONNECTION_ID = os.environ["CUSTOMER_FABRIC_CONNECTION_ID"]
 # backed by the remote agent. When it is disabled the agent has NO compliance
 # grounding at all — there is no local compliance index fallback — and it must
 # defer regulatory / eligibility questions to a human adviser.
-_COMPLIANCE_A2A_ENABLED = os.getenv("COMPLIANCE_A2A_ENABLED", "false").strip().lower() in {
-    "1", "true", "yes", "on",
+_COMPLIANCE_A2A_ENABLED = os.getenv(
+    "COMPLIANCE_A2A_ENABLED", "false"
+).strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
 }
 _COMPLIANCE_AGENT_NAME = os.getenv("AZURE_AI_COMPLIANCE_AGENT_NAME", "compliance-agent")
 # Direct A2A endpoint override; otherwise derive the Foundry hosted-agent A2A
@@ -104,7 +111,9 @@ _COMPLIANCE_A2A_URL = os.getenv("COMPLIANCE_AGENT_A2A_URL", "").strip() or (
 )
 # Entra audience for the bearer token sent to the compliance agent. Foundry
 # hosted agents accept the Foundry scope; override for a custom audience.
-_COMPLIANCE_A2A_AUDIENCE = os.getenv("COMPLIANCE_AGENT_AUDIENCE", "https://ai.azure.com").strip()
+_COMPLIANCE_A2A_AUDIENCE = os.getenv(
+    "COMPLIANCE_AGENT_AUDIENCE", "https://ai.azure.com"
+).strip()
 
 _SKILLS_DIR = Path(__file__).parent / "skills"
 
@@ -124,9 +133,9 @@ You can:
   - Start a product order (e.g. a new savings account or credit card) — this is
     a write operation and is ALWAYS human-in-the-loop.
   - Proactively spot an optimisation for the customer (e.g. a large uninvested
-    balance on their current account) using detect_opportunities, and — only
-    after asking permission — offer two concrete, personalised recommendations
-    (a reshuffle with a concrete annual interest gain, and a suitable product).
+    balance on their current account) and — only after asking permission — offer
+    two concrete, personalised recommendations (a reshuffle with a concrete
+    annual interest gain, and a suitable product).
   - When available, consult Bank North's Compliance agent over A2A via the
     ask_compliance tool for a regulatory / eligibility decision, and relay its
     cited guidance.
@@ -135,12 +144,12 @@ Operating principles:
   1. You only ever act for the ONE signed-in customer in context. Never reveal
      or act on another customer's data.
   2. Ground every factual claim (balances, transactions, product conditions,
-     branch details) in a tool result, and name the source — the MCP tool, or
-     the knowledge file and its numbered section (e.g. "bank-south.md §2.1").
+     branch details) in a tool result, and name the source — the Fabric data
+     agent, or the knowledge file and its numbered section (e.g. "bank-south.md §2.1").
   3. For any regulatory, eligibility or advice question, you have NO built-in
      compliance grounding. If the ask_compliance tool is available, consult it
      for a compliance decision and cite its answer. Before you call it, gather
-     the signed-in customer's relevant data (get_customer, list_accounts) and
+     the signed-in customer's relevant data from the Fabric data agents and
      send a structured, self-contained question — the scenario, the specific
      product with its category/credit exposure, and the customer's fields
      (derived age, nationality, tax_residency, kyc_status, segment, existing
@@ -149,9 +158,8 @@ Operating principles:
      is NOT available, do not answer from your own knowledge — tell the customer
      the compliance service is unavailable and defer the question to a human
      adviser. Always defer personalised financial advice to a human adviser.
-  4. Never commit a write (order_product, update_customer) without an explicit
-     confirmation step: preview the change, ask the customer to confirm, and
-     only then commit with confirm=true.
+  4. Never commit a write operation without an explicit confirmation step:
+     preview the change, ask the customer to confirm, and only then proceed.
   5. Be proactive but never pushy: only raise an optimisation once the
      customer's immediate question is handled, always ask permission before
      making suggestions, and stay silent when detect_opportunities finds nothing.
@@ -182,6 +190,7 @@ SYSTEM_PROMPT = BASE_INSTRUCTIONS + _load_skills()
 # Semantic provider with full-field extraction
 # ---------------------------------------------------------------------------
 
+
 class _FlatFieldContextProvider(AzureAISearchContextProvider):
     """Semantic provider that surfaces every flat scalar field, not just strings."""
 
@@ -203,7 +212,10 @@ class _FlatFieldContextProvider(AzureAISearchContextProvider):
 # Context provider factories
 # ---------------------------------------------------------------------------
 
-def _make_embedding_client(credential: DefaultAzureCredential) -> OpenAIEmbeddingClient | None:
+
+def _make_embedding_client(
+    credential: DefaultAzureCredential,
+) -> OpenAIEmbeddingClient | None:
     """Return an embedding client for hybrid search, or None if not configured."""
     if _AOAI_ENDPOINT and _EMBEDDING_MODEL:
         return OpenAIEmbeddingClient(
@@ -253,6 +265,7 @@ def make_providers(
 # Fabric data agent tools (Foundry project connections)
 # ---------------------------------------------------------------------------
 
+
 def make_fabric_tools(credential: DefaultAzureCredential) -> list:
     """Build the customer-data and product-data Fabric tools.
 
@@ -267,16 +280,12 @@ def make_fabric_tools(credential: DefaultAzureCredential) -> list:
         credential=credential,
         allow_preview=True,
     )
-    # ``get_fabric_tool`` returns an azure.ai.projects ``MicrosoftFabricPreviewTool``
-    # model. Serialise each to its plain wire dict with ``as_dict()`` before handing
-    # it to the agent: when the Foundry client builds the Responses API payload it
-    # only *shallow*-copies hosted-tool mappings, so the nested
-    # ``FabricDataAgentToolParameters`` model would otherwise reach json.dumps and
-    # raise "Object of type FabricDataAgentToolParameters is not JSON serializable".
-    # as_dict() serialises recursively, yielding a fully JSON-safe payload.
+    # Serialise to plain wire dicts via as_dict(): the Foundry client shallow-copies
+    # hosted-tool mappings, so the nested FabricDataAgentToolParameters model would
+    # otherwise reach json.dumps and raise "not JSON serializable".
     return [
         chat_client.get_fabric_tool(connection_id=_CUSTOMER_FABRIC_CONNECTION_ID).as_dict(),
-        # chat_client.get_fabric_tool(connection_id=_PRODUCT_FABRIC_CONNECTION_ID).as_dict(),
+        chat_client.get_fabric_tool(connection_id=_PRODUCT_FABRIC_CONNECTION_ID).as_dict(),
     ]
 
 
@@ -340,8 +349,9 @@ def make_compliance_a2a_tool(credential: DefaultAzureCredential):
         def __init__(self, get_token):
             self._get_token = get_token
 
-        async def intercept(self, method_name, request_payload, http_kwargs,
-                            agent_card, context):
+        async def intercept(
+            self, method_name, request_payload, http_kwargs, agent_card, context
+        ):
             headers = dict(http_kwargs.get("headers") or {})
             headers["Authorization"] = "Bearer " + await self._get_token()
             http_kwargs["headers"] = headers

@@ -22,6 +22,7 @@ Endpoints:
 Environment: see ``fabric_agent.py``. Additionally honours ``HOST``
 and ``PORT`` (default 0.0.0.0:8090).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -55,7 +56,9 @@ from src.fabric_agent.fabric_agent import (  # noqa: E402
     make_providers,
 )
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s"
+)
 logging.getLogger("azure").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -68,7 +71,12 @@ logger = logging.getLogger(__name__)
 # wired in this process, so the instrumentation only builds spans that go
 # nowhere but still crash. Disable framework instrumentation for this app until
 # the upstream fix lands; set ENABLE_INSTRUMENTATION=true to opt back in.
-if os.getenv("ENABLE_INSTRUMENTATION", "").strip().lower() not in {"1", "true", "yes", "on"}:
+if os.getenv("ENABLE_INSTRUMENTATION", "").strip().lower() not in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}:
     from agent_framework.observability import disable_instrumentation
 
     disable_instrumentation()
@@ -80,13 +88,20 @@ _TEMPLATES_DIR = Path(__file__).parent / "templates"
 # Shared-state schema used by the UI sidebar
 # ---------------------------------------------------------------------------
 
+
 class CustomerProfile(BaseModel):
     """The signed-in customer's headline profile."""
 
-    customer_id: Optional[str] = Field(default=None, description="Customer id, e.g. 'CUST-1001'.")
+    customer_id: Optional[str] = Field(
+        default=None, description="Customer id, e.g. 'CUST-1001'."
+    )
     full_name: Optional[str] = Field(default=None, description="Customer legal name.")
-    bank: Optional[str] = Field(default=None, description="Owning bank, e.g. 'Bank South'.")
-    segment: Optional[str] = Field(default=None, description="Segment: retail / youth / premium.")
+    bank: Optional[str] = Field(
+        default=None, description="Owning bank, e.g. 'Bank South'."
+    )
+    segment: Optional[str] = Field(
+        default=None, description="Segment: retail / youth / premium."
+    )
 
 
 class AccountRow(BaseModel):
@@ -95,16 +110,26 @@ class AccountRow(BaseModel):
     account_id: str = Field(description="Account id, e.g. 'ACC-100001'.")
     product_name: str = Field(description="Product held, e.g. 'FlexSave', 'GoldCard'.")
     kind: str = Field(default="account", description="'account' or 'card'.")
-    balance: Optional[float] = Field(default=None, description="Current balance in EUR.")
-    status: Optional[str] = Field(default=None, description="active / blocked / closed / pending.")
+    balance: Optional[float] = Field(
+        default=None, description="Current balance in EUR."
+    )
+    status: Optional[str] = Field(
+        default=None, description="active / blocked / closed / pending."
+    )
 
 
 class PendingAction(BaseModel):
     """A human-in-the-loop action awaiting the customer's confirmation."""
 
-    kind: Optional[str] = Field(default=None, description="e.g. 'order_product', 'update_customer'.")
-    summary: Optional[str] = Field(default=None, description="One-line description of the change.")
-    awaiting_confirmation: bool = Field(default=False, description="True while confirmation is pending.")
+    kind: Optional[str] = Field(
+        default=None, description="e.g. 'order_product', 'update_customer'."
+    )
+    summary: Optional[str] = Field(
+        default=None, description="One-line description of the change."
+    )
+    awaiting_confirmation: bool = Field(
+        default=False, description="True while confirmation is pending."
+    )
 
 
 @tool
@@ -165,7 +190,7 @@ _agent = Agent(
     ),
     name="FabricCustomerSupportAgent",
     instructions=SYSTEM_PROMPT,
-    tools=[*_fabric_tools],
+    tools=[update_overview, *_fabric_tools, *_extra_tools],
     context_providers=[_product_provider],
 )
 
@@ -216,7 +241,9 @@ add_agent_framework_fastapi_endpoint(
 def main() -> None:
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8090"))
-    logger.info("Starting Customer Support Agent AG-UI server on http://%s:%d", host, port)
+    logger.info(
+        "Starting Customer Support Agent AG-UI server on http://%s:%d", host, port
+    )
     uvicorn.run(app, host=host, port=port)
 
 
