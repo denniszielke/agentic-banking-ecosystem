@@ -7,8 +7,10 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
     <!-- OAuth config injected server-side (client ID only, no secrets) -->
     <script src="/config.js"></script>
-    <!-- MSAL.js loaded as static tag to avoid ORB blocking of dynamic scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/dist/msal-browser.min.js" crossorigin="anonymous"></script>
+    <!-- MSAL.js loaded as static tag to avoid ORB blocking of dynamic scripts.
+         NOTE: msal-browser v2 publishes its UMD bundle under /lib/, not /dist/
+         (the /dist/ path only exists in v3+). Version pinned for cache/stability. -->
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.39.0/lib/msal-browser.min.js" crossorigin="anonymous"></script>
     <style>
       :root {
         --bg: #0b1220; --bg-soft: #121a2b; --panel: #16203a; --panel-2: #1d284a;
