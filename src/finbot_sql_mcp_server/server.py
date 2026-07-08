@@ -645,19 +645,6 @@ def write_kunde_produkt(
             "record": record,
         }
 
-    existing = _rows(
-        f"SELECT 1 FROM {_KUNDE_PRODUKTE_TABLE} "
-        "WHERE id_mandant = ? AND id_kunde = ? AND id_produkt = ?",
-        (id_mandant, id_kunde, id_produkt),
-    )
-    if existing:
-        return {
-            "error": (
-                f"Record already exists: (id_mandant={id_mandant}, "
-                f"id_kunde={id_kunde}, id_produkt={id_produkt}). No insert performed."
-            )
-        }
-
     cols = list(record.keys())
     col_list = ", ".join(f"[{c}]" for c in cols)
     placeholders = ", ".join("?" for _ in cols)
@@ -667,8 +654,13 @@ def write_kunde_produkt(
             f"INSERT INTO {_KUNDE_PRODUKTE_TABLE} ({col_list}) VALUES ({placeholders})",
             params,
         )
-    except pyodbc.IntegrityError as exc:
-        return {"error": f"Insert failed (integrity): {exc}"}
+    except pyodbc.IntegrityError:
+        return {
+            "error": (
+                f"A product assignment for id_mandant={id_mandant}, "
+                f"id_kunde={id_kunde}, id_produkt={id_produkt} already exists."
+            )
+        }
     return {"status": "committed", "rows_affected": affected, "record": record}
 
 
