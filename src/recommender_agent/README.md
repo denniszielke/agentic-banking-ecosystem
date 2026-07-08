@@ -1,6 +1,6 @@
 # Recommender Agent
 
-Der persönliche Banking-Assistent der Volksbank — ein AG-UI-Webagent, der dem eingeloggten Kunden hilft, seine Finanzen zu verstehen, passende Produkte zu entdecken und Aktionen mit expliziter Bestätigung durchzuführen.
+Der persönliche Banking-Assistent der Volksbank — ein **Foundry Hosted Agent**, der dem eingeloggten Kunden hilft, seine Finanzen zu verstehen und passende Produkte zu entdecken.
 
 ## Überblick
 
@@ -9,16 +9,12 @@ Der Recommender Agent ist der kundenorientierte Kanal der Volksbank. Er beantwor
 ### Architektur
 
 ```
-Browser (AG-UI SSE)
-    └── server.py  (FastAPI / AG-UI)
+Foundry Agent (RESPONSES protocol)
+    └── recommender_agent.py  (ResponsesHostServer)
             ├── Fabric Data Agent  (Foundry project connection → Microsoft Fabric)
             │       └── Kontodaten, Transaktionen, Kundenprofil
-            ├── Finance MCP Server  (Foundry toolbox oder direkter URL)
-            │       └── calculate_compound_interest, discount_cashflow
-            ├── Financial Products Index  (Azure AI Search — Kontext-Provider)
-            │       └── Produktkatalog, Konditionen, Zinsprodukte
-            └── Compliance Agent (A2A, optional)
-                    └── Regulatorische Fragen über Bank North
+            └── Finance MCP Server  (Foundry toolbox finance-tools oder direkter URL)
+                    └── calculate_compound_interest, discount_cashflow
 ```
 
 ## Skills
@@ -28,24 +24,20 @@ Browser (AG-UI SSE)
 | `account-enquiry` | Kontostand, Transaktionen und Kundenprofil über den Fabric-Data-Agent |
 | `product-recommendation` | Proaktive Empfehlungen aus dem Volksbank- / FinanzGruppe-Portfolio |
 | `financial-calculation` | Zinsberechnungen und Barwertanalysen über die Finance-MCP-Tools |
-| `human-in-the-loop-actions` | Produktbestellung, Kündigung und Kontaktdatenänderung mit verbindlicher Bestätigung |
 
 ## Lokale Entwicklung
 
 ```bash
 # Aus dem Repository-Root
 cp .env.example .env   # Pflichtfelder befüllen (s. u.)
-python -m src.recommender_agent.server
+python -m src.recommender_agent.recommender_agent
 ```
-
-Der Server startet auf `http://localhost:8091`. Die Chat-UI ist unter `/` erreichbar.
 
 ### Pflicht-Umgebungsvariablen
 
 | Variable | Beschreibung |
 |---|---|
 | `AZURE_AI_PROJECT_ENDPOINT` | Foundry-Projektendpunkt |
-| `AZURE_SEARCH_ENDPOINT` | Azure AI Search-Endpunkt |
 | `FABRIC_CONNECTION_ID` | Foundry-Verbindungs-ID für den Fabric-Data-Agent |
 
 ### Optionale Konfiguration
@@ -53,66 +45,91 @@ Der Server startet auf `http://localhost:8091`. Die Chat-UI ist unter `/` erreic
 | Variable | Standard | Beschreibung |
 |---|---|---|
 | `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME` | `gpt-4.1-mini` | Chat-Modell |
-| `AZURE_OPENAI_ENDPOINT` | — | Azure OpenAI-Endpunkt (für Embedding-Hybridsuche) |
-| `AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME` | — | Embedding-Modell |
-| `AZURE_SEARCH_ADMIN_KEY` | — | API-Key für AI Search (alternativ: Entra ID) |
-| `AZURE_SEARCH_PRODUCT_INDEX_NAME` | `banking-products` | Produktkatalog-Index |
 | `FINANCE_TOOLBOX_NAME` | `finance-tools` | Foundry-Toolbox-Name für Finance-MCP |
 | `FINANCE_MCP_URL` | — | Direkter MCP-URL (überschreibt Toolbox, für lokale Entwicklung) |
-| `COMPLIANCE_A2A_ENABLED` | `false` | Compliance-Agent über A2A einbinden |
-| `AZURE_AI_COMPLIANCE_AGENT_NAME` | `compliance-agent` | Name des Compliance-Hosted-Agents |
-| `COMPLIANCE_AGENT_A2A_URL` | (auto) | Direkter A2A-Endpunkt (wird sonst aus Projektendpunkt abgeleitet) |
-| `COMPLIANCE_AGENT_AUDIENCE` | `https://ai.azure.com` | Entra-Audience für A2A-Bearer-Token |
-| `HOST` | `0.0.0.0` | Bind-Adresse |
 | `PORT` | `8091` | Container-Port |
 
-## Deployment auf Azure Container Apps
+## Deployment als Foundry Hosted Agent
 
 ```bash
-# Image in ACR bauen und dann deployen
-python -m scripts.deploy_recommender_agent --build
+# Prerequisite: Finance-Toolbox registrieren
+python -m scripts.register_finance_toolbox
 
-# Nur deployen — Image bereits in ACR (nutzt :latest oder TAG)
+# Agent deployen (baut Image in ACR und registriert den Hosted Agent)
 python -m scripts.deploy_recommender_agent
 ```
 
 Das Deploy-Skript:
 1. Baut das Container-Image in ACR (`src/recommender_agent/Dockerfile`).
-2. Weist der Managed Identity die notwendigen RBAC-Rollen zu
-   (Cognitive Services User, Search Index Data Reader, Monitoring Metrics Publisher).
-3. Deployt die Container App via `infra/core/host/app.bicep`.
-4. Gibt die öffentliche URL aus.
+2. Registriert den Agenten als Foundry Hosted Agent (RESPONSES + A2A + INVOCATIONS).
+3. Patcht die Agent Card mit den Skills aus `agentcard.json`.
 
 Alle Variablen werden aus `.env` geladen (von `azd up` geschrieben).
 
-### Wichtige Deployment-Variablen
+### Deployment-Variablen
 
 | Variable | Standard | Beschreibung |
 |---|---|---|
-| `RECOMMENDER_AGENT_APP_NAME` | `recommender-agent` | Name der Container App |
-| `RECOMMENDER_AGENT_PORT` | `8091` | Containerport |
-| `RECOMMENDER_AGENT_EXTERNAL` | `true` | Öffentlicher Ingress |
-| `TAG` | `latest` | Image-Tag |
+| `AZURE_AI_RECOMMENDER_AGENT_NAME` | `recommender-agent` | Name des Hosted Agents |
+| `AZURE_CONTAINER_REGISTRY_ENDPOINT` | (aus RG ermittelt) | ACR Login Server |
+| `FABRIC_CONNECTION_ID` | — | Foundry-Verbindungs-ID (Pflicht) |
+| `FINANCE_TOOLBOX_NAME` | `finance-tools` | Finance-MCP-Toolbox |
+| `FINANCE_MCP_URL` | — | Direkter MCP-URL (optional) |
 
-## Agent im Foundry-Projekt veröffentlichen
+## Beispiel-Prompts
 
-Nach dem Deployment kann der Agent im Foundry-Projektkatalog registriert werden:
+### Kontoinformationen
+
+- „Wie hoch ist mein aktueller Kontostand?"
+- „Zeig mir meine letzten 10 Transaktionen."
+- „Wie viel habe ich diesen Monat für Lebensmittel ausgegeben?"
+- „Gib mir einen Überblick über alle meine Konten und Karten."
+- „Was waren meine größten Ausgaben im letzten Quartal?"
+
+### Finanzberechnungen
+
+- „Wenn ich 10.000 € bei 3,5 % Zinsen anlege – wie viel habe ich in 10 Jahren?"
+- „Berechne den Barwert von 500 € monatlich über 15 Jahre bei einem Zinssatz von 4 %."
+- „Was wäre mein Endkapital, wenn ich monatlich 200 € spare und 2,5 % p.a. erhalte?"
+
+### Produktempfehlungen
+
+- „Ich habe freie Liquidität auf meinem Konto – was empfiehlst du mir?"
+- „Ich plane eine Reise nach Japan. Welche Produkte der Volksbank passen dazu?"
+- „Welches Sparprodukt ist für mich am besten geeignet?"
+- „Ich möchte ein neues Auto kaufen – welche Finanzierungsmöglichkeiten gibt es?"
+- „Erkläre mir die Vorteile der Union Investment Fondsprodukte im Vergleich zum Tagesgeld."
+
+## Nach jedem Re-Deployment: Conditional Access freischalten
+
+Jedes Re-Deployment rotiert die **Entra Agent Identity** des Agents (neue Service-Principal-Objekt-ID).
+Die CA-Policy **„High Risk Agents"** (`974ed75d-23d4-4f1f-af57-c1daf9998505`) blockiert standardmäßig alle Agent Identities.
+Die neue ID muss nach jedem Deployment in die Ausnahmeliste eingetragen werden, sonst schlägt jeder API-Aufruf mit `AADSTS53003` fehl.
 
 ```bash
-python -m scripts.publish_recommender_agent
+# 1. Neue Agent Identity Object-ID ermitteln
+az rest --method GET \
+  --uri "https://graph.microsoft.com/beta/servicePrincipals/microsoft.graph.agentIdentity?\$select=id,displayName" \
+  --query "value[?contains(displayName, 'recommender')]" -o json
+
+# 2. Aktuelle Ausnahmeliste lesen
+az rest --method GET \
+  --uri "https://graph.microsoft.com/beta/identity/conditionalAccess/policies/974ed75d-23d4-4f1f-af57-c1daf9998505" \
+  --query "conditions.clientApplications.excludeAgentIdServicePrincipals" -o json
+
+# 3. CA-Policy mit der neuen ID patchen (alle bisherigen IDs + neue ID)
+az rest --method PATCH \
+  --uri "https://graph.microsoft.com/beta/identity/conditionalAccess/policies/974ed75d-23d4-4f1f-af57-c1daf9998505" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "conditions": {
+      "clientApplications": {
+        "excludeAgentIdServicePrincipals": ["<id1>", "<id2>", "...", "<neue-id>"]
+      }
+    }
+  }'
 ```
 
-Das Skript liest `src/recommender_agent/agentcard.json` und registriert den Agenten
-(inkl. Skills und öffentlicher URL) im Foundry-Projekt.
-
-## Human-in-the-Loop
-
-Alle schreibenden Aktionen (Produktbestellung, Kündigung, Kontaktdatenänderung)
-sind **verbindlich menschlich bestätigt**:
-
-1. Der Agent legt die geplante Aktion offen (Tool, Parameter, Werte).
-2. Er fragt genau einmal: „Soll ich das so ausführen? (ja/nein)"
-3. Das Tool wird erst nach ausdrücklicher Zustimmung aufgerufen.
-4. Bei „nein" oder Unklarheit: Vorschlag anpassen, erneut fragen.
-
-Lesende Aktionen (Kontostand, Transaktionen, Produkte) benötigen keine Bestätigung.
+> **Symptom bei fehlender Ausnahme:** Der Agent startet, aber jeder Request schlägt mit HTTP 500 fehl.
+> Die Logs zeigen `ManagedIdentityCredential: (bad_request) ... AADSTS53003`.
+> Die Änderung propagiert nach ca. 2–5 Minuten; kein Redeploy erforderlich.

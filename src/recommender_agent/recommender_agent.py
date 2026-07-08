@@ -1,48 +1,34 @@
-"""Recommender Agent — AG-UI web agent (Volksbank personal banking assistant).
+"""Recommender Agent — Foundry hosted agent (Volksbank personal banking assistant).
 
-A personal banking assistant for Volksbank customers. It answers everyday
-questions about the customer's accounts and finances, explains products, and
-proactively recommends suitable Volksbank / genossenschaftliche FinanzGruppe
-products (Union Investment, R+V Versicherung, Bausparkasse Schwäbisch Hall,
+A personal banking assistant for Volksbank customers, hosted as an Azure AI
+Foundry hosted agent (RESPONSES protocol). It answers everyday questions about
+the customer's accounts and finances, explains products, and proactively
+recommends suitable Volksbank / genossenschaftliche FinanzGruppe products
+(Union Investment, R+V Versicherung, Bausparkasse Schwäbisch Hall,
 easyCredit/TeamBank).
 
-It is grounded on:
+It is grounded on two tool surfaces:
 
   1. **Fabric data agent** — live account and transaction data via a Microsoft
-     Fabric data agent reached through a Foundry project connection
-     (``FoundryChatClient.get_fabric_tool()``).
+     Fabric data agent reached through a Foundry project connection.
 
   2. **Finance MCP server** — compound-interest and discounted-cash-flow
-     calculations, consumed through a Foundry toolbox (or a direct MCP URL
-     for local development).
-
-  3. **Financial products index** — the ``banking-products`` Azure AI Search
-     index for product discovery and explanations, surfaced as a context
-     provider.
-
-Write operations (order product, cancel product, update contact details) are
-strictly human-in-the-loop: the agent previews, asks for confirmation, then
-commits only after an explicit "yes".
+     calculations, consumed through the ``finance-tools`` Foundry toolbox.
 
 Business flows are loaded from the ``skills/`` folder so the domain process
 ships inside the container image.
 
 Environment variables:
-  AZURE_SEARCH_ENDPOINT                   — required
-  AZURE_SEARCH_ADMIN_KEY                  — optional; else DefaultAzureCredential
-  AZURE_SEARCH_PRODUCT_INDEX_NAME         — default: banking-products
-  AZURE_AI_PROJECT_ENDPOINT               — Foundry project endpoint (required)
-  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME       — model deployment name
-  AZURE_AI_MODEL_DEPLOYMENT_NAME          — fallback model name
-  AZURE_OPENAI_ENDPOINT                   — Azure OpenAI endpoint for embeddings
-  AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME  — embedding model for hybrid search
-  FABRIC_CONNECTION_ID                    — Foundry project connection ID (required)
-  FINANCE_TOOLBOX_NAME                    — finance MCP toolbox (default: finance-tools)
-  FINANCE_MCP_URL                         — direct MCP URL for local dev (optional)
-  COMPLIANCE_A2A_ENABLED                  — consume Compliance agent over A2A (default: false)
-  AZURE_AI_COMPLIANCE_AGENT_NAME          — compliance hosted-agent name (default: compliance-agent)
-  COMPLIANCE_AGENT_A2A_URL                — direct A2A endpoint override (auto-derived if unset)
-  COMPLIANCE_AGENT_AUDIENCE               — Entra audience (default: https://ai.azure.com)
+  AZURE_AI_PROJECT_ENDPOINT               Foundry project endpoint (required).
+  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME       model deployment name.
+  AZURE_AI_MODEL_DEPLOYMENT_NAME          fallback model name.
+  FABRIC_CONNECTION_ID                    Foundry project connection name (required).
+  FINANCE_TOOLBOX_NAME                    finance MCP toolbox (default: finance-tools).
+  FINANCE_MCP_URL                         direct MCP URL for local dev (optional).
+
+Run locally from the project root:
+
+    python -m src.recommender_agent.recommender_agent
 """
 
 from __future__ import annotations
@@ -52,13 +38,15 @@ import os
 import sys
 from pathlib import Path
 
-from agent_framework.azure import AzureAISearchContextProvider
+import httpx
+from agent_framework import MCPStreamableHTTPTool, tool
 from agent_framework.foundry import FoundryChatClient
-from agent_framework.openai import OpenAIEmbeddingClient
-from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
+from agent_framework_foundry_hosting import ResponsesHostServer
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 
-# Allow standalone execution / uvicorn module loading from the project root.
+# Allow standalone execution from the project root.
 _src_root = Path(__file__).resolve().parents[2]
 if str(_src_root) not in sys.path:
     sys.path.insert(0, str(_src_root))
@@ -74,22 +62,14 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 
-_SEARCH_ENDPOINT = os.environ["AZURE_SEARCH_ENDPOINT"]
-_SEARCH_API_KEY = os.getenv("AZURE_SEARCH_ADMIN_KEY", "").strip() or None
-
-_PRODUCT_INDEX = os.getenv("AZURE_SEARCH_PRODUCT_INDEX_NAME", "banking-products")
-
 _PROJECT_ENDPOINT = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
 _MODEL = (
     os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME")
     or os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME")
     or "gpt-4.1-mini"
 )
-_AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", "").strip()
-_EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME", "").strip()
 
-# Customer and product data via Microsoft Fabric data agents.
-_FABRIC_CONNECTION_ID = os.environ["FABRIC_CONNECTION_ID"]
+_FABRIC_CONNECTION_ID = os.environ["FABRIC_CONNECTION_ID"]  # connection name
 
 # Finance MCP server — compound interest / DCF calculations.
 _FINANCE_TOOLBOX_NAME = os.getenv("FINANCE_TOOLBOX_NAME", "finance-tools")
@@ -98,49 +78,23 @@ _FINANCE_TOOLBOX_ENDPOINT = os.getenv("FINANCE_TOOLBOX_MCP_ENDPOINT") or (
 )
 _DIRECT_FINANCE_MCP_URL = os.getenv("FINANCE_MCP_URL", "").strip()
 
-# Cross-organisation A2A: optionally consume Bank North's Compliance agent.
-_COMPLIANCE_A2A_ENABLED = os.getenv(
-    "COMPLIANCE_A2A_ENABLED", "false"
-).strip().lower() in {"1", "true", "yes", "on"}
-_COMPLIANCE_AGENT_NAME = os.getenv("AZURE_AI_COMPLIANCE_AGENT_NAME", "compliance-agent")
-_COMPLIANCE_A2A_URL = os.getenv("COMPLIANCE_AGENT_A2A_URL", "").strip() or (
-    f"{_PROJECT_ENDPOINT.rstrip('/')}/agents/{_COMPLIANCE_AGENT_NAME}/endpoint/protocols/a2a"
-)
-_COMPLIANCE_A2A_AUDIENCE = os.getenv(
-    "COMPLIANCE_AGENT_AUDIENCE", "https://ai.azure.com"
-).strip()
-
 _SKILLS_DIR = Path(__file__).parent / "skills"
 
 
 BASE_INSTRUCTIONS = """\
 Du bist ein persönlicher Banking-Assistent der Volksbank. Du hilfst dem eingeloggten Nutzer,
 Informationen zu seinen eigenen Konten und Finanzdaten abzurufen und verständlich zu erklären.
-Du kannst Produkte erklären und Empfehlungen geben, buchen und kündigen.
+Du kannst Produkte erklären und Empfehlungen geben.
 
 ## Deine Fähigkeiten
-- Du hast Zugriff auf einen Genie Space ('AAP Daten'),
-  über den du strukturierte Kontodaten abfragen kannst (z. B. Kontostand, Transaktionen,
-  Konto-Übersichten, Salden über die Zeit).
-- Nutze das Genie-Tool für jede Frage, die echte Kontodaten erfordert. Erfinde niemals
+- Du hast Zugriff auf einen **Fabric Data Agent**, über den du strukturierte Kontodaten
+  abfragen kannst (z. B. Kontostand, Transaktionen, Konto-Übersichten, Salden über die Zeit).
+  Nutze dieses Tool für jede Frage, die echte Kontodaten erfordert. Erfinde niemals
   Zahlen, Salden oder Transaktionen.
 - Mit dem Tool `get_current_time` kannst du das aktuelle Datum/die Uhrzeit ermitteln,
   z. B. für Anfragen wie "letzten Monat" oder "dieses Jahr".
-- Über die Tools des `mcp-finbot-writer` kannst du schreibende Aktionen ausführen
-  (z. B. Daten anlegen, ändern oder löschen).
 - Mit den Finance-Tools (`calculate_compound_interest`, `discount_cashflow`) kannst du
   Zinsberechnungen und Barwertanalysen für den Kunden durchführen.
-
-## Human-in-the-Loop für schreibende Aktionen (VERBINDLICH)
-Bevor du ein schreibendes Tool aufrufst:
-1. Lege dem Nutzer in einer kurzen, klaren Nachricht vor, was genau ausgeführt werden soll:
-   die geplante Aktion, das betroffene Tool und alle konkreten Werte/Parameter.
-2. Stelle genau eine Rückfrage, z. B.: „Soll ich das so ausführen? (ja/nein)".
-3. Rufe das Tool ERST auf, nachdem der Nutzer eindeutig zugestimmt hat (z. B. „ja",
-   „bestätige", „mach das"). Bei „nein", Unklarheit oder Korrekturwunsch führst du nichts
-   aus, sondern passt den Vorschlag an und fragst erneut.
-
-Lesende Aktionen benötigen KEINE Bestätigung und werden direkt ausgeführt.
 
 ## Deine Rolle als Volksbank-Berater (VERBINDLICH)
 - Du bist ein Berater der Volksbank. Empfiehl dem Kunden auch proaktiv passende
@@ -159,16 +113,85 @@ Lesende Aktionen benötigen KEINE Bestätigung und werden direkt ausgeführt.
   Stelle die Produktvorteile ehrlich dar und erfinde keine Konditionen oder Zinssätze.
   Wenn dir konkrete Konditionen fehlen, verweise auf die persönliche Beratung in der
   Volksbank.
-
-## Sidebar aktuell halten (VERBINDLICH)
-- Rufe `update_overview` auf, sobald sich das Kontobild oder eine ausstehende Aktion ändert —
-  immer BEVOR du die Chat-Antwort schreibst.
+- Wenn der Kunde Interesse an einem Produkt signalisiert, biete ihm an, eine Empfehlung
+  im CRM zu hinterlegen, damit ein menschlicher Berater sich meldet. Nutze dazu das
+  Tool `submit_product_recommendation`. Dieses Tool erfordert immer eine explizite
+  Bestätigung durch den Nutzer, bevor es ausgeführt wird.
 
 ## Stil
 - Antworte auf Deutsch, freundlich, knapp und präzise.
 - Stelle Salden und Übersichten gut lesbar dar (z. B. als kurze Liste oder Tabelle).
 - Erkläre Finanzbegriffe nur auf Nachfrage oder wenn es zum Verständnis nötig ist.
 """
+
+
+# ---------------------------------------------------------------------------
+# CRM submission tool (human-in-the-loop, always requires approval)
+# ---------------------------------------------------------------------------
+
+_MOCK_CRM_MODULE = Path(__file__).parent / "mock_crm.py"
+
+
+@tool(approval_mode="always_require")
+def submit_product_recommendation(
+    customer_id: str,
+    product_code: str,
+    product_name: str,
+    reason: str,
+    advisor_note: str = "",
+) -> dict:
+    """Submit a product recommendation to the CRM system.
+
+    **Always requires explicit human approval before execution.**
+
+    Records a personalised product recommendation for the customer in the CRM
+    so that a human advisor can follow up. Use this after you have explained a
+    product to the customer and they have expressed interest.
+
+    Args:
+        customer_id: The customer's unique identifier (e.g. from the Fabric data
+            agent response).
+        product_code: The product code / SKU (e.g. "UI-GROWTH-2024").
+        product_name: Human-readable product name (e.g. "Union Investment
+            Wachstumsfonds").
+        reason: A short explanation of why this product suits the customer
+            (1–3 sentences). This is stored on the CRM record.
+        advisor_note: Optional free-text note for the human advisor who will
+            follow up (default: empty).
+
+    Returns:
+        A dict with ``success`` (bool) and ``crm_record_id`` (str) on success,
+        or ``error`` (str) on failure.
+    """
+    import json
+    import subprocess
+
+    cmd = [
+        sys.executable,
+        str(_MOCK_CRM_MODULE),
+        "--customer-id", customer_id,
+        "--product-code", product_code,
+        "--product-name", product_name,
+        "--reason", reason,
+    ]
+    if advisor_note:
+        cmd += ["--advisor-note", advisor_note]
+
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        error_msg = result.stderr.strip() or f"CRM script exited with code {result.returncode}"
+        logger.error("mock_crm failed: %s", error_msg)
+        return {"success": False, "error": error_msg}
+
+    try:
+        return json.loads(result.stdout.strip())
+    except json.JSONDecodeError:
+        return {"success": False, "error": f"Unexpected CRM output: {result.stdout.strip()}"}
 
 
 def _load_skills() -> str:
@@ -187,183 +210,84 @@ SYSTEM_PROMPT = BASE_INSTRUCTIONS + _load_skills()
 
 
 # ---------------------------------------------------------------------------
-# Semantic provider with full-field extraction
+# Identity / credential + toolbox auth
 # ---------------------------------------------------------------------------
 
-
-class _FlatFieldContextProvider(AzureAISearchContextProvider):
-    """Semantic provider that surfaces every flat scalar field, not just strings."""
-
-    _SKIP_FIELDS = frozenset({"description_vector", "scenario_vector", "embedding"})
-
-    def _extract_document_text(self, doc: dict, doc_id: str | None = None) -> str:  # type: ignore[override]
-        parts: list[str] = []
-        for key, value in doc.items():
-            if key.startswith("@") or key in self._SKIP_FIELDS or value is None:
-                continue
-            parts.append(f"{key}: {value}")
-        text = " | ".join(parts)
-        if doc_id and text:
-            return f"[Source: {doc_id}] {text}"
-        return text
+_credential = DefaultAzureCredential()
+_toolbox_token_provider = get_bearer_token_provider(_credential, "https://ai.azure.com/.default")
 
 
-# ---------------------------------------------------------------------------
-# Context provider factories
-# ---------------------------------------------------------------------------
+class _ToolboxAuth(httpx.Auth):
+    """Inject a fresh Entra token on every Foundry toolbox MCP request."""
+
+    def __init__(self, token_provider):
+        self._get_token = token_provider
+
+    def auth_flow(self, request):
+        request.headers["Authorization"] = "Bearer " + self._get_token()
+        yield request
 
 
-def _make_embedding_client(
-    credential: DefaultAzureCredential,
-) -> OpenAIEmbeddingClient | None:
-    if _AOAI_ENDPOINT and _EMBEDDING_MODEL:
-        return OpenAIEmbeddingClient(
-            azure_endpoint=_AOAI_ENDPOINT,
-            model=_EMBEDDING_MODEL,
-            credential=credential,
-        )
-    return None
-
-
-def _make_product_provider(
-    credential: DefaultAzureCredential,
-    embedding_client: OpenAIEmbeddingClient | None,
-) -> AzureAISearchContextProvider:
-    return _FlatFieldContextProvider(
-        source_id="financial_products",
-        endpoint=_SEARCH_ENDPOINT,
-        index_name=_PRODUCT_INDEX,
-        api_key=_SEARCH_API_KEY,
-        credential=credential if not _SEARCH_API_KEY else None,
-        mode="semantic",
-        top_k=15,
-        embedding_function=embedding_client,
-        vector_field_name="description_vector" if embedding_client else None,
-    )
-
-
-def make_providers(
-    credential: DefaultAzureCredential,
-) -> tuple[AzureAISearchContextProvider, OpenAIEmbeddingClient | None]:
-    """Build the Financial products context provider and the embedding client."""
-    embedding_client = _make_embedding_client(credential)
-    product_provider = _make_product_provider(credential, embedding_client)
-    return product_provider, embedding_client
-
-
-# ---------------------------------------------------------------------------
-# Fabric data agent tools (Foundry project connections)
-# ---------------------------------------------------------------------------
-
-
-def make_fabric_tools(credential: DefaultAzureCredential) -> list:
-    """Build the Fabric data agent tool for live account/transaction data."""
-    chat_client = FoundryChatClient(
-        project_endpoint=_PROJECT_ENDPOINT,
-        model=_MODEL,
-        credential=credential,
-        allow_preview=True,
-    )
-    return [
-        chat_client.get_fabric_tool(connection_id=_FABRIC_CONNECTION_ID).as_dict(),
-    ]
-
-
-# ---------------------------------------------------------------------------
-# Finance MCP toolbox (compound interest / DCF calculations)
-# ---------------------------------------------------------------------------
-
-
-def make_finance_mcp_tool(credential: DefaultAzureCredential):
-    """Build the Finance MCP streamable-HTTP tool.
-
-    Uses the Foundry toolbox endpoint by default; falls back to a direct MCP
-    URL when ``FINANCE_MCP_URL`` is set (local development).
-
-    Returns a configured ``MCPStreamableHTTPTool`` or ``None`` when neither
-    a toolbox endpoint nor a direct URL is reachable.
-    """
-    from agent_framework import MCPStreamableHTTPTool
-
-    mcp_url = _DIRECT_FINANCE_MCP_URL or _FINANCE_TOOLBOX_ENDPOINT
-    if not mcp_url:
-        logger.warning("Finance MCP URL not configured; financial calculations unavailable.")
-        return None
-
-    if _DIRECT_FINANCE_MCP_URL:
-        logger.info("Finance MCP: using direct URL %s", mcp_url)
-        return MCPStreamableHTTPTool(url=mcp_url)
-
-    token_provider = get_bearer_token_provider(credential, "https://ai.azure.com/.default")
-
-    import httpx
-
-    class _ToolboxAuth(httpx.Auth):
-        def auth_flow(self, request):
-            request.headers["Authorization"] = "Bearer " + token_provider()
-            yield request
-
-    logger.info("Finance MCP: using Foundry toolbox %s", mcp_url)
-    return MCPStreamableHTTPTool(
-        url=mcp_url,
-        http_client=httpx.AsyncClient(auth=_ToolboxAuth(), headers={"Foundry-Features": "Toolboxes=V1Preview"}),
+def _toolbox_http_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        auth=_ToolboxAuth(_toolbox_token_provider),
+        headers={"Foundry-Features": "Toolboxes=V1Preview"},
+        timeout=120.0,
     )
 
 
 # ---------------------------------------------------------------------------
-# Cross-organisation A2A tool (optional Compliance agent)
+# Foundry client + tools
 # ---------------------------------------------------------------------------
 
-_COMPLIANCE_TOOL_DESCRIPTION = (
-    "Ask the Compliance agent a regulatory, KYC/AML, sanctions, fraud or "
-    "product-eligibility question. Use it before recommending a product to a "
-    "customer who may have eligibility constraints. "
-    "Gather the customer's relevant data first and pass a structured, "
-    "self-contained question including the scenario, the product category, and "
-    "the customer's KYC status, segment, nationality, and existing holdings."
+_project_client = AIProjectClient(endpoint=_PROJECT_ENDPOINT, credential=_credential)
+try:
+    _fabric_connection_id = _project_client.connections.get(_FABRIC_CONNECTION_ID).id
+    logger.info("Fabric connection resolved: %s → %s", _FABRIC_CONNECTION_ID, _fabric_connection_id)
+except Exception as _exc:
+    logger.warning(
+        "Could not resolve Fabric connection '%s' via API (%s); using name directly.",
+        _FABRIC_CONNECTION_ID,
+        _exc,
+    )
+    _fabric_connection_id = _FABRIC_CONNECTION_ID
+
+_foundry_client = FoundryChatClient(
+    project_endpoint=_PROJECT_ENDPOINT,
+    model=_MODEL,
+    credential=_credential,
+    allow_preview=True,
+)
+
+# Fabric data agent tool — live account and transaction data.
+_fabric_tool = _foundry_client.get_fabric_tool(connection_id=_fabric_connection_id).as_dict()
+
+# Finance MCP tool — compound interest / DCF calculations.
+if _DIRECT_FINANCE_MCP_URL:
+    logger.info("Finance MCP: using direct URL %s", _DIRECT_FINANCE_MCP_URL)
+    _finance_tool: MCPStreamableHTTPTool = MCPStreamableHTTPTool(
+        name="finance", url=_DIRECT_FINANCE_MCP_URL, load_prompts=False
+    )
+else:
+    logger.info("Finance MCP: using Foundry toolbox %s", _FINANCE_TOOLBOX_ENDPOINT)
+    _finance_tool = MCPStreamableHTTPTool(
+        name="finance",
+        url=_FINANCE_TOOLBOX_ENDPOINT,
+        http_client=_toolbox_http_client(),
+        load_prompts=False,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Agent assembly
+# ---------------------------------------------------------------------------
+
+agent = _foundry_client.as_agent(
+    name="recommender-agent",
+    instructions=SYSTEM_PROMPT,
+    tools=[_fabric_tool, _finance_tool, submit_product_recommendation],
 )
 
 
-def make_compliance_a2a_tool(credential: DefaultAzureCredential):
-    """Build the cross-org Compliance A2A tool, or ``(None, None)`` if disabled."""
-    if not _COMPLIANCE_A2A_ENABLED:
-        logger.info("Compliance A2A disabled.")
-        return None, None
-
-    from a2a.client.middleware import ClientCallInterceptor
-    from agent_framework.a2a import A2AAgent
-
-    token_provider = get_bearer_token_provider(
-        credential, f"{_COMPLIANCE_A2A_AUDIENCE.rstrip('/')}/.default"
-    )
-
-    class _BearerTokenInterceptor(ClientCallInterceptor):
-        def __init__(self, get_token):
-            self._get_token = get_token
-
-        async def intercept(
-            self, method_name, request_payload, http_kwargs, agent_card, context
-        ):
-            headers = dict(http_kwargs.get("headers") or {})
-            headers["Authorization"] = "Bearer " + await self._get_token()
-            http_kwargs["headers"] = headers
-            return request_payload, http_kwargs
-
-    logger.info("Wiring Compliance A2A agent at %s", _COMPLIANCE_A2A_URL)
-    a2a_agent = A2AAgent(
-        name="compliance",
-        url=_COMPLIANCE_A2A_URL,
-        auth_interceptor=_BearerTokenInterceptor(token_provider),
-        timeout=120.0,
-    )
-    tool = a2a_agent.as_tool(
-        name="ask_compliance",
-        description=_COMPLIANCE_TOOL_DESCRIPTION,
-        arg_name="question",
-        arg_description=(
-            "A structured compliance question including the scenario, product, and "
-            "the customer's relevant data-model facts (age, nationality, kyc_status, "
-            "segment, existing holdings). Mark unknown fields as 'unknown'."
-        ),
-    )
-    return tool, a2a_agent
+if __name__ == "__main__":
+    ResponsesHostServer(agent).run()

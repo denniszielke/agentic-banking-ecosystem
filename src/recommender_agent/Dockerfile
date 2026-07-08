@@ -10,4 +10,4 @@ RUN if [ -f /tmp/requirements.txt ]; then \
 COPY ./src /app/src
 ENV PORT=8091
 EXPOSE 8091
-CMD ["python", "-m", "src.recommender_agent.server"]
+CMD ["python", "-m", "src.recommender_agent.recommender_agent"]

@@ -3,21 +3,26 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Volksbank — Mein Banking-Assistent</title>
+    <title>Volksbank — Persönlicher Berater</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <!-- OAuth config injected server-side (client ID only, no secrets) -->
+    <script src="/config.js"></script>
+    <!-- MSAL.js loaded as static tag to avoid ORB blocking of dynamic scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/dist/msal-browser.min.js" crossorigin="anonymous"></script>
     <style>
       :root {
         --bg: #0b1220; --bg-soft: #121a2b; --panel: #16203a; --panel-2: #1d284a;
-        --border: #263352; --text: #e8eef7; --muted: #93a1bd; --brand: #e30613;
-        --brand-2: #b0000e; --green: #3fb950; --amber: #d29922; --red: #f85149;
+        --border: #263352; --text: #e8eef7; --muted: #93a1bd;
+        --brand: #005b87; --brand-2: #007dc3;
+        --green: #3fb950; --amber: #d29922; --red: #f85149;
         --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       }
       * { box-sizing: border-box; }
       html, body { height: 100%; }
       body {
         margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-        background: radial-gradient(1200px 600px at 80% -10%, rgba(227, 6, 19, 0.10), transparent),
-                    radial-gradient(900px 500px at -10% 10%, rgba(176, 0, 14, 0.08), transparent), var(--bg);
+        background: radial-gradient(1200px 600px at 80% -10%, rgba(0, 125, 195, 0.15), transparent),
+                    radial-gradient(900px 500px at -10% 10%, rgba(0, 91, 135, 0.14), transparent), var(--bg);
         color: var(--text); display: flex; flex-direction: column; height: 100vh; overflow: hidden;
       }
       header.app-bar {
@@ -54,7 +59,7 @@
         border-radius: 12px; padding: 10px 14px; cursor: pointer; font-size: 0.85rem; max-width: 260px;
         display: flex; flex-direction: column; gap: 3px; transition: border-color .15s, transform .1s;
       }
-      .chip:hover { border-color: var(--brand); transform: translateY(-1px); }
+      .chip:hover { border-color: var(--brand-2); transform: translateY(-1px); }
       .chip span { color: var(--muted); font-size: 0.74rem; }
       .bubble { display: flex; gap: 12px; margin: 0 auto 18px; max-width: 820px; }
       .bubble .avatar {
@@ -65,7 +70,7 @@
         background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
         padding: 12px 16px; line-height: 1.5; overflow-wrap: anywhere;
       }
-      .bubble.user .msg { background: linear-gradient(135deg, rgba(227,6,19,.15), rgba(176,0,14,.10)); }
+      .bubble.user .msg { background: linear-gradient(135deg, rgba(0,125,195,.22), rgba(0,91,135,.18)); }
       .bubble .msg h2, .bubble .msg h3 { margin: 8px 0 6px; font-size: 1rem; }
       .bubble .msg ul { margin: 6px 0; padding-left: 20px; }
       .bubble .msg code { background: rgba(255,255,255,.08); padding: 1px 5px; border-radius: 5px; }
@@ -80,7 +85,7 @@
         border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 0.95rem; max-height: 140px;
       }
       form.composer button {
-        background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #fff; border: 0;
+        background: linear-gradient(135deg, var(--brand-2), var(--brand)); color: #fff; border: 0;
         border-radius: 12px; padding: 0 22px; font-weight: 600; cursor: pointer;
       }
       form.composer button:disabled { opacity: .5; cursor: not-allowed; }
@@ -109,9 +114,17 @@
     <header class="app-bar">
       <div class="brand">
         <div class="logo">🏦</div>
-        <div><h1>Volksbank — Mein Banking-Assistent</h1><p>Fragen zu Konten, Produkten, Empfehlungen und Zinsberechnungen</p></div>
+        <div><h1>Volksbank — Persönlicher Berater</h1><p>Konten, Finanzen, Produktempfehlungen und Berechnungen</p></div>
       </div>
-      <div class="status-pill" id="status" data-state="ready"><span class="dot"></span><span id="statusText">Bereit</span></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="userBadge" style="display:none;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:0.8rem;">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span>
+          <span id="userName">Angemeldet</span>
+        </div>
+        <button id="loginBtn" onclick="msalLogin()" style="background:linear-gradient(135deg,var(--brand-2),var(--brand));color:#fff;border:0;border-radius:10px;padding:8px 16px;font-size:0.85rem;font-weight:600;cursor:pointer">Anmelden</button>
+        <button id="logoutBtn" onclick="msalLogout()" style="display:none;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-size:0.82rem;cursor:pointer">Abmelden</button>
+        <div class="status-pill" id="status" data-state="ready"><span class="dot"></span><span id="statusText">Bereit</span></div>
+      </div>
     </header>
 
     <div class="layout">
@@ -119,12 +132,12 @@
         <div class="chat-scroll" id="chatScroll">
           <div class="welcome" id="welcome">
             <h2>Wie kann ich Ihnen heute helfen? 🏦</h2>
-            <p>Ich zeige Ihnen Ihre Salden und Transaktionen, erkläre Produkte, berechne Zinsen und helfe Ihnen dabei, passende Produkte zu finden oder zu beantragen – immer mit Ihrer Bestätigung.</p>
+            <p>Ich kann Ihre Kontostände und Transaktionen anzeigen, Finanzberechnungen durchführen, Produkte erklären und passende Angebote empfehlen. Ihre Kontodaten und ausstehende Aktionen werden rechts in Echtzeit aktualisiert.</p>
             <div class="chips" id="chips"></div>
           </div>
         </div>
         <form class="composer" id="composer">
-          <textarea id="input" placeholder="z. B. Wie hoch ist mein Kontostand? Was könnte ich mit 10.000 € bei 3 % p. a. in 5 Jahren ansparen?" rows="1"></textarea>
+          <textarea id="input" placeholder="z. B. Wie hoch ist mein aktueller Kontostand?" rows="1"></textarea>
           <button type="submit" id="sendBtn">Senden</button>
         </form>
       </main>
@@ -132,7 +145,7 @@
       <aside class="sidebar">
         <section class="card">
           <header><h3>👤 Kunde</h3></header>
-          <div class="body" id="customerBody"><div class="empty">Ihr Profil erscheint hier nach der Identifikation.</div></div>
+          <div class="body" id="customerBody"><div class="empty">Ihr Profil erscheint hier, sobald Sie sich identifiziert haben.</div></div>
         </section>
         <section class="card">
           <header><h3>💳 Konten &amp; Karten</h3><span class="count" id="acctCount">0</span></header>
@@ -147,15 +160,122 @@
 
     <script>
       const ENDPOINT = "/agent";
+      // Injected by the server or set via window.WEB_RECOMMENDER_CLIENT_ID.
+      const CLIENT_ID = window.WEB_RECOMMENDER_CLIENT_ID || "";
+      const TENANT_ID = window.WEB_RECOMMENDER_TENANT_ID || "common";
       const STARTERS = [
-        { t: "Kontostand prüfen", q: "Ich bin Kunde CUST-1001. Wie hoch ist mein aktueller Kontostand auf allen Konten?" },
-        { t: "Letzte Transaktionen", q: "Ich bin Kunde CUST-1001. Zeig mir meine Transaktionen vom letzten Monat mit Kategorien." },
-        { t: "Zinsberechnung", q: "Ich bin Kunde CUST-1001. Was ergibt sich, wenn ich 15.000 € bei 3,5 % p. a. über 5 Jahre anlege?" },
-        { t: "Produkt beantragen", q: "Ich bin Kunde CUST-1001. Ich möchte ein Sparkonto eröffnen. Was muss ich tun?" },
-        { t: "Reise planen", q: "Ich bin Kunde CUST-1001. Ich plane eine Reise nach Italien — welche Volksbank-Produkte können mir dabei helfen?" },
-        { t: "Geldanlage-Empfehlung", q: "Ich bin Kunde CUST-1001. Ich habe etwas Liquidität auf dem Konto. Was empfehlt ihr mir für eine sinnvolle Geldanlage?" },
+        { t: "Kontostand prüfen", q: "Wie hoch ist mein aktueller Kontostand auf allen Konten?" },
+        { t: "Letzte Transaktionen", q: "Zeig mir meine letzten 10 Transaktionen." },
+        { t: "Ausgaben analysieren", q: "Wie viel habe ich diesen Monat für Lebensmittel ausgegeben?" },
+        { t: "Zinsberechnung", q: "Wenn ich 10.000 € bei 3,5 % Zinsen anlege – wie viel habe ich in 10 Jahren?" },
+        { t: "Sparprodukt empfehlen", q: "Ich habe freie Liquidität – welches Volksbank-Sparprodukt passt zu mir?" },
+        { t: "Reise planen", q: "Ich plane eine Reise nach Japan – welche Volksbank-Produkte empfiehlst du?" },
       ];
 
+      // ---------------------------------------------------------------------------
+      // MSAL.js — user authentication
+      // ---------------------------------------------------------------------------
+      let msalInstance = null;
+      let currentAccount = null;
+      let accessToken = null;
+
+      async function initMsal() {
+        if (!CLIENT_ID) {
+          console.warn('[MSAL] CLIENT_ID not set — login disabled');
+          return;
+        }
+        const config = {
+          auth: {
+            clientId: CLIENT_ID,
+            authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+            // Must exactly match a registered SPA redirect URI (no trailing slash).
+            redirectUri: window.location.origin,
+          },
+          cache: { cacheLocation: "sessionStorage" },
+        };
+        try {
+          msalInstance = new msal.PublicClientApplication(config);
+          // MSAL Browser 2.28+ added initialize(); call it if present (no-op on older builds).
+          if (typeof msalInstance.initialize === 'function') {
+            await msalInstance.initialize();
+          }
+          const result = await msalInstance.handleRedirectPromise();
+          if (result) {
+            currentAccount = result.account;
+            accessToken = result.accessToken;
+          }
+          if (!currentAccount) {
+            const accounts = msalInstance.getAllAccounts();
+            if (accounts.length > 0) {
+              currentAccount = accounts[0];
+              await acquireToken();
+            }
+          }
+          console.log('[MSAL] Ready. Account:', currentAccount ? currentAccount.username : 'none');
+        } catch (err) {
+          console.error('[MSAL] Init error:', err);
+          msalInstance = null; // ensure login button guard works
+        }
+        updateAuthUI();
+      }
+
+      async function acquireToken() {
+        if (!msalInstance || !currentAccount) return;
+        const scopes = [`api://${CLIENT_ID}/user_impersonation`];
+        try {
+          const result = await msalInstance.acquireTokenSilent({ scopes, account: currentAccount });
+          accessToken = result.accessToken;
+        } catch (_) {
+          accessToken = null;
+        }
+      }
+
+      async function msalLogin() {
+        if (!msalInstance) {
+          console.error('[MSAL] Not initialized — cannot login');
+          return;
+        }
+        try {
+          await msalInstance.loginRedirect({
+            scopes: [`api://${CLIENT_ID}/user_impersonation`],
+          });
+        } catch (err) {
+          console.error('[MSAL] loginRedirect error:', err);
+          // interaction_in_progress means a prior redirect was never completed.
+          // Clear MSAL session keys and retry once.
+          if (err.errorCode === 'interaction_in_progress') {
+            Object.keys(sessionStorage)
+              .filter(k => k.startsWith('msal.') || k.startsWith('msal|'))
+              .forEach(k => sessionStorage.removeItem(k));
+            try {
+              await msalInstance.loginRedirect({ scopes: [`api://${CLIENT_ID}/user_impersonation`] });
+            } catch (e2) {
+              alert('Anmeldung fehlgeschlagen: ' + e2.message);
+            }
+          } else {
+            alert('Anmeldung fehlgeschlagen: ' + err.message);
+          }
+        }
+      }
+
+      function msalLogout() {
+        if (!msalInstance || !currentAccount) return;
+        msalInstance.logoutRedirect({ account: currentAccount });
+        currentAccount = null; accessToken = null;
+        updateAuthUI();
+      }
+
+      function updateAuthUI() {
+        const loggedIn = !!currentAccount;
+        el("loginBtn").style.display = loggedIn ? "none" : "";
+        el("logoutBtn").style.display = loggedIn ? "" : "none";
+        el("userBadge").style.display = loggedIn ? "flex" : "none";
+        if (currentAccount) el("userName").textContent = currentAccount.name || currentAccount.username || "Angemeldet";
+      }
+
+      // ---------------------------------------------------------------------------
+      // Markdown / DOMPurify
+      // ---------------------------------------------------------------------------
       function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
       function basicMarkdown(text) {
         let html = escapeHtml(text);
@@ -172,6 +292,9 @@
         loadScript("https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"),
       ]).then(() => { if (window.marked && window.DOMPurify) renderMd = (t) => window.DOMPurify.sanitize(window.marked.parse(t, { breaks: true })); }).catch(() => {});
 
+      // ---------------------------------------------------------------------------
+      // Chat state
+      // ---------------------------------------------------------------------------
       const threadId = (crypto.randomUUID && crypto.randomUUID()) || ("t-" + Math.random().toString(16).slice(2));
       const history = [];
       let appState = { customer: {}, accounts: [], pending: {} };
@@ -206,7 +329,7 @@
       function renderSidebar() {
         const c = appState.customer || {};
         const cb = el("customerBody");
-        if (!c.customer_id && !c.full_name) { cb.innerHTML = '<div class="empty">Ihr Profil erscheint hier nach der Identifikation.</div>'; }
+        if (!c.customer_id && !c.full_name) { cb.innerHTML = '<div class="empty">Ihr Profil erscheint hier, sobald Sie sich identifiziert haben.</div>'; }
         else {
           cb.innerHTML = `
             ${c.full_name ? `<div class="kv"><span>Name</span><b>${escapeHtml(c.full_name)}</b></div>` : ""}
@@ -266,22 +389,28 @@
       function handleEvent(ev) {
         const get = (...k) => { for (const key of k) if (ev[key] !== undefined) return ev[key]; };
         switch (ev.type) {
-          case "RUN_STARTED": setStatus("running", "Analysiere…"); break;
+          case "RUN_STARTED": setStatus("running", "Denke nach…"); break;
           case "TEXT_MESSAGE_START": ensureBubble(get("message_id", "messageId"), get("role")); break;
           case "TEXT_MESSAGE_CONTENT": case "TEXT_MESSAGE_CHUNK": appendDelta(get("message_id", "messageId"), get("delta")); break;
           case "TEXT_MESSAGE_END": { const id = get("message_id", "messageId"); saveMessage(id); removeIfEmpty(id); break; }
-          case "TOOL_CALL_START": setStatus("running", "Rufe Daten ab…"); break;
-          case "TOOL_CALL_END": setStatus("running", "Analysiere…"); break;
+          case "TOOL_CALL_START": setStatus("running", "Lade Daten…"); break;
+          case "TOOL_CALL_END": setStatus("running", "Denke nach…"); break;
           case "STATE_SNAPSHOT": { const snap = get("snapshot"); if (snap && typeof snap === "object") { appState = Object.assign({ customer: {}, accounts: [], pending: {} }, snap); renderSidebar(); } break; }
           case "STATE_DELTA": { applyPatch(appState, get("delta")); renderSidebar(); break; }
           case "RUN_FINISHED": Object.keys(msgText).forEach(saveMessage); Object.keys(msgIndex).forEach(removeIfEmpty); setStatus("ready", "Bereit"); break;
-          case "RUN_ERROR": setStatus("error", "Fehler"); addBubble("system", "⚠️ " + (get("message") || "Der Assistent ist auf einen Fehler gestoßen."), false); break;
+          case "RUN_ERROR": setStatus("error", "Fehler"); addBubble("system", "⚠️ " + (get("message") || "Der Agent hat einen Fehler."), false); break;
         }
       }
 
       async function stream(payload) {
-        const res = await fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream" }, body: JSON.stringify(payload) });
-        if (!res.ok || !res.body) throw new Error("Anfrage fehlgeschlagen: " + res.status);
+        // Refresh the user token before each request.
+        if (msalInstance && currentAccount) await acquireToken();
+
+        const headers = { "Content-Type": "application/json", "Accept": "text/event-stream" };
+        if (accessToken) headers["Authorization"] = "Bearer " + accessToken;
+
+        const res = await fetch(ENDPOINT, { method: "POST", headers, body: JSON.stringify(payload) });
+        if (!res.ok || !res.body) throw new Error("Request failed: " + res.status);
         const reader = res.body.getReader(); const decoder = new TextDecoder("utf-8"); let buffer = "";
         const flush = (raw) => {
           const data = raw.split("\n").filter(l => l.startsWith("data:")).map(l => l.slice(5).trim()).join("\n");
@@ -307,6 +436,9 @@
       input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 140) + "px"; });
       input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); el("composer").requestSubmit(); } });
       el("composer").addEventListener("submit", (e) => { e.preventDefault(); const text = input.value.trim(); if (!text || running) return; input.value = ""; input.style.height = "auto"; send(text); });
+
+      // Boot MSAL.
+      initMsal().catch(console.error);
     </script>
   </body>
 </html>
