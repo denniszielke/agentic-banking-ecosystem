@@ -1,0 +1,20 @@
+{
+  "serverName": "ext_finance_mcp",
+  "serverUrl": ".azurecontainerapps.io/mcp",
+  "authType": "NoAuth",
+  "description": "Finance MCP server: compound-interest and present-value discounting tools.",
+  "publisherName": "Bank North / Bank South",
+  "tools": [
+    {
+      "name": "calculate_compound_interest",
+      "description": "Compute future value from principal, annual rate, duration and compounding frequency."
+    },
+    {
+      "name": "discount_cashflow",
+      "description": "Discount a future amount to present value using rate, duration and compounding frequency."
+    }
+  ],
+  "remoteScopes": null,
+  "externalOAuth": null,
+  "apiKey": null
+}

@@ -42,6 +42,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 IMAGES: dict[str, str] = {
     "customer-data-mcp-server": "src/customer_data_mcp_server/Dockerfile",
     "product-data-mcp-server": "src/product_data_mcp_server/Dockerfile",
+    "finance-mcp-server": "src/finance_mcp_server/Dockerfile",
     "customer-support-agent": "src/customer_support_agent/Dockerfile",
     "compliance-agent": "src/compliance_agent/Dockerfile",
     "employee-advisory-agent": "src/employee_advisory_agent/Dockerfile",
