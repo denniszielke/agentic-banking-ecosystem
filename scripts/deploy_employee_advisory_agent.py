@@ -55,6 +55,8 @@ def deploy() -> None:
             "CUSTOMER_TOOLBOX_NAME": os.getenv("CUSTOMER_TOOLBOX_NAME", "customer-data-tools"),
             "WORKIQ_TOOLBOX_NAME": os.getenv("WORKIQ_TOOLBOX_NAME", "workiq-tools"),
             "EMPLOYEE_WORKIQ_ENABLED": os.getenv("EMPLOYEE_WORKIQ_ENABLED", "true"),
+            "FINBOT_SQL_TOOLBOX_NAME": os.getenv("FINBOT_SQL_TOOLBOX_NAME", "finbot-sql-tools"),
+            "EMPLOYEE_FINBOT_SQL_ENABLED": os.getenv("EMPLOYEE_FINBOT_SQL_ENABLED", "true"),
             # Direct MCP overrides (blank by default → use the toolboxes).
             "PRODUCT_MCP_URL": os.getenv("PRODUCT_MCP_URL", ""),
             "CUSTOMER_MCP_URL": os.getenv("CUSTOMER_MCP_URL", ""),

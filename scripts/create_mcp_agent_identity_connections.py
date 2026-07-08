@@ -72,6 +72,17 @@ _SERVERS = {
         "PRODUCT_MCP_URL", "PRODUCT_MCP_APP_NAME", "product-data-mcp-server",
         "PRODUCT_MCP_CONNECTION_NAME", "product-mcp-agentid",
     ),
+    "finbot": (
+        "FINBOT_SQL_MCP_URL", "FINBOT_SQL_MCP_APP_NAME", "finbot-sql-mcp-server",
+        "FINBOT_SQL_MCP_CONNECTION_NAME", "finbot-sql-mcp-agentid",
+    ),
+}
+
+# label -> the ./.env variable the register scripts read for the connection id.
+_CONN_ENV = {
+    "customer": "CUSTOMER_MCP_CONNECTION_ID",
+    "product": "PRODUCT_MCP_CONNECTION_ID",
+    "finbot": "FINBOT_SQL_MCP_CONNECTION_ID",
 }
 
 
@@ -209,13 +220,16 @@ def main(argv: list[str] | None = None) -> int:
     if created:
         print("\nSet these in ./.env so the toolboxes use the connections:")
         for label, conn_name in created:
-            env_name = "CUSTOMER_MCP_CONNECTION_ID" if label == "customer" else "PRODUCT_MCP_CONNECTION_ID"
+            env_name = _CONN_ENV[label]
             print(f"  {env_name}={conn_name}")
-        print(
-            "\nThen re-register the toolboxes:\n"
-            "  python -m scripts.register_customer_data_toolbox\n"
-            "  python -m scripts.register_product_data_toolbox"
-        )
+        _register_hint = {
+            "customer": "python -m scripts.register_customer_data_toolbox",
+            "product": "python -m scripts.register_product_data_toolbox",
+            "finbot": "python -m scripts.register_finbot_sql_toolbox",
+        }
+        print("\nThen re-register the toolboxes:")
+        for label, _ in created:
+            print(f"  {_register_hint[label]}")
 
     print("\nDone." if not failures else f"\nDone with {failures} failure(s).")
     return 1 if failures else 0
