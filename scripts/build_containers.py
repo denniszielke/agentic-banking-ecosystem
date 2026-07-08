@@ -46,6 +46,7 @@ IMAGES: dict[str, str] = {
     "customer-support-agent": "src/customer_support_agent/Dockerfile",
     "compliance-agent": "src/compliance_agent/Dockerfile",
     "employee-advisory-agent": "src/employee_advisory_agent/Dockerfile",
+    "fabric-agent": "src/fabric_agent/Dockerfile",
 }
 
 
