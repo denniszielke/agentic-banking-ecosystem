@@ -39,6 +39,10 @@ import json
 import os
 import subprocess
 import sys
+<<<<<<< HEAD
+=======
+from dataclasses import dataclass
+>>>>>>> origin/main
 
 from scripts._cli import normalize
 from pathlib import Path
@@ -126,14 +130,14 @@ def _ensure_service_principal(app_id: str) -> None:
     print("==> Created service principal for the app.")
 
 
-def _add_permission(app_id: str, scope_id: str) -> None:
+def _add_permission(app_id: str, scope_id: str, scope_value: str = WORKIQ_SCOPE) -> None:
     _az(
         "ad", "app", "permission", "add",
         "--id", app_id,
         "--api", ATG_APP_ID,
         "--api-permissions", f"{scope_id}=Scope",
     )
-    print(f"==> Added delegated permission {WORKIQ_SCOPE} on Agent 365 Tools.")
+    print(f"==> Added delegated permission {scope_value} on Agent 365 Tools.")
 
 
 def _admin_consent(app_id: str) -> None:
@@ -156,17 +160,77 @@ def _create_secret(app_id: str) -> str:
     )
 
 
-def main() -> None:
+@dataclass
+class WorkIQOAuthApp:
+    """The scriptable outputs needed to configure the Foundry OAuth connection."""
+
+    app_id: str
+    client_secret: str
+    tenant_id: str
+    scope: str
+    scopes: str
+    authority: str
+
+    @property
+    def auth_url(self) -> str:
+        return f"{self.authority}/authorize"
+
+    @property
+    def token_url(self) -> str:
+        return f"{self.authority}/token"
+
+    @property
+    def refresh_url(self) -> str:
+        return f"{self.authority}/token"
+
+
+def ensure_oauth_app(
+    display_name: str = APP_NAME, scope: str = WORKIQ_SCOPE
+) -> WorkIQOAuthApp:
+    """Create/reuse the custom Entra OAuth app and return its connection config.
+
+    Idempotently ensures the app registration, service principal, WorkIQ
+    delegated permission and admin consent, then mints a fresh client secret.
+    Callers (e.g. scripts.create_workiq_connection) use the returned values to
+    build the Foundry custom-OAuth connection without the portal.
+    """
     tenant_id = _resolve_tenant_id()
-    scope_id = _resolve_scope_id(WORKIQ_SCOPE)
-    app_id = _ensure_app(APP_NAME)
+    scope_id = _resolve_scope_id(scope)
+    app_id = _ensure_app(display_name)
     _ensure_service_principal(app_id)
-    _add_permission(app_id, scope_id)
+    _add_permission(app_id, scope_id, scope)
     _admin_consent(app_id)
     secret = _create_secret(app_id)
+    return WorkIQOAuthApp(
+        app_id=app_id,
+        client_secret=secret,
+        tenant_id=tenant_id,
+        scope=scope,
+        scopes=f"{ATG_APP_ID}/{scope} offline_access",
+        authority=f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0",
+    )
 
-    authority = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0"
-    scopes = f"{ATG_APP_ID}/{WORKIQ_SCOPE} offline_access"
+
+def append_redirect_uri(app_id: str, redirect_uri: str) -> bool:
+    """Add ``redirect_uri`` to the app's Web redirect URIs (idempotent).
+
+    Foundry issues its OAuth callback URL when the connection is created; adding
+    it here lets the identity-passthrough consent complete. Returns True if the
+    URI was added, False if it was already present.
+    """
+    existing = json.loads(
+        _az("ad", "app", "show", "--id", app_id,
+            "--query", "web.redirectUris", "-o", "json") or "[]"
+    )
+    if redirect_uri in existing:
+        return False
+    _az("ad", "app", "update", "--id", app_id,
+        "--web-redirect-uris", *existing, redirect_uri)
+    return True
+
+
+def main() -> None:
+    app = ensure_oauth_app()
 
     print("\n" + "=" * 72)
     print("Custom OAuth app ready. Create the Foundry connection with these values")
@@ -175,13 +239,19 @@ def main() -> None:
     print("=" * 72)
     print(f"  Connection name : workiq-connection")
     print(f"  MCP server URL  : (the tenant-scoped WorkIQ URL you registered)")
-    print(f"  Client ID       : {app_id}")
-    print(f"  Client secret   : {secret}")
-    print(f"  Auth URL        : {authority}/authorize")
-    print(f"  Token URL       : {authority}/token")
-    print(f"  Refresh URL     : {authority}/token")
-    print(f"  Scopes          : {scopes}")
+    print(f"  Client ID       : {app.app_id}")
+    print(f"  Client secret   : {app.client_secret}")
+    print(f"  Auth URL        : {app.auth_url}")
+    print(f"  Token URL       : {app.token_url}")
+    print(f"  Refresh URL     : {app.refresh_url}")
+    print(f"  Scopes          : {app.scopes}")
     print("=" * 72)
+    print(
+        "Prefer to skip the portal? Run instead:\n"
+        "  python -m scripts.create_workiq_connection\n"
+        "which creates the connection with 'azd ai connection create' and\n"
+        "re-registers the toolbox for you.\n"
+    )
     print(
         "After you save the connection, Foundry shows a redirect URL. Add it to\n"
         f"this app (Entra admin center > App registrations > {APP_NAME} >\n"

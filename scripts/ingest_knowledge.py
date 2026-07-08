@@ -5,12 +5,16 @@ optionally embeds the text with Azure OpenAI, and uploads them:
 
   * **Financial products** (``banking-products``) — every product section of
     ``data/knowledge/savings-products.md``,
-    ``data/knowledge/childrens-savings-products.md`` and
+    ``data/knowledge/childrens-savings-products.md``,
+    ``data/knowledge/securities-products.md`` and
     ``data/knowledge/credit-card-products.md``, plus the catalogue rows in
     ``data/products.md``.
 
-  * **Compliance rules** (``banking-compliance``) — every ``## N.M`` section of
-    ``data/knowledge/compliance-regulatory.md``, tagged by regulatory domain.
+  * **Compliance rules** (``banking-compliance``) — every individual rule of
+    ``data/knowledge/compliance-regulatory.md`` (each numbered bullet, bold
+    statement and table row) as its own document, tagged by regulatory domain
+    and carrying the breadcrumb of the headings above it so a single rule can be
+    matched semantically while still citing its exact ``§N.M.O`` reference.
 
 Every document carries a ``source_ref`` (``file §N.M``) so agents can cite it.
 Run ``python -m scripts.create_search_indexes`` first to create the schemas.
@@ -55,6 +59,7 @@ COMPLIANCE_INDEX_NAME = os.getenv("AZURE_SEARCH_COMPLIANCE_INDEX_NAME", "banking
 _PRODUCT_FILES = {
     "savings-products.md": "savings",
     "childrens-savings-products.md": "childrens_savings",
+    "securities-products.md": "securities",
     "credit-card-products.md": "credit_card",
 }
 
@@ -197,27 +202,86 @@ def _domain_for(text: str) -> tuple[str, list[str]]:
     return primary, matched or ["General"]
 
 
+# Leaf-level rule patterns for the compliance knowledge base. Every numbered
+# bullet, bold statement and table row becomes its own search document, so an
+# agent can semantically match a single rule while the enclosing headings travel
+# with it as breadcrumb context.
+_COMP_HEADING_RE = re.compile(r"^(#{1,6})\s+(\d+(?:\.\d+)*)\.?\s*(.*)$")
+_COMP_BULLET_RE = re.compile(r"^\s*[-*]\s+(\d+(?:\.\d+)*)\s+(.*)$")
+_COMP_BOLD_RE = re.compile(r"^\s*\*\*(\d+(?:\.\d+)*)\*\*\s*(.*)$")
+_COMP_TABLE_RE = re.compile(r"^\|(.+)\|\s*$")
+_COMP_NUMBER_RE = re.compile(r"^\d+(?:\.\d+)*$")
+
+
+def _compliance_leaf(
+    number: str, text: str, stack: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Build one search document for a single numbered compliance rule.
+
+    ``stack`` is the chain of enclosing headings (outermost first); their titles
+    form the breadcrumb stored alongside the rule text so semantic search matches
+    the rule together with its place in the document hierarchy.
+    """
+    text = text.strip()
+    breadcrumb = " > ".join(h["title"] for h in stack if h["title"])
+    description = f"{breadcrumb}\n\n{text}".strip() if breadcrumb else text
+    domain, tags = _domain_for(f"{breadcrumb} {text}")
+    return {
+        "id": f"comp-{number.replace('.', '-')}",
+        "name": text or f"compliance §{number}",
+        "description": description,
+        "scenario": breadcrumb,
+        "domain": domain,
+        "tags": tags,
+        "source_ref": f"compliance-regulatory.md §{number}",
+    }
+
+
 def _build_compliance_docs() -> list[dict[str, Any]]:
+    """Index the compliance knowledge base at the granularity of a single rule.
+
+    Walks the markdown while maintaining the current heading stack, and emits a
+    document for each numbered bullet, bold statement or table row, carrying the
+    breadcrumb of the headings above it. This lets agents semantically search for
+    an individual rule and still cite its exact ``§N.M.O`` reference.
+    """
     path = _KNOWLEDGE_DIR / "compliance-regulatory.md"
     if not path.exists():
         return []
     docs: list[dict[str, Any]] = []
-    for sec in _parse_sections(path.read_text(encoding="utf-8")):
-        title, number, body = sec["title"], sec["number"], sec["body"]
-        if not body:
+    stack: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        heading = _COMP_HEADING_RE.match(line)
+        if heading:
+            level = len(heading.group(1))
+            while stack and stack[-1]["level"] >= level:
+                stack.pop()
+            stack.append({
+                "level": level,
+                "number": heading.group(2),
+                "title": heading.group(3).strip(),
+            })
             continue
-        scenario = f"{sec['h1_title']}: {title}".strip(": ")
-        description = f"{title}\n\n{body}".strip()
-        domain, tags = _domain_for(f"{title} {body} {sec['h1_title']}")
-        docs.append({
-            "id": f"comp-{number.replace('.', '-')}",
-            "name": title or f"compliance §{number}",
-            "description": description,
-            "scenario": scenario,
-            "domain": domain,
-            "tags": tags,
-            "source_ref": f"compliance-regulatory.md §{number}",
-        })
+
+        match = _COMP_BULLET_RE.match(line) or _COMP_BOLD_RE.match(line)
+        if match:
+            number, text = match.group(1), match.group(2)
+        else:
+            table = _COMP_TABLE_RE.match(line)
+            if not table:
+                continue
+            cells = [c.strip() for c in table.group(1).split("|")]
+            if not cells or not _COMP_NUMBER_RE.match(cells[0]):
+                continue  # header, separator or non-numbered row
+            number = cells[0]
+            text = " — ".join(c for c in cells[1:] if c)
+
+        if not number or number in seen:
+            continue
+        seen.add(number)
+        docs.append(_compliance_leaf(number, text, stack))
     return docs
 
 
@@ -297,13 +361,13 @@ def _upload(index_name: str, docs: list[dict[str, Any]]) -> None:
 def ingest() -> None:
     embedder = _Embedder()
 
-    product_docs = _build_product_docs()
-    if embedder.enabled and product_docs:
-        vectors = embedder.embed([d["description"] for d in product_docs])
-        for doc, vec in zip(product_docs, vectors):
-            if vec:
-                doc["description_vector"] = vec
-    _upload(PRODUCT_INDEX_NAME, product_docs)
+    # product_docs = _build_product_docs()
+    # if embedder.enabled and product_docs:
+    #     vectors = embedder.embed([d["description"] for d in product_docs])
+    #     for doc, vec in zip(product_docs, vectors):
+    #         if vec:
+    #             doc["description_vector"] = vec
+    # _upload(PRODUCT_INDEX_NAME, product_docs)
 
     compliance_docs = _build_compliance_docs()
     if embedder.enabled and compliance_docs:

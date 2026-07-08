@@ -27,6 +27,12 @@ Environment variables (populated from ``.env`` by ``azd up``):
   CUSTOMER_MCP_URL / PRODUCT_MCP_URL     direct MCP URLs (auto-resolved if unset)
   ENTRA_AUTH_ENABLED                     "true" to send Entra tokens to the Easy
                                          Auth-protected MCP servers (default: true)
+  COMPLIANCE_A2A_ENABLED                 "true" to consume Bank North's Compliance
+                                         agent over A2A (default: false)
+  AZURE_AI_COMPLIANCE_AGENT_NAME         compliance hosted-agent name (default: compliance-agent)
+  COMPLIANCE_AGENT_A2A_URL               direct A2A endpoint override (auto-derived if unset)
+  COMPLIANCE_AGENT_AUDIENCE              Entra audience for the A2A bearer token
+                                         (default: https://ai.azure.com)
   TAG                                    image tag to deploy (default: latest)
 """
 
@@ -184,6 +190,15 @@ def deploy(tag: str | None = None) -> None:
         # calls attach an Entra bearer token.
         "CUSTOMER_MCP_AUDIENCE": customer_mcp_audience,
         "PRODUCT_MCP_AUDIENCE": product_mcp_audience,
+        # Cross-org A2A: consume Bank North's Compliance hosted agent over A2A.
+        # Opt-in via COMPLIANCE_A2A_ENABLED (default false → the customer support
+        # agent keeps using the local Compliance rules index for guardrails).
+        # When enabled, the container derives the Foundry A2A endpoint from the
+        # project endpoint + agent name unless COMPLIANCE_AGENT_A2A_URL is set.
+        "COMPLIANCE_A2A_ENABLED": os.getenv("COMPLIANCE_A2A_ENABLED", "false"),
+        "AZURE_AI_COMPLIANCE_AGENT_NAME": os.getenv("AZURE_AI_COMPLIANCE_AGENT_NAME", "compliance-agent"),
+        "COMPLIANCE_AGENT_A2A_URL": os.getenv("COMPLIANCE_AGENT_A2A_URL", ""),
+        "COMPLIANCE_AGENT_AUDIENCE": os.getenv("COMPLIANCE_AGENT_AUDIENCE", "https://ai.azure.com"),
         "APPLICATIONINSIGHTS_CONNECTION_STRING": os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING", ""),
     }
 

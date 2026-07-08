@@ -24,12 +24,21 @@ conditions live in the linked `data/knowledge/*-products.md` files.
 | `list_products` | List the catalogue, optionally by category | read |
 | `get_product` | A single product definition by code/name | read |
 | `list_holdings` | Product holdings of a customer | read |
-| `order_product` | Order a new product for a customer | write (HITL) |
+| `detect_opportunities` | Proactive optimisation ideas — idle cash (with annual interest gain) + credit-card candidate | read |
+| `list_orders` | Product-order cases (the Vorgangs-Log), optionally by customer/status | read |
+| `get_order` | A single order case incl. status history | read |
+| `order_product` | Order a new product for a customer (opens an order case) | write (HITL) |
 | `update_holding` | Update an existing holding | write (HITL) |
+| `update_order_status` | Advance an order (requested → approved/rejected → shipped → delivered) | write (HITL) |
 
-The `order_product` and `update_holding` write tools are **human-in-the-loop**:
-call them first with `confirm=false` to get a preview, then re-call with
-`confirm=true` once a human has approved the change.
+The `order_product`, `update_holding` and `update_order_status` write tools are
+**human-in-the-loop**: call them first with `confirm=false` to get a preview,
+then re-call with `confirm=true` once a human has approved the change.
+
+Orders follow a status lifecycle — `requested` → `approved` | `rejected`;
+`approved` → `shipped` → `delivered`. `order_product` opens the case (status
+`requested`, holding `pending`); approving it activates the holding. For credit
+cards the order confirmation carries a delivery estimate and shipping address.
 
 ## Run
 

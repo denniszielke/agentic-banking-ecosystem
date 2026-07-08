@@ -31,25 +31,28 @@ boundaries.
 ```mermaid
 flowchart LR
     U([Customer]) --> WEB[customer_app - web]
-    E([Employee]) --> TEAMS[employee_app - Teams]
 
-    subgraph South["Bank South subscription"]
-        WEB --> CSA[customer_support_agent]
+    subgraph South["Bank South Tenant"]
+        E([Employee]) --> TEAMS[employee_app - Teams]
+        WEB -->|AG-UI| CSA[customer_support_agent]
         TEAMS --> EAA[employee_advisory_agent]
         CSA --> CCA[credit_card_agent]
-        CSA --> CDATA[(customer_data MCP)]
-        CSA --> PDATA[(product_data MCP)]
+        CSA -->|MCP| GW{{MCP Gateway}}
+        GW -->|MCP| CDATA[(customer_data MCP)]
+        GW -->|MCP| PDATA[(product_data MCP)]
+        SEARCH_S[[Azure AI Search]]
     end
 
-    subgraph North["Bank North subscription"]
+    subgraph North["Bank North Tenant"]
         COMP[compliance_agent]
+        SEARCH_N[[Azure AI Search]]
     end
 
     CSA -. A2A cross-org .-> COMP
     CCA -. A2A cross-org .-> COMP
-    CSA --> SEARCH[[Azure AI Search]]
-    EAA --> SEARCH
-    COMP --> SEARCH
+    CSA --> SEARCH_S
+    EAA --> SEARCH_S
+    COMP --> SEARCH_N
 
     style South fill:#0078D41F,stroke:#004e8c
     style North fill:#4129911F,stroke:#2a1a5e
@@ -131,7 +134,9 @@ canonical data model under `data/products.md`, and deploy scripts under `scripts
 
 - **Customer support agent** → `customer_data_mcp_server`, `product_data_mcp_server`;
   Financial products + Compliance rules search indexes; grounding docs
-  `data/knowledge/bank-south.md` and the product knowledge files.
+  `data/knowledge/bank-south.md` and the product knowledge files. When
+  `COMPLIANCE_A2A_ENABLED=true`, it also consumes Bank North's compliance agent
+  **over A2A** (an `ask_compliance` tool) for cross-org regulatory decisions.
 - **Employee advisory agent** → `product_data_mcp_server`, `customer_data_mcp_server`,
   WorkIQ toolbox; Financial products index; grounding docs
   `data/knowledge/*-products.md` and the relevant branch directory.
@@ -148,8 +153,8 @@ and are registered as Foundry toolboxes so agents can consume them.
 
 | MCP server | What it serves | Tools |
 |------------|----------------|-------|
-| **Customer data** (`src/customer_data_mcp_server`) | Customers, accounts/holdings, balances and transactions | `list_customers`, `get_customer`, `list_accounts`, `get_account`, `list_transactions`, `get_balance` (read); `update_customer` (write, HITL) |
-| **Product data** (`src/product_data_mcp_server`) | Product catalogue + per-customer product holdings and conditions | `list_products`, `get_product`, `list_holdings` (read); `order_product`, `update_holding` (write, HITL) |
+| **Customer data** (`src/customer_data_mcp_server`) | Customers, accounts/holdings, balances and transactions | `list_customers`, `get_customer`, `list_accounts`, `get_account`, `list_transactions`, `get_balance`, `summarize_spending`, `get_net_worth` (read); `update_customer` (write, HITL) |
+| **Product data** (`src/product_data_mcp_server`) | Product catalogue + per-customer product holdings and conditions | `list_products`, `get_product`, `list_holdings`, `detect_opportunities`, `list_orders`, `get_order` (read); `order_product`, `update_holding`, `update_order_status` (write, HITL) |
 
 **Dependencies**
 
@@ -410,6 +415,9 @@ OneDrive/SharePoint, etc.
 
 **Step 1 — create the custom OAuth app**
 
+> Using the scripted **Option A** in step 2? You can skip running this
+> separately — `create_workiq_connection` performs this step for you.
+
 ```bash
 python -m scripts.setup_workiq_oauth_app
 ```
@@ -422,6 +430,38 @@ client secret is shown once — copy it now.
 
 **Step 2 — create the Foundry connection**
 
+Pick one of the two options below. **Option A is the recommended path** — it
+automates the whole connection creation and toolbox registration; Option B is the
+manual portal fallback.
+
+*Option A — scripted (no portal)*
+
+```bash
+# uses AZURE_AI_PROJECT_ENDPOINT from ./.env; requires the Foundry azd extension:
+#   azd ext install microsoft.foundry
+python -m scripts.create_workiq_connection
+```
+
+This ensures the OAuth app (step 1 — you can skip running `setup_workiq_oauth_app`
+separately), then creates the `workiq-connection` Foundry connection with
+`azd ai connection create … --auth-type oauth2` (client id/secret, authorize /
+token / refresh URLs and scopes), and finally re-registers the `workiq-tools`
+toolbox against it — so **step 3 is already done** when this succeeds. Useful
+flags:
+
+- `--force` — replace an existing connection (azd upsert).
+- `--redirect-uri <url>` — add Foundry's OAuth callback URL to the app
+  registration in the same run (or set `WORKIQ_REDIRECT_URI`). If you don't have
+  the URL yet, run once without it, grab the redirect URL from the Foundry
+  connection, then re-run with `--force --redirect-uri <url>`.
+- `--skip-toolbox` — create the connection only, without re-registering the toolbox.
+
+> The `azure-ai-projects` SDK's `connections` API is **read-only** (get/list), so
+> connection creation goes through the Foundry azd extension rather than the SDK.
+
+*Option B — Foundry portal (manual)*
+
+First run `python -m scripts.setup_workiq_oauth_app` (step 1) to get the values.
 In the [Foundry portal](https://ai.azure.com), open your project and go to
 **Tools → Add tool → Custom → MCP → OAuth Identity Passthrough → Custom OAuth**.
 Create a connection named `workiq-connection` with the values printed in step 1:
@@ -443,6 +483,8 @@ URIs** (Entra admin center), so Foundry can complete the OAuth handshake. Keep
 `offline_access` in the scopes so tokens refresh automatically.
 
 **Step 3 — register the toolbox against the connection**
+
+> Skip this step if you used Option A above — it already re-registered the toolbox.
 
 ```bash
 WORKIQ_CONNECTION_NAME=workiq-connection python -m scripts.register_workiq_toolbox

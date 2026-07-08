@@ -12,7 +12,7 @@
         "properties": {
           "category": {
             "type": "string",
-            "description": "Optional category filter — 'current_account', 'savings', 'childrens_savings' or 'credit_card' (case-insensitive). Omit to list every product."
+            "description": "Optional category filter — 'current_account', 'savings', 'childrens_savings', 'securities' or 'credit_card' (case-insensitive). Omit to list every product."
           }
         },
         "required": []
@@ -43,6 +43,36 @@
           "customer_id": {
             "type": "string",
             "description": "The customer id, format 'CUST-1001'."
+          }
+        },
+        "required": ["customer_id"]
+      }
+    },
+    {
+      "name": "detect_opportunities",
+      "description": "Detect proactive optimisation opportunities for a customer: idle cash on low-interest holdings (with estimated annual interest gain) and a credit-card candidate when none is held.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "The customer id, format 'CUST-1001'."
+          },
+          "liquidity_buffer": {
+            "type": "number",
+            "default": 3000.0,
+            "description": "Cash to leave on the current account for liquidity when computing the movable idle amount."
+          },
+          "min_idle_balance": {
+            "type": "number",
+            "default": 10000.0,
+            "description": "Only flag a holding whose balance exceeds this."
+          },
+          "min_annual_gain": {
+            "type": "number",
+            "default": 25.0,
+            "description": "Only flag an idle-cash opportunity whose estimated annual gain is at least this (EUR)."
           }
         },
         "required": ["customer_id"]
@@ -96,6 +126,69 @@
           }
         },
         "required": ["account_id", "fields"]
+      }
+    },
+    {
+      "name": "list_orders",
+      "description": "List product-order cases (the Vorgangs-Log), newest first, optionally filtered by customer and/or status.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "description": "Optional customer id filter, format 'CUST-1001'."
+          },
+          "status": {
+            "type": "string",
+            "description": "Optional status filter: 'requested', 'approved', 'rejected', 'shipped' or 'delivered'."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "get_order",
+      "description": "Get a single product-order case by id, including its status history.",
+      "access": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "The order id, format 'ORD-000001'."
+          }
+        },
+        "required": ["order_id"]
+      }
+    },
+    {
+      "name": "update_order_status",
+      "description": "Advance a product order's status along its lifecycle (requested -> approved | rejected; approved -> shipped | delivered) (write — human-in-the-loop).",
+      "access": "write",
+      "humanInTheLoop": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "The order id, format 'ORD-000001'."
+          },
+          "status": {
+            "type": "string",
+            "description": "Target status: 'approved', 'rejected', 'shipped' or 'delivered'."
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional free-text note recorded in the status history."
+          },
+          "confirm": {
+            "type": "boolean",
+            "default": false,
+            "description": "Set to true only after a human has approved the preview."
+          }
+        },
+        "required": ["order_id", "status"]
       }
     }
   ]

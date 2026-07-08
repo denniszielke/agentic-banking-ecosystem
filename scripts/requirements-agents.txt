@@ -3,6 +3,11 @@
 azure-ai-projects==2.3.0
 azure-identity==1.25.3
 azure-search-documents==11.7.0b2
+<<<<<<< HEAD
 # azure-ai-projects 2.3.0 requires openai>=2.8.0; keep this in sync with it.
 openai>=2.8.0
+=======
+# azure-ai-projects 2.3.0 requires openai>=2.8.0; cap <3 to avoid breaking changes.
+openai>=2.8.0,<3
+>>>>>>> origin/main
 python-dotenv==1.2.2
