@@ -33,14 +33,11 @@ def _az_prefix() -> list[str]:
         py = os.path.join(os.path.dirname(wbin), "python.exe")
         if os.path.exists(py):
             return [py, "-I", "-B", "-X", "utf8", "-m", "azure.cli"]
-<<<<<<< HEAD
-=======
         raise FileNotFoundError(
             f"Azure CLI found at '{azcmd}' but the bundled Python interpreter was not "
             f"found at '{py}'. Reinstall the Azure CLI or ensure a native 'az.exe' is "
             f"on PATH."
         )
->>>>>>> origin/main
     return [azcmd or "az"]
 
 
@@ -62,26 +59,17 @@ def normalize(cmd: list[str]) -> list[str]:
     Only the first element is inspected. On POSIX the command is returned
     unchanged. On Windows ``az`` / ``azd`` are expanded to their real invocation
     and ``which`` is mapped to ``where``.
-<<<<<<< HEAD
-=======
 
     Prefixes are resolved at call time so that any PATH changes made after
     import (e.g. via ``load_dotenv``) are reflected correctly.
->>>>>>> origin/main
     """
     if not cmd:
         return cmd
     head, *rest = cmd
     if head == "az":
-<<<<<<< HEAD
-        return [*AZ, *rest]
-    if head == "azd":
-        return [*AZD, *rest]
-=======
         return [*_az_prefix(), *rest]
     if head == "azd":
         return [*_azd_prefix(), *rest]
->>>>>>> origin/main
     if head == "which":
         return ["where" if os.name == "nt" else "which", *rest]
     return list(cmd)

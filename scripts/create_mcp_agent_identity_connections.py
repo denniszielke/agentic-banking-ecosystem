@@ -107,11 +107,7 @@ def _azd(*args: str) -> subprocess.CompletedProcess[str]:
 
 def _ensure_azd() -> bool:
     """Verify the azd CLI and the Foundry extension (`azd ai`) are available."""
-<<<<<<< HEAD
-    if subprocess.run(normalize(["which", "azd"]), check=False, capture_output=True).returncode != 0:
-=======
     if shutil.which("azd") is None:
->>>>>>> origin/main
         print(
             "ERROR: the Azure Developer CLI (azd) is not installed. Install it, then "
             "run 'azd ext install microsoft.foundry'.",

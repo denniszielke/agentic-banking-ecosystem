@@ -46,14 +46,9 @@ MCP_APP_NAMES = [CUSTOMER_MCP_APP, PRODUCT_MCP_APP]
 
 
 def run(cmd: list[str]) -> None:
-<<<<<<< HEAD
-    print(f"$ {' '.join(cmd)}")
-    subprocess.run(normalize(cmd), check=False)
-=======
     normalized = normalize(cmd)
     print(f"$ {' '.join(normalized)}")
     subprocess.run(normalized, check=False)
->>>>>>> origin/main
 
 
 def delete_all(purge_auth: bool = False) -> None:

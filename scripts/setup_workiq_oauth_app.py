@@ -39,10 +39,7 @@ import json
 import os
 import subprocess
 import sys
-<<<<<<< HEAD
-=======
 from dataclasses import dataclass
->>>>>>> origin/main
 
 from scripts._cli import normalize
 from pathlib import Path
