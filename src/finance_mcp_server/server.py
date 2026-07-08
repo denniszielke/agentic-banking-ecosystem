@@ -5,13 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Any
 
 from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-
-logger = logging.getLogger(__name__)
 
 _HOST = os.getenv("FINANCE_MCP_HOST", "127.0.0.1")
 _PORT = int(os.getenv("FINANCE_MCP_PORT", "8093"))
@@ -20,12 +17,19 @@ _PORT = int(os.getenv("FINANCE_MCP_PORT", "8093"))
 def _build_auth():
     """Build the FastMCP Microsoft Entra ID JWT auth provider, or ``None``.
 
-    Enabled when ``ENTRA_AUTH_ENABLED`` is truthy and both ``MCP_AUTH_CLIENT_ID``
-    and ``AZURE_TENANT_ID`` are set. Returns ``None`` to run anonymously (local
+    Enabled only when ``ENTRA_AUTH_ENABLED`` is truthy and both the API audience
+    (``MCP_AUTH_CLIENT_ID``) and ``AZURE_TENANT_ID`` are set. The provider
+    validates incoming Entra access tokens (issuer, audience and JWKS signature)
+    inside the app itself — no Container Apps Easy Auth and no client secret.
+    No scope is required, so both delegated (user) and app-only (managed
+    identity) tokens are accepted. Returns ``None`` to run anonymously (local
     development, or auth toggled off).
     """
     enabled = os.getenv("ENTRA_AUTH_ENABLED", "false").strip().lower() in {
-        "1", "true", "yes", "on",
+        "1",
+        "true",
+        "yes",
+        "on",
     }
     client_id = os.getenv("MCP_AUTH_CLIENT_ID", "").strip()
     tenant_id = os.getenv("AZURE_TENANT_ID", "").strip()
@@ -102,7 +106,9 @@ def calculate_compound_interest(
             "compounds_per_year": compounds_per_year,
             "future_value": round(future_value, 2),
             "interest_earned": round(interest_earned, 2),
-            "total_return_percent": round((interest_earned / principal) * 100, 4) if principal > 0 else None,
+            "total_return_percent": round((interest_earned / principal) * 100, 4)
+            if principal > 0
+            else None,
         },
         indent=2,
     )
@@ -146,7 +152,9 @@ def discount_cashflow(
             "compounds_per_year": compounds_per_year,
             "present_value": round(present_value, 2),
             "discount_amount": round(discount, 2),
-            "discount_percent": round((discount / future_value) * 100, 4) if future_value > 0 else None,
+            "discount_percent": round((discount / future_value) * 100, 4)
+            if future_value > 0
+            else None,
         },
         indent=2,
     )
