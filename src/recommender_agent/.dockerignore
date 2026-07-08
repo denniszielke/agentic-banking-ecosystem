@@ -1,0 +1,5 @@
+src/recommender_agent/__pycache__/
+**/__pycache__/
+*.pyc
+.env
+.venv/
